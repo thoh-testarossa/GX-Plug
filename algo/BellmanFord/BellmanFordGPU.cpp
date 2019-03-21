@@ -36,9 +36,9 @@ void BellmanFordGPU::Init(Graph &g, std::set<int> &activeVertice, const std::vec
     BellmanFord::Init(g, activeVertice, initVList);
 }
 
-void BellmanFordGPU::Deploy(Graph &g)
+void BellmanFordGPU::Deploy(Graph &g, int numOfInitV)
 {
-    BellmanFord::Deploy(g);
+    BellmanFord::Deploy(g, numOfInitV);
 
     cudaError_t err = cudaSuccess;
 
