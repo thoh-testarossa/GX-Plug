@@ -32,7 +32,7 @@ class Graph
 {
 public:
     Graph(int vCount);
-    Graph(int vCount, std::map<int, std::map<int, double>> vertex, std::vector<Edge> edge);
+    Graph(int vCount, std::map<int, std::map<int, double>> &vertex, std::vector<Edge> &edge, std::set<int> &markID);
 
     void insertEdge(int src, int dst, double weight);
 

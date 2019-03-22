@@ -27,7 +27,7 @@ Graph::Graph(int vCount)
     this->eCount = 0;
 }
 
-Graph::Graph(int vCount, std::map<int, std::map<int, double>> vertex, std::vector<Edge> edge) {
+Graph::Graph(int vCount, std::map<int, std::map<int, double>>& vertex, std::vector<Edge>& edge, std::set<int>& markID) {
 
     this->vList = std::vector<Vertex>();
     this->eList = std::vector<Edge>();
@@ -39,10 +39,14 @@ Graph::Graph(int vCount, std::map<int, std::map<int, double>> vertex, std::vecto
     for(auto itE : edge){
         insertEdge(itE.src, itE.dst, itE.weight);
     }
-    for(auto itV : vList){
-        auto iter = vertex.find(itV.vertexID);
-        if(iter!=vertex.end()){
+    for(auto &itV : vList){
+        if(vertex.count(itV.vertexID) > 0){
             itV.value = vertex[itV.vertexID];
+        }
+        else{
+            for(auto blank : markID){
+                itV.value.insert(std::pair<int, double>(blank, INT32_MAX >> 1));
+            }
         }
     }
 }
