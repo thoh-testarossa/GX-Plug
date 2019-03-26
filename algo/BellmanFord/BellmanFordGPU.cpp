@@ -236,6 +236,8 @@ void BellmanFordGPU::MSGApply(Graph &g, std::set<int> &activeVertice, const Mess
     //g assembly
     for(int i = 0; i < g.vCount; i++)
     {
+        g.vList.at(i).isActive = AVCheckSet[i];
+
         counterForIter = 0;
         for(auto iter = g.vList.at(i).value.begin(); iter != g.vList.at(i).value.end(); iter++)
         {
@@ -313,6 +315,12 @@ void BellmanFordGPU::MSGGen(const Graph &g, const std::set<int> &activeVertice, 
 
     err = cudaMemcpy(d_activeVerticeSet, activeVerticeSet, numOfAV * sizeof(int), cudaMemcpyHostToDevice);
 
+    //AVCheckSet Init
+    for(int i = 0; i < g.vCount; i++)
+        AVCheckSet[i] = g.vList.at(i).isActive;
+
+    err = cudaMemcpy(d_AVCheckSet, AVCheckSet, g.vCount * sizeof(bool), cudaMemcpyHostToDevice);
+
     //initVSet Init
     counterForIter = 0;
     for(auto iter = g.vList.at(0).value.begin(); iter != g.vList.at(0).value.end() && counterForIter < numOfInitV; iter++)
@@ -385,7 +393,7 @@ void BellmanFordGPU::MSGGen(const Graph &g, const std::set<int> &activeVertice, 
         err = cudaMemcpy(d_mValueSet, mValueSet, eG.size() * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
 
         //Kernel Execution
-        err = MSGGen_kernel_exec(eG.size(), numOfAV, d_activeVerticeSet, d_eSrcSet, d_eDstSet, d_eWeightSet, numOfInitV, d_initVSet, d_vValueSet, d_mDstSet, d_mInitVSet, d_mValueSet);
+        err = MSGGen_kernel_exec(eG.size(), numOfAV, d_activeVerticeSet, d_AVCheckSet, d_eSrcSet, d_eDstSet, d_eWeightSet, numOfInitV, d_initVSet, d_vValueSet, d_mDstSet, d_mInitVSet, d_mValueSet);
 
         //Re-package the data
         //info necessary: mSetCheck table for each e in eGroup

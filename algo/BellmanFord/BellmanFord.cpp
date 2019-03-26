@@ -13,12 +13,17 @@ BellmanFord::BellmanFord()
 
 void BellmanFord::MSGApply(Graph &g, std::set<int> &activeVertice, const MessageSet &mSet)
 {
+    //Reset active vertices info
+    for(auto &v : g.vList)
+        v.isActive = false;
+
     for(auto m : mSet.mSet)
     {
         if(g.vList.at(m.dst).value.find(m.src)->second > m.value)
         {
             g.vList.at(m.dst).value.find(m.src)->second = m.value;
             activeVertice.insert(m.dst);
+            g.vList.at(m.dst).isActive = true;
         }
     }
 }
@@ -27,7 +32,7 @@ void BellmanFord::MSGGen(const Graph &g, const std::set<int> &activeVertice, Mes
 {
     for(auto e : g.eList)
     {
-        if(activeVertice.find(e.src) != activeVertice.end())
+        if(g.vList.at(e.src).isActive)
         {
             int vID = e.src;
             if(g.vList.at(vID).vertexID == vID) // It should be of equal value
@@ -89,6 +94,7 @@ void BellmanFord::Init(Graph &g, std::set<int> &activeVertice, const std::vector
             {
                 v.value.insert(std::pair<int, double>(iV, 0));
                 activeVertice.insert(v.vertexID);
+                v.isActive = true;
             }
             else
                 v.value.insert(std::pair<int, double>(iV, INT32_MAX >> 1));
@@ -126,6 +132,9 @@ void BellmanFord::MergeGraph(Graph &g, const std::vector<Graph> &subGSet,
             //Merge vertices info
             for(auto v : subG.vList)
             {
+                if(v.isActive)
+                    resG.vList.at(v.vertexID).isActive = true;
+
                 for(auto vV : v.value)
                 {
                     if(resG.vList.at(v.vertexID).value.find(vV.first)->second > vV.second)

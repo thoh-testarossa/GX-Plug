@@ -15,6 +15,7 @@ public:
     Vertex(int vertexID, std::map<int, double> value);
 
     int vertexID;
+    bool isActive;
     std::map<int, double> value;
 };
 

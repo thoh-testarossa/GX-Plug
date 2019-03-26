@@ -7,6 +7,7 @@
 Vertex::Vertex(int vertexID, std::map<int, double> value)
 {
     this->vertexID = vertexID;
+    this->isActive = false;
     this->value = value;
 }
 
