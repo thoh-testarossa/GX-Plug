@@ -190,7 +190,7 @@ void BellmanFord::ApplyStep(Graph &g, std::set<int> &activeVertice)
     MSGGen(g, activeVertice, mGenSet);
 
     //Test
-    std::cout << "Gen:" << clock() << std::endl;
+    //std::cout << "Gen:" << clock() << std::endl;
     //Test end
 
     //Test
@@ -204,7 +204,7 @@ void BellmanFord::ApplyStep(Graph &g, std::set<int> &activeVertice)
     MSGMerge(g, mMergedSet, mGenSet);
 
     //Test
-    std::cout << "MMerge:" << clock() << std::endl;
+    //std::cout << "MMerge:" << clock() << std::endl;
     //Test end
 
     //Test
@@ -220,7 +220,7 @@ void BellmanFord::ApplyStep(Graph &g, std::set<int> &activeVertice)
     MSGApply(g, activeVertice, mMergedSet);
 
     //Test
-    std::cout << "Apply:" << clock() << std::endl;
+    //std::cout << "Apply:" << clock() << std::endl;
     //Test end
 
     //Test

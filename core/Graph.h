@@ -12,7 +12,7 @@
 class Vertex
 {
 public:
-    Vertex(int vertexID, std::map<int, double> value);
+    Vertex(int vertexID, bool activeness, std::map<int, double> value);
 
     int vertexID;
     bool isActive;
@@ -33,7 +33,7 @@ class Graph
 {
 public:
     Graph(int vCount);
-    Graph(int vCount, std::map<int, std::map<int, double>> &vertex, std::vector<Edge> &edge, std::set<int> &markID);
+    Graph(int vCount, std::map<int, std::map<int, double>> &vertex, std::vector<Edge> &edge, std::set<int>& activeID, std::set<int> &markID);
 
     void insertEdge(int src, int dst, double weight);
 

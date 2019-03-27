@@ -266,7 +266,15 @@ void BellmanFordGPU::MSGGen(const Graph &g, const std::set<int> &activeVertice, 
     int numG = g.eCount / ePerEdgeSet + 1;
     auto eSetG = std::vector<std::vector<Edge>>();
     for(int i = 0; i < numG; i++) eSetG.push_back(std::vector<Edge>());
-    for(int i = 0; i < g.eCount; i++) eSetG.at(i / ePerEdgeSet).push_back(g.eList.at(i));
+
+    //Filter of valid message through isActive in source vertex
+    //int validEdgeNum = 0;
+    for(int i = 0; i < g.eCount; i++){
+        //if(g.vList.at(g.eList.at(i).src).isActive){
+            //eSetG.at(validEdgeNum++ / ePerEdgeSet).push_back(g.eList.at(i));
+        eSetG.at(i / ePerEdgeSet).push_back(g.eList.at(i));
+        //}
+    }
 
     //Init
     //const int numOfInitV = g.vList.at(0).value.size();
@@ -360,6 +368,8 @@ void BellmanFordGPU::MSGGen(const Graph &g, const std::set<int> &activeVertice, 
         //activeVerticeSet
 
         //eSrcSet, eDstSet & eWeightSet
+
+        //if(eG.size() == 0)continue;
 
         for(int i = 0; i < eG.size(); i++)
         {

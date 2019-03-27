@@ -4,10 +4,10 @@
 
 #include "../core/Graph.h"
 
-Vertex::Vertex(int vertexID, std::map<int, double> value)
+Vertex::Vertex(int vertexID, bool activeness, std::map<int, double> value)
 {
     this->vertexID = vertexID;
-    this->isActive = false;
+    this->isActive = activeness;
     this->value = value;
 }
 
@@ -24,17 +24,20 @@ Graph::Graph(int vCount)
     this->eList = std::vector<Edge>();
 
     this->vCount = vCount;
-    for(int i = 0; i < vCount; i++) this->vList.emplace_back(Vertex(i, std::map<int, double>()));
+    for(int i = 0; i < vCount; i++) this->vList.emplace_back(Vertex(i, false, std::map<int, double>()));
     this->eCount = 0;
 }
 
-Graph::Graph(int vCount, std::map<int, std::map<int, double>>& vertex, std::vector<Edge>& edge, std::set<int>& markID) {
+Graph::Graph(int vCount, std::map<int, std::map<int, double>>& vertex, std::vector<Edge>& edge, std::set<int>& activeID, std::set<int>& markID) {
 
     this->vList = std::vector<Vertex>();
     this->eList = std::vector<Edge>();
 
     this->vCount = vCount;
-    for(int i = 0; i < vCount; i++) this->vList.emplace_back(Vertex(i, std::map<int, double>()));
+    for(int i = 0; i < vCount; i++) {
+        bool ifactive = activeID.count(i)>0;
+        this->vList.emplace_back(Vertex(i, ifactive, std::map<int, double>()));
+    }
     this->eCount = 0;
 
     for(auto itE : edge){
@@ -42,7 +45,9 @@ Graph::Graph(int vCount, std::map<int, std::map<int, double>>& vertex, std::vect
     }
     for(auto &itV : vList){
         if(vertex.count(itV.vertexID) > 0){
-            itV.value = vertex[itV.vertexID];
+            //copy construct
+            std::map<int, double> attr = std::map<int, double>(vertex[itV.vertexID]);
+            itV.value = attr;
         }
         else{
             for(auto blank : markID){
