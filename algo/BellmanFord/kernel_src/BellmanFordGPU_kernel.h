@@ -29,11 +29,19 @@ cudaError_t MSGGen_kernel_exec(int numOfEdge, int numOfAV, int *activeVerticeSet
                                int numOfInitV, int *initVSet, double *vValues,
                                int *mDstSet, int *mInitVSet, double *mValueSet);
 
-__global__ void MSGMerge_kernel(unsigned long long int *mTransFormdMergedMSGValueSet,
+__global__ void MSGMerge_kernel(unsigned long long int *mTransformdMergedMSGValueSet,
 	                            int numOfInitV, int *initVSet, 
 	                            int numOfMsg, int *mDstSet, int *mInitVSet, unsigned long long int *mValueTSet);
 
-cudaError_t MSGMerge_kernel_exec(unsigned long long int *mTransFormdMergedMSGValueSet,
+cudaError_t MSGMerge_kernel_exec(unsigned long long int *mTransformdMergedMSGValueSet,
 	                             int numOfInitV, int *initVSet, 
 	                             int numOfMsg, int *mDstSet, int *mInitVSet, unsigned long long int *mValueTSet);
+
+__global__ void MSGGenMerge_kernel(unsigned long long int *mTransformdMergedMSGValueSet,
+                                   bool *AVCheckSet, int numOfInitV, int *initVSet, double *vValues,
+                                   int numOfEdge, int *eSrcSet, int *eDstSet, double *eWeightSet);
+
+cudaError_t MSGGenMerge_kernel_exec(unsigned long long int *mTransformdMergedMSGValueSet,
+                                    bool *AVCheckSet, int numOfInitV, int *initVSet, double *vValues,
+                                    int numOfEdge, int *eSrcSet, int *eDstSet, double *eWeightSet);
 #endif //GRAPH_ALGO_BELLMANFORDGPU_KERNEL_H

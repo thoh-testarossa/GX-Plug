@@ -82,6 +82,18 @@ void BellmanFord::MSGMerge(const Graph &g, MessageSet &result, const MessageSet 
     }
 }
 
+void BellmanFord::MSGGenMerge(const Graph &g, const std::set<int> &activeVertice, MessageSet &mSet)
+{
+    //Old way to do this two step
+    MSGGen(g, activeVertice, mSet);
+    auto mSetBeforeMerged = mSet;
+    mSet.mSet.clear();
+    MSGMerge(g, mSet, mSetBeforeMerged);
+
+    //Generate merged msgs directly
+
+}
+
 void BellmanFord::Init(Graph &g, std::set<int> &activeVertice, const std::vector<int> &initVList)
 {
     this->numOfInitV = initVList.size();
@@ -186,8 +198,8 @@ void BellmanFord::ApplyStep(Graph &g, std::set<int> &activeVertice)
     MessageSet mGenSet = MessageSet();
     MessageSet mMergedSet = MessageSet();
 
-    mGenSet.mSet.clear();
-    MSGGen(g, activeVertice, mGenSet);
+    //mGenSet.mSet.clear();
+    //MSGGen(g, activeVertice, mGenSet);
 
     //Test
     //std::cout << "Gen:" << clock() << std::endl;
@@ -200,11 +212,27 @@ void BellmanFord::ApplyStep(Graph &g, std::set<int> &activeVertice)
     */
     //Test end
 
-    mMergedSet.mSet.clear();
-    MSGMerge(g, mMergedSet, mGenSet);
+    //mMergedSet.mSet.clear();
+    //MSGMerge(g, mMergedSet, mGenSet);
 
     //Test
     //std::cout << "MMerge:" << clock() << std::endl;
+    //Test end
+
+    //Test
+    /*
+    for(int j = 0; j < mMergedSet.mSet.size(); j++)
+        mMergedSet.mSet.at(j).print();
+    std::cout << std::endl;
+    std::cout << "######################################" << std::endl;
+    */
+    //Test end
+
+    mMergedSet.mSet.clear();
+    MSGGenMerge(g, activeVertice, mMergedSet);
+
+    //Test
+    std::cout << "MGenMerge:" << clock() << std::endl;
     //Test end
 
     //Test
@@ -220,7 +248,7 @@ void BellmanFord::ApplyStep(Graph &g, std::set<int> &activeVertice)
     MSGApply(g, activeVertice, mMergedSet);
 
     //Test
-    //std::cout << "Apply:" << clock() << std::endl;
+    std::cout << "Apply:" << clock() << std::endl;
     //Test end
 
     //Test

@@ -138,3 +138,37 @@ cudaError_t MSGMerge_kernel_exec(unsigned long long int *mTransformdMergedMSGVal
 	
 	return err;
 }
+
+__global__ void MSGGenMerge_kernel(unsigned long long int *mTransformdMergedMSGValueSet,
+	bool *AVCheckSet, int numOfInitV, int *initVSet, double *vValues,
+	int numOfEdge, int *eSrcSet, int *eDstSet, double *eWeightSet)
+{
+	int tid = threadIdx.x;
+
+	if(tid < numOfEdge)
+	{
+		int vID = -1;
+		if(AVCheckSet[eSrcSet[tid]] == true) vID = eDstSet[tid];
+
+		if(vID != -1)
+		{
+			for(int i = 0; i < numOfInitV; i++)
+				atomicMin(&mTransformdMergedMSGValueSet[vID * numOfInitV + i], __double_as_longlong(vValues[eSrcSet[tid] * numOfInitV + i] + eWeightSet[tid]));
+		}
+		else;
+	}
+}
+
+cudaError_t MSGGenMerge_kernel_exec(unsigned long long int *mTransformdMergedMSGValueSet,
+	bool *AVCheckSet, int numOfInitV, int *initVSet, double *vValues,
+	int numOfEdge, int *eSrcSet, int *eDstSet, double *eWeightSet)
+{
+	cudaError_t err = cudaSuccess;
+
+	MSGGenMerge_kernel<<<1, NUMOFGPUCORE>>>(mTransformdMergedMSGValueSet, AVCheckSet, numOfInitV, initVSet, vValues, numOfEdge, eSrcSet, eDstSet, eWeightSet);
+	err = cudaGetLastError();
+
+	cudaDeviceSynchronize();
+	
+	return err;
+}

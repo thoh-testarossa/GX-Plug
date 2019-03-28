@@ -21,7 +21,7 @@ public:
     void MSGApply(Graph &g, std::set<int> &activeVertice, const MessageSet &mSet) override;
     void MSGGen(const Graph &g, const std::set<int> &activeVertice, MessageSet &mSet) override;
     void MSGMerge(const Graph &g, MessageSet &result, const MessageSet &source) override;
-
+    void MSGGenMerge(const Graph &g, const std::set<int> &activeVertice, MessageSet &mSet) override;
 
 
 protected:
@@ -52,6 +52,13 @@ protected:
 
     int *activeVerticeSet;
     int *d_activeVerticeSet;
+
+    double *mMergedMSGValueSet;
+    unsigned long long int *mTransformedMergedMSGValueSet;
+    unsigned long long int *d_mTransformedMergedMSGValueSet;
+
+    unsigned long long int *mValueTSet;
+    unsigned long long int *d_mValueTSet;
 };
 
 #endif //GRAPH_ALGO_BELLMANFORDGPU_H

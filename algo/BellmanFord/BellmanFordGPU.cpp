@@ -72,6 +72,13 @@ void BellmanFordGPU::Deploy(Graph &g, int numOfInitV)
 
     this->activeVerticeSet = new int [g.vCount];
     err = cudaMalloc((void **)&this->d_activeVerticeSet, g.vCount * sizeof(int));
+
+    this->mMergedMSGValueSet = new double [g.vCount * numOfInitV];
+    this->mTransformedMergedMSGValueSet = new unsigned long long int [g.vCount * numOfInitV];
+    err = cudaMalloc((void **)&d_mTransformedMergedMSGValueSet, numOfInitV * g.vCount * sizeof(unsigned long long int));
+
+    this->mValueTSet = new unsigned long long int [mPerMSGSet];
+    err = cudaMalloc((void **)&this->d_mValueTSet, mPerMSGSet * sizeof(unsigned long long int));
 }
 
 void BellmanFordGPU::Free(Graph &g)
@@ -103,6 +110,13 @@ void BellmanFordGPU::Free(Graph &g)
 
     free(this->activeVerticeSet);
     cudaFree(this->d_activeVerticeSet);
+
+    free(this->mMergedMSGValueSet);
+    free(this->mTransformedMergedMSGValueSet);
+    cudaFree(this->d_mTransformedMergedMSGValueSet);
+
+    free(this->mValueTSet);
+    cudaFree(this->d_mValueTSet);
 }
 
 void BellmanFordGPU::MSGApply(Graph &g, std::set<int> &activeVertice, const MessageSet &mSet)
@@ -268,12 +282,10 @@ void BellmanFordGPU::MSGGen(const Graph &g, const std::set<int> &activeVertice, 
     for(int i = 0; i < numG; i++) eSetG.push_back(std::vector<Edge>());
 
     //Filter of valid message through isActive in source vertex
-    //int validEdgeNum = 0;
-    for(int i = 0; i < g.eCount; i++){
-        //if(g.vList.at(g.eList.at(i).src).isActive){
-            //eSetG.at(validEdgeNum++ / ePerEdgeSet).push_back(g.eList.at(i));
-        eSetG.at(i / ePerEdgeSet).push_back(g.eList.at(i));
-        //}
+    for(int i = 0, validEdgeNum = 0; i < g.eCount; i++)
+    {
+        if(g.vList.at(g.eList.at(i).src).isActive)
+            eSetG.at(validEdgeNum++ / ePerEdgeSet).push_back(g.eList.at(i));
     }
 
     //Init
@@ -369,7 +381,7 @@ void BellmanFordGPU::MSGGen(const Graph &g, const std::set<int> &activeVertice, 
 
         //eSrcSet, eDstSet & eWeightSet
 
-        //if(eG.size() == 0)continue;
+        if(eG.size() == 0) continue;
 
         for(int i = 0; i < eG.size(); i++)
         {
@@ -482,17 +494,17 @@ void BellmanFordGPU::MSGMerge(const Graph &g, MessageSet &result, const MessageS
     //Test end
 
     //mMergedMSGValueSet Init
-    double *mMergedMSGValueSet = new double [g.vCount * numOfInitV];
+    //double *mMergedMSGValueSet = new double [g.vCount * numOfInitV];
     for(int i = 0; i < g.vCount * numOfInitV; i++)
         mMergedMSGValueSet[i] = INT32_MAX;
 
     //Transform to the long long int form which CUDA can do atomic ops
-    unsigned long long int *mTransformedMergedMSGValueSet = new unsigned long long int [g.vCount * numOfInitV];
+    //unsigned long long int *mTransformedMergedMSGValueSet = new unsigned long long int [g.vCount * numOfInitV];
     for(int i = 0; i < g.vCount * numOfInitV; i++)
         mTransformedMergedMSGValueSet[i] = doubleAsLongLongInt(mMergedMSGValueSet[i]);
 
-    unsigned long long int *d_mTransformedMergedMSGValueSet = nullptr;
-    err = cudaMalloc((void **)&d_mTransformedMergedMSGValueSet, numOfInitV * g.vCount * sizeof(unsigned long long int));
+    //unsigned long long int *d_mTransformedMergedMSGValueSet = nullptr;
+    //err = cudaMalloc((void **)&d_mTransformedMergedMSGValueSet, numOfInitV * g.vCount * sizeof(unsigned long long int));
     //Test
     //std::cout << cudaGetErrorString(err) << std::endl;
     //Test end
@@ -502,10 +514,10 @@ void BellmanFordGPU::MSGMerge(const Graph &g, MessageSet &result, const MessageS
     //Test end
 
     //Transform to the long long int form which CUDA can do atomic ops
-    unsigned long long int *mValueTSet = new unsigned long long int [mPerMSGSet];
+    //unsigned long long int *mValueTSet = new unsigned long long int [mPerMSGSet];
 
-    unsigned long long int *d_mValueTSet = nullptr;
-    err = cudaMalloc((void **)&d_mValueTSet, mPerMSGSet * sizeof(unsigned long long int));
+    //unsigned long long int *d_mValueTSet = nullptr;
+    //err = cudaMalloc((void **)&d_mValueTSet, mPerMSGSet * sizeof(unsigned long long int));
     //Test
     //std::cout << cudaGetErrorString(err) << std::endl;
     //Test end
@@ -568,6 +580,162 @@ void BellmanFordGPU::MSGMerge(const Graph &g, MessageSet &result, const MessageS
     }
 
     //Memory free
-    cudaFree(d_mTransformedMergedMSGValueSet);
-    cudaFree(d_mValueTSet);
+    //cudaFree(d_mTransformedMergedMSGValueSet);
+    //cudaFree(d_mValueTSet);
+}
+
+void BellmanFordGPU::MSGGenMerge(const Graph &g, const std::set<int> &activeVertice, MessageSet &mSet)
+{
+    //Old way to do this two step
+    /*
+    MSGGen(g, activeVertice, mSet);
+    auto mSetBeforeMerged = mSet;
+    mSet.mSet.clear();
+    MSGMerge(g, mSet, mSetBeforeMerged);
+    */
+
+    //Generate merged msgs directly
+
+    //Availability check
+    if(g.vCount == 0) return;
+
+    //Organise e group
+    int ePerEdgeSet = NUMOFGPUCORE;
+    int numG = g.eCount / ePerEdgeSet + 1;
+    auto eSetG = std::vector<std::vector<Edge>>();
+    for(int i = 0; i < numG; i++) eSetG.push_back(std::vector<Edge>());
+
+    //Filter of valid message through isActive in source vertex
+    for(int i = 0, validEdgeNum = 0; i < g.eCount; i++)
+    {
+        if(g.vList.at(g.eList.at(i).src).isActive)
+            eSetG.at(validEdgeNum++ / ePerEdgeSet).push_back(g.eList.at(i));
+    }
+
+    //Init
+    //const int numOfInitV = g.vList.at(0).value.size();
+    const int numOfAV = activeVertice.size();
+
+    int counterForIter = 0;
+
+    //Memory allocation
+    cudaError_t err = cudaSuccess;
+
+    //activeVerticeSet Init
+    counterForIter = 0;
+    for(auto iter = activeVertice.begin(); iter != activeVertice.end(); iter++)
+        activeVerticeSet[counterForIter++] = *iter;
+
+    err = cudaMemcpy(d_activeVerticeSet, activeVerticeSet, numOfAV * sizeof(int), cudaMemcpyHostToDevice);
+
+    //AVCheckSet Init
+    for(int i = 0; i < g.vCount; i++)
+        AVCheckSet[i] = g.vList.at(i).isActive;
+
+    err = cudaMemcpy(d_AVCheckSet, AVCheckSet, g.vCount * sizeof(bool), cudaMemcpyHostToDevice);
+
+    //initVSet Init
+    counterForIter = 0;
+    for(auto iter = g.vList.at(0).value.begin(); iter != g.vList.at(0).value.end() && counterForIter < numOfInitV; iter++)
+        initVSet[counterForIter++] = iter->first;
+
+    err = cudaMemcpy(d_initVSet, initVSet, numOfInitV * sizeof(int), cudaMemcpyHostToDevice);
+
+    //vValueSet Init
+    for(int i = 0; i < g.vCount; i++)
+    {
+        counterForIter = 0;
+        for(auto iter = g.vList.at(i).value.begin(); iter != g.vList.at(i).value.end(); iter++)
+            vValueSet[i * numOfInitV + counterForIter++] = iter->second;
+    }
+
+    err = cudaMemcpy(d_vValueSet, vValueSet, g.vCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+
+    //mMergedMSGValueSet Init
+    for(int i = 0; i < g.vCount * numOfInitV; i++)
+        mMergedMSGValueSet[i] = INT32_MAX;
+
+    //Transform to the long long int form which CUDA can do atomic ops
+    for(int i = 0; i < g.vCount * numOfInitV; i++)
+        mTransformedMergedMSGValueSet[i] = doubleAsLongLongInt(mMergedMSGValueSet[i]);
+
+    err = cudaMemcpy(d_mTransformedMergedMSGValueSet, mTransformedMergedMSGValueSet, g.vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyHostToDevice);
+
+    for(auto eG : eSetG)
+    {
+        //Transfer data into GPU
+        //info necessary: a group of e, values of v for initV, AVSet
+        //eGroup.size() may be equal to the number of GPU threads
+        //Size: eGroup.size() + vCount * numOfInitV + AVSet.size()
+
+        //eSrcSet, eDstSet & eWeightSet
+
+        if(eG.size() == 0) continue;
+
+        for(int i = 0; i < eG.size(); i++)
+        {
+            eSrcSet[i] = eG.at(i).src;
+            eDstSet[i] = eG.at(i).dst;
+            eWeightSet[i] = eG.at(i).weight;
+        }
+
+        err = cudaMemcpy(d_eSrcSet, eSrcSet, eG.size() * sizeof(int), cudaMemcpyHostToDevice);
+        err = cudaMemcpy(d_eDstSet, eDstSet, eG.size() * sizeof(int), cudaMemcpyHostToDevice);
+        err = cudaMemcpy(d_eWeightSet, eWeightSet, eG.size() * sizeof(double), cudaMemcpyHostToDevice);
+        //Test
+        //std::cout << cudaGetErrorString(err) << std::endl;
+        //Test end
+
+        //Kernel Execution
+        err = MSGGenMerge_kernel_exec(d_mTransformedMergedMSGValueSet, d_AVCheckSet, numOfInitV, d_initVSet, d_vValueSet, eG.size(), d_eSrcSet, d_eDstSet, d_eWeightSet);
+
+        cudaDeviceSynchronize();
+        //Test
+        //std::cout << cudaGetErrorString(err) << std::endl;
+        //Test end
+    }
+
+    //Re-package the data
+    //Memory copyback
+    err = cudaMemcpy(mTransformedMergedMSGValueSet, d_mTransformedMergedMSGValueSet, g.vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
+    //Test
+    //std::cout << cudaGetErrorString(err) << std::endl;
+    //Test end
+
+    cudaDeviceSynchronize();
+
+    //Test
+    /*
+    for(int i = 0; i < g.vCount * numOfInitV; i++)
+    {
+        std::cout << mTransformedMergedMSGValueSet[i] << " ";
+        if(i % numOfInitV == numOfInitV - 1) std::cout << std::endl;
+    }
+    */
+    //Test end
+
+    //Transform back to original double form
+    for(int i = 0; i < g.vCount * numOfInitV; i++)
+        mMergedMSGValueSet[i] = longLongIntAsDouble(mTransformedMergedMSGValueSet[i]);
+
+    //Test
+    /*
+    for(int i = 0; i < g.vCount * numOfInitV; i++)
+    {
+        std::cout << mMergedMSGValueSet[i] << " ";
+        if(i % numOfInitV == numOfInitV - 1) std::cout << std::endl;
+    }
+    */
+    //Test end
+
+    //Package mMergedMSGValueSet to result mSet
+    for(int i = 0; i < g.vCount * numOfInitV; i++)
+    {
+        if(mMergedMSGValueSet[i] != INT32_MAX)
+        {
+            int dst = i / numOfInitV;
+            int initV = initVSet[i % numOfInitV];
+            mSet.insertMsg(Message(initV, dst, mMergedMSGValueSet[i]));
+        }
+    }
 }

@@ -16,6 +16,7 @@ public:
     virtual void MSGApply(Graph &g, std::set<int> &activeVertices, const MessageSet &mSet) = 0;
     virtual void MSGGen(const Graph &g, const std::set<int> &activeVertice, MessageSet &mSet) = 0;
     virtual void MSGMerge(const Graph &g, MessageSet &result, const MessageSet &source) = 0;
+    virtual void MSGGenMerge(const Graph &g, const std::set<int> &activeVertice, MessageSet &mSet) = 0;
 
     //Master function
     virtual void Init(Graph &g, std::set<int> &activeVertice, const std::vector<int> &initVList) = 0;
