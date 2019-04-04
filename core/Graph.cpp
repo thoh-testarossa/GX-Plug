@@ -57,6 +57,28 @@ Graph::Graph(int vCount, std::map<int, std::map<int, double>>& vertex, std::vect
     }
 }
 
+Graph::Graph(int vCount, int eCount, int numOfInitV, double *vValues, int *initVSet, int *eSrcSet, int *eDstSet, double *eWeightSet, bool *AVCheckSet)
+{
+    this->vCount = vCount;
+    this->eCount = eCount;
+
+    this->vList = std::vector<Vertex>();
+    this->eList = std::vector<Edge>();
+
+    //v assemble
+    for(int i = 0; i < this->vCount; i++)
+    {
+        auto v = Vertex(i, AVCheckSet[i], std::map<int, double>());
+        for(int j = 0; j < numOfInitV; j++)
+            v.value.insert(std::pair<int, double>(initVSet[j], vValues[i * numOfInitV + j]));
+        this->vList.push_back(v);
+    }
+
+    //e assemble
+    for(int i = 0; i < this->eCount; i++)
+        this->eList.push_back(Edge(eSrcSet[i], eDstSet[i], eWeightSet[i]));
+}
+
 void Graph::insertEdge(int src, int dst, double weight)
 {
     this->eList.emplace_back(Edge(src, dst, weight));

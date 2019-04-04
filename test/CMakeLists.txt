@@ -33,3 +33,16 @@ if(CUDA_FOUND)
             core_GraphUtil)
 endif(CUDA_FOUND)
 
+add_executable(srv_Test_srv
+        SRVTest_srv.cpp)
+
+target_link_libraries(srv_Test_srv
+        srv_UNIX_shm
+        srv_UNIX_msg)
+
+add_executable(srv_Test_cli
+        SRVTest_cli.cpp)
+
+target_link_libraries(srv_Test_cli
+        srv_UNIX_shm
+        srv_UNIX_msg)

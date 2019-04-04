@@ -47,7 +47,7 @@ cudaError_t MSGApply_kernel_exec(int numOfInitV, int *initVSet, double *vValues,
 	return err;
 }
 
-__global__ void MSGGen_kernel(int numOfEdge, int numOfAV, int *activeVerticeSet, bool *AVCheckSet, 
+__global__ void MSGGen_kernel(int numOfEdge, bool *AVCheckSet, 
 	int *eSrcSet, int *eDstSet, double *eWeightSet,
 	int numOfInitV, int *initVSet, double *vValues,
 	int *mDstSet, int *mInitVSet, double *mValueSet)
@@ -59,17 +59,6 @@ __global__ void MSGGen_kernel(int numOfEdge, int numOfAV, int *activeVerticeSet,
 		int vID = -1;
 
 		if(AVCheckSet[eSrcSet[tid]] == true) vID = eSrcSet[tid];
-
-		/*
-		for(int i = 0; i < numOfAV; i++)
-		{
-			if(eSrcSet[tid] == activeVerticeSet[i])
-			{
-				vID = activeVerticeSet[i];
-				break;
-			}
-		}
-		*/
 
 		if(vID != -1)
 		{
@@ -84,14 +73,14 @@ __global__ void MSGGen_kernel(int numOfEdge, int numOfAV, int *activeVerticeSet,
 	}
 }
 
-cudaError_t MSGGen_kernel_exec(int numOfEdge, int numOfAV, int *activeVerticeSet, bool *AVCheckSet, 
+cudaError_t MSGGen_kernel_exec(int numOfEdge, bool *AVCheckSet, 
 	int *eSrcSet, int *eDstSet, double *eWeightSet,
 	int numOfInitV, int *initVSet, double *vValues,
 	int *mDstSet, int *mInitVSet, double *mValueSet)
 {
 	cudaError_t err = cudaSuccess;
 
-	MSGGen_kernel<<<1, NUMOFGPUCORE>>>(numOfEdge, numOfAV, activeVerticeSet, AVCheckSet, eSrcSet, eDstSet, eWeightSet, numOfInitV, initVSet, vValues, mDstSet, mInitVSet, mValueSet);
+	MSGGen_kernel<<<1, NUMOFGPUCORE>>>(numOfEdge, AVCheckSet, eSrcSet, eDstSet, eWeightSet, numOfInitV, initVSet, vValues, mDstSet, mInitVSet, mValueSet);
 	err = cudaGetLastError();
 
 	cudaDeviceSynchronize();

@@ -9,6 +9,8 @@
 
 #include "../include/deps.h"
 
+#define INVALID_MASSAGE INT32_MAX
+
 class Message
 {
 public:

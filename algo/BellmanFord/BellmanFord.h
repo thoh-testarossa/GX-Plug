@@ -19,6 +19,12 @@ public:
     void MSGMerge(const Graph &g, MessageSet &result, const MessageSet &source) override;
     void MSGGenMerge(const Graph &g, const std::set<int> &activeVertice, MessageSet &mSet) override;
 
+    //Unified interface but actually algo_BellmanFord didn't use this form
+    void MSGApply_array(int vCount, int numOfInitV, int *initVSet, bool *AVCheckSet, double *vValues, double *mValues) override;
+    void MSGGen_array(int vCount, int eCount, int numOfInitV, int *initVSet, double *vValues, int *eSrcSet, int *eDstSet, double *eWeightSet, int &numOfMSG, int *mInitVSet, int *mDstSet, double *mValueSet, bool *AVCheckSet) override;
+    void MSGMerge_array(int vCount, int numOfInitV, int *initVSet, int numOfMSG, int *mInitVSet, int *mDstSet, double *mValueSet, double *mValues) override;
+    void MSGGenMerge_array(int vCount, int eCount, int numOfInitV, int *initVSet, double *vValues, int *eSrcSet, int *eDstSet, double *eWeightSet, double *mValues, bool *AVCheckSet) override;
+
     void MergeGraph(Graph &g, const std::vector<Graph> &subGSet,
                     std::set<int> &activeVertice, const std::vector<std::set<int>> &activeVerticeSet,
                     const std::vector<int> &initVList) override;

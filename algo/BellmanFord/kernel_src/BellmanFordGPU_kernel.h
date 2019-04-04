@@ -19,12 +19,12 @@ cudaError_t MSGApply_kernel_exec(int numOfInitV, int *initVSet, double *vValues,
                                  int numOfMsg, int *mDstSet, int *mInitVSet, double *mValueSet,
                                  bool *AVCheckSet);
 
-__global__ void MSGGen_kernel(int numOfEdge, int numOfAV, int *activeVerticeSet, bool *AVCheckSet, 
+__global__ void MSGGen_kernel(int numOfEdge, bool *AVCheckSet, 
                               int *eSrcSet, int *eDstSet, double *eWeightSet,
                               int numOfInitV, int *initVSet, double *vValues,
                               int *mDstSet, int *mInitVSet, double *mValueSet);
 
-cudaError_t MSGGen_kernel_exec(int numOfEdge, int numOfAV, int *activeVerticeSet, bool *AVCheckSet, 
+cudaError_t MSGGen_kernel_exec(int numOfEdge, bool *AVCheckSet, 
                                int *eSrcSet, int *eDstSet, double *eWeightSet,
                                int numOfInitV, int *initVSet, double *vValues,
                                int *mDstSet, int *mInitVSet, double *mValueSet);

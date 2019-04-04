@@ -125,38 +125,16 @@ void BellmanFordGPU::MSGApply(Graph &g, std::set<int> &activeVertice, const Mess
     if(g.vCount == 0) return;
 
     //Organise m group
-    //int mPerMSGSet = NUMOFGPUCORE;
     int numG = mSet.mSet.size() / mPerMSGSet + 1;
     std::vector<MessageSet> mSetG = std::vector<MessageSet>();
     for(int i = 0; i < numG; i++) mSetG.push_back(MessageSet());
     for(int i = 0; i < mSet.mSet.size(); i++) mSetG.at(i / mPerMSGSet).insertMsg(mSet.mSet.at(i));
 
     //Init
-    //const int numOfInitV = g.vList.at(0).value.size();
-
     int counterForIter = 0;
-
-    //int *initVSet = new int [numOfInitV];
-    //double *vValueSet = new double [g.vCount * numOfInitV];
-
-    //int *mDstSet = new int [mPerMSGSet];
-    //int *mInitVSet = new int [mPerMSGSet];
-    //double *mValueSet = new double [mPerMSGSet];
-    //bool *AVCheckSet = new bool [g.vCount];
-
-    //CUDA init
-    //int *d_initVSet = nullptr, *d_mDstSet = nullptr, *d_mInitVSet = nullptr;
-    //double *d_vValueSet = nullptr, *d_mValueSet = nullptr;
-    //bool *d_AVCheckSet = nullptr;
 
     //Memory allocation
     cudaError_t err = cudaSuccess;
-    //err = cudaMalloc((void **)&d_initVSet, numOfInitV * sizeof(int));
-    //err = cudaMalloc((void **)&d_mInitVSet, mPerMSGSet * sizeof(int));
-    //err = cudaMalloc((void **)&d_mDstSet, mPerMSGSet * sizeof(int));
-    //err = cudaMalloc((void **)&d_vValueSet, g.vCount * numOfInitV * sizeof(double));
-    //err = cudaMalloc((void **)&d_mValueSet, mPerMSGSet * sizeof(double));
-    //err = cudaMalloc((void **)&d_AVCheckSet, g.vCount * sizeof(bool));
     
     //initVSet Init
     counterForIter = 0;
@@ -193,12 +171,6 @@ void BellmanFordGPU::MSGApply(Graph &g, std::set<int> &activeVertice, const Mess
         //info necessary: numOfInitV, initVSet, values of v for initV, a group of msg
         //size: 1 + numOfInitV + vCount * numOfInitV + msgGroup.size()
 
-        //numOfInitV
-
-        //initVSet
-
-        //vValueSet
-
         //msg info Set
         for(int i = 0; i < mS.mSet.size(); i++)
         {
@@ -206,16 +178,6 @@ void BellmanFordGPU::MSGApply(Graph &g, std::set<int> &activeVertice, const Mess
             mDstSet[i] = mS.mSet.at(i).dst;
             mValueSet[i] = mS.mSet.at(i).value;
         }
-
-        //Test
-        /*
-        for(int i = 0; i < mS.mSet.size(); i++)
-            std::cout << mInitVSet[i] << " " << mDstSet[i] << " " << mValueSet[i] << std::endl;
-        std::cout << std::endl;
-        */
-        //Test end
-
-        //AVCheckSet
 
         //GPU kernel function (one GPU thread handles a msg)
         //How to execute it parallel without IO conflict?
@@ -260,14 +222,6 @@ void BellmanFordGPU::MSGApply(Graph &g, std::set<int> &activeVertice, const Mess
             counterForIter++;
         }
     }
-
-    //Free CUDA mem
-    //err = cudaFree(d_initVSet);
-    //err = cudaFree(d_vValueSet);
-    //err = cudaFree(d_mDstSet);
-    //err = cudaFree(d_mInitVSet);
-    //err = cudaFree(d_mValueSet);
-    //err = cudaFree(d_AVCheckSet);
 }
 
 void BellmanFordGPU::MSGGen(const Graph &g, const std::set<int> &activeVertice, MessageSet &mSet)
@@ -289,52 +243,11 @@ void BellmanFordGPU::MSGGen(const Graph &g, const std::set<int> &activeVertice, 
     }
 
     //Init
-    //const int numOfInitV = g.vList.at(0).value.size();
-    const int numOfAV = activeVertice.size();
-
     int counterForIter = 0;
-
-    //int *eSrcSet = new int [ePerEdgeSet];
-    //int *eDstSet = new int [ePerEdgeSet];
-    //double *eWeightSet = new double [ePerEdgeSet];
-    
-    //int *activeVerticeSet = new int [numOfAV];
-
-    //int *initVSet = new int [numOfInitV];
-    //double *vValueSet = new double [g.vCount * numOfInitV];
-
-    //int *mDstSet = new int [numOfInitV * ePerEdgeSet];
-    //int *mInitVSet = new int [numOfInitV * ePerEdgeSet];
-    //double *mValueSet = new double [numOfInitV * ePerEdgeSet];
-
-    //CUDA init
-    //int *d_eSrcSet = nullptr, *d_eDstSet = nullptr;
-    //double *d_eWeightSet = nullptr;
-    //int *d_initVSet = nullptr;
-    //double *d_vValueSet = nullptr;
-    //int *d_activeVerticeSet = nullptr;
-    //int *d_mDstSet = nullptr, *d_mInitVSet = nullptr;
-    //double *d_mValueSet = nullptr;
 
     //Memory allocation
     cudaError_t err = cudaSuccess;
-    //err = cudaMalloc((void **)&d_eSrcSet, ePerEdgeSet * sizeof(int));
-    //err = cudaMalloc((void **)&d_eDstSet, ePerEdgeSet * sizeof(int));
-    //err = cudaMalloc((void **)&d_eWeightSet, ePerEdgeSet * sizeof(double));
-    //err = cudaMalloc((void **)&d_initVSet, numOfInitV * sizeof(int));
-    //err = cudaMalloc((void **)&d_vValueSet, g.vCount * numOfInitV * sizeof(double));
-    //err = cudaMalloc((void **)&d_activeVerticeSet, numOfAV * sizeof(int));
-    //err = cudaMalloc((void **)&d_mDstSet, numOfInitV * g.eCount * sizeof(int));
-    //err = cudaMalloc((void **)&d_mInitVSet, numOfInitV * g.eCount * sizeof(int));
-    //err = cudaMalloc((void **)&d_mValueSet, numOfInitV * g.eCount * sizeof(double));
-
-    //activeVerticeSet Init
-    counterForIter = 0;
-    for(auto iter = activeVertice.begin(); iter != activeVertice.end(); iter++)
-        activeVerticeSet[counterForIter++] = *iter;
-
-    err = cudaMemcpy(d_activeVerticeSet, activeVerticeSet, numOfAV * sizeof(int), cudaMemcpyHostToDevice);
-
+    
     //AVCheckSet Init
     for(int i = 0; i < g.vCount; i++)
         AVCheckSet[i] = g.vList.at(i).isActive;
@@ -357,17 +270,6 @@ void BellmanFordGPU::MSGGen(const Graph &g, const std::set<int> &activeVertice, 
     }
 
     err = cudaMemcpy(d_vValueSet, vValueSet, g.vCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
-
-    //Test
-    /*
-    for(int i = 0; i < g.vCount * numOfInitV; i++)
-    {
-            std::cout << vValueSet[i] << " ";
-            if(i % numOfInitV == numOfInitV - 1) std::cout << std::endl;
-    }
-    std::cout << std::endl;
-    */
-    //Test end
     
     //Loop by groups of e
     for(auto eG : eSetG)
@@ -377,10 +279,7 @@ void BellmanFordGPU::MSGGen(const Graph &g, const std::set<int> &activeVertice, 
         //eGroup.size() may be equal to the number of GPU threads
         //Size: eGroup.size() + vCount * numOfInitV + AVSet.size()
         
-        //activeVerticeSet
-
         //eSrcSet, eDstSet & eWeightSet
-
         if(eG.size() == 0) continue;
 
         for(int i = 0; i < eG.size(); i++)
@@ -389,12 +288,6 @@ void BellmanFordGPU::MSGGen(const Graph &g, const std::set<int> &activeVertice, 
             eDstSet[i] = eG.at(i).dst;
             eWeightSet[i] = eG.at(i).weight;
         }
-
-        //numOfInitV
-
-        //initVSet
-
-        //vValueSet
 
         //msg info Set
         for(int i = 0; i < eG.size() * numOfInitV; i++)
@@ -415,7 +308,7 @@ void BellmanFordGPU::MSGGen(const Graph &g, const std::set<int> &activeVertice, 
         err = cudaMemcpy(d_mValueSet, mValueSet, eG.size() * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
 
         //Kernel Execution
-        err = MSGGen_kernel_exec(eG.size(), numOfAV, d_activeVerticeSet, d_AVCheckSet, d_eSrcSet, d_eDstSet, d_eWeightSet, numOfInitV, d_initVSet, d_vValueSet, d_mDstSet, d_mInitVSet, d_mValueSet);
+        err = MSGGen_kernel_exec(eG.size(), d_AVCheckSet, d_eSrcSet, d_eDstSet, d_eWeightSet, numOfInitV, d_initVSet, d_vValueSet, d_mDstSet, d_mInitVSet, d_mValueSet);
 
         //Re-package the data
         //info necessary: mSetCheck table for each e in eGroup
@@ -428,22 +321,6 @@ void BellmanFordGPU::MSGGen(const Graph &g, const std::set<int> &activeVertice, 
 
         cudaDeviceSynchronize();
 
-        //Test
-        /*
-        for(int i = 0; i < eG.size() * numOfInitV; i++)
-        {
-            if(mDstSet[i] != NULLMSG)
-            {
-                int eID = i / numOfInitV;
-                std::cout << eSrcSet[eID] << " " << eDstSet[eID] << " " << eWeightSet[eID] 
-                << ": " 
-                << mInitVSet[i] << " " << mDstSet[i] << " " << mValueSet[i] << std::endl;
-            }
-        }
-        //std::cout << "***************************" << std::endl;
-        */
-        //Test end
-        
         //CPU gathers mSet from each mSetCheck table
         for(int i = 0; i < eG.size() * numOfInitV; i++)
         {
@@ -451,16 +328,6 @@ void BellmanFordGPU::MSGGen(const Graph &g, const std::set<int> &activeVertice, 
                 mSet.insertMsg(Message(mInitVSet[i], mDstSet[i], mValueSet[i]));
         }
     }
-    //Free CUDA mem
-    //err = cudaFree(d_activeVerticeSet);
-    //err = cudaFree(d_eSrcSet);
-    //err = cudaFree(d_eDstSet);
-    //err = cudaFree(d_eWeightSet);
-    //err = cudaFree(d_initVSet);
-    //err = cudaFree(d_vValueSet);
-    //err = cudaFree(d_mDstSet);
-    //err = cudaFree(d_mInitVSet);
-    //err = cudaFree(d_mValueSet);
 }
 
 void BellmanFordGPU::MSGMerge(const Graph &g, MessageSet &result, const MessageSet &source)
@@ -469,7 +336,6 @@ void BellmanFordGPU::MSGMerge(const Graph &g, MessageSet &result, const MessageS
     if(source.mSet.size() == 0) return;
 
     //Organise m group
-    //int mPerMSGSet = NUMOFGPUCORE;
     int numG = source.mSet.size() / mPerMSGSet + 1;
     std::vector<MessageSet> mSetG = std::vector<MessageSet>();
     for(int i = 0; i < numG; i++) mSetG.push_back(MessageSet());
@@ -489,38 +355,17 @@ void BellmanFordGPU::MSGMerge(const Graph &g, MessageSet &result, const MessageS
     }
 
     err = cudaMemcpy(d_initVSet, initVSet, numOfInitV * sizeof(int), cudaMemcpyHostToDevice);
-    //Test
-    //std::cout << cudaGetErrorString(err) << std::endl;
-    //Test end
 
     //mMergedMSGValueSet Init
-    //double *mMergedMSGValueSet = new double [g.vCount * numOfInitV];
     for(int i = 0; i < g.vCount * numOfInitV; i++)
-        mMergedMSGValueSet[i] = INT32_MAX;
+        mMergedMSGValueSet[i] = INVALID_MASSAGE;
 
     //Transform to the long long int form which CUDA can do atomic ops
     //unsigned long long int *mTransformedMergedMSGValueSet = new unsigned long long int [g.vCount * numOfInitV];
     for(int i = 0; i < g.vCount * numOfInitV; i++)
         mTransformedMergedMSGValueSet[i] = doubleAsLongLongInt(mMergedMSGValueSet[i]);
 
-    //unsigned long long int *d_mTransformedMergedMSGValueSet = nullptr;
-    //err = cudaMalloc((void **)&d_mTransformedMergedMSGValueSet, numOfInitV * g.vCount * sizeof(unsigned long long int));
-    //Test
-    //std::cout << cudaGetErrorString(err) << std::endl;
-    //Test end
     err = cudaMemcpy(d_mTransformedMergedMSGValueSet, mTransformedMergedMSGValueSet, g.vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyHostToDevice);
-    //Test
-    //std::cout << cudaGetErrorString(err) << std::endl;
-    //Test end
-
-    //Transform to the long long int form which CUDA can do atomic ops
-    //unsigned long long int *mValueTSet = new unsigned long long int [mPerMSGSet];
-
-    //unsigned long long int *d_mValueTSet = nullptr;
-    //err = cudaMalloc((void **)&d_mValueTSet, mPerMSGSet * sizeof(unsigned long long int));
-    //Test
-    //std::cout << cudaGetErrorString(err) << std::endl;
-    //Test end
 
     //Loop by groups of msg
     for(auto mS : mSetG)
@@ -536,34 +381,19 @@ void BellmanFordGPU::MSGMerge(const Graph &g, MessageSet &result, const MessageS
 
         //Memory copy
         err = cudaMemcpy(d_mInitVSet, mInitVSet, mS.mSet.size() * sizeof(int), cudaMemcpyHostToDevice);
-        //Test
-        //std::cout << cudaGetErrorString(err) << std::endl;
-        //Test end
         err = cudaMemcpy(d_mDstSet, mDstSet, mS.mSet.size() * sizeof(int), cudaMemcpyHostToDevice);
-        //Test
-        //std::cout << cudaGetErrorString(err) << std::endl;
-        //Test end
         err = cudaMemcpy(d_mValueTSet, mValueTSet, mS.mSet.size() * sizeof(unsigned long long int), cudaMemcpyHostToDevice);
-        //Test
-        //std::cout << cudaGetErrorString(err) << std::endl;
-        //Test end
-
+        
         //Kernel Execution
         err = MSGMerge_kernel_exec(d_mTransformedMergedMSGValueSet, numOfInitV, d_initVSet, mS.mSet.size(), d_mDstSet, d_mInitVSet, d_mValueTSet);
-        //Test
-        //std::cout << "a " << cudaGetErrorString(err) << std::endl;
-        //Test end
-
+        
         cudaDeviceSynchronize();
     }
 
     //Re-package the data
     //Memory copyback
     err = cudaMemcpy(mTransformedMergedMSGValueSet, d_mTransformedMergedMSGValueSet, g.vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
-    //Test
-    //std::cout << cudaGetErrorString(err) << std::endl;
-    //Test end
-
+    
     //Transform back to original double form
     for(int i = 0; i < g.vCount * numOfInitV; i++)
         mMergedMSGValueSet[i] = longLongIntAsDouble(mTransformedMergedMSGValueSet[i]);
@@ -571,29 +401,17 @@ void BellmanFordGPU::MSGMerge(const Graph &g, MessageSet &result, const MessageS
     //Package mMergedMSGValueSet to result mSet
     for(int i = 0; i < g.vCount * numOfInitV; i++)
     {
-        if(mMergedMSGValueSet[i] != INT32_MAX)
+        if(mMergedMSGValueSet[i] != INVALID_MASSAGE)
         {
             int dst = i / numOfInitV;
             int initV = initVSet[i % numOfInitV];
             result.insertMsg(Message(initV, dst, mMergedMSGValueSet[i]));
         }
     }
-
-    //Memory free
-    //cudaFree(d_mTransformedMergedMSGValueSet);
-    //cudaFree(d_mValueTSet);
 }
 
 void BellmanFordGPU::MSGGenMerge(const Graph &g, const std::set<int> &activeVertice, MessageSet &mSet)
 {
-    //Old way to do this two step
-    /*
-    MSGGen(g, activeVertice, mSet);
-    auto mSetBeforeMerged = mSet;
-    mSet.mSet.clear();
-    MSGMerge(g, mSet, mSetBeforeMerged);
-    */
-
     //Generate merged msgs directly
 
     //Availability check
@@ -613,20 +431,10 @@ void BellmanFordGPU::MSGGenMerge(const Graph &g, const std::set<int> &activeVert
     }
 
     //Init
-    //const int numOfInitV = g.vList.at(0).value.size();
-    const int numOfAV = activeVertice.size();
-
     int counterForIter = 0;
 
     //Memory allocation
     cudaError_t err = cudaSuccess;
-
-    //activeVerticeSet Init
-    counterForIter = 0;
-    for(auto iter = activeVertice.begin(); iter != activeVertice.end(); iter++)
-        activeVerticeSet[counterForIter++] = *iter;
-
-    err = cudaMemcpy(d_activeVerticeSet, activeVerticeSet, numOfAV * sizeof(int), cudaMemcpyHostToDevice);
 
     //AVCheckSet Init
     for(int i = 0; i < g.vCount; i++)
@@ -653,7 +461,7 @@ void BellmanFordGPU::MSGGenMerge(const Graph &g, const std::set<int> &activeVert
 
     //mMergedMSGValueSet Init
     for(int i = 0; i < g.vCount * numOfInitV; i++)
-        mMergedMSGValueSet[i] = INT32_MAX;
+        mMergedMSGValueSet[i] = INVALID_MASSAGE;
 
     //Transform to the long long int form which CUDA can do atomic ops
     for(int i = 0; i < g.vCount * numOfInitV; i++)
@@ -669,7 +477,6 @@ void BellmanFordGPU::MSGGenMerge(const Graph &g, const std::set<int> &activeVert
         //Size: eGroup.size() + vCount * numOfInitV + AVSet.size()
 
         //eSrcSet, eDstSet & eWeightSet
-
         if(eG.size() == 0) continue;
 
         for(int i = 0; i < eG.size(); i++)
@@ -682,60 +489,271 @@ void BellmanFordGPU::MSGGenMerge(const Graph &g, const std::set<int> &activeVert
         err = cudaMemcpy(d_eSrcSet, eSrcSet, eG.size() * sizeof(int), cudaMemcpyHostToDevice);
         err = cudaMemcpy(d_eDstSet, eDstSet, eG.size() * sizeof(int), cudaMemcpyHostToDevice);
         err = cudaMemcpy(d_eWeightSet, eWeightSet, eG.size() * sizeof(double), cudaMemcpyHostToDevice);
-        //Test
-        //std::cout << cudaGetErrorString(err) << std::endl;
-        //Test end
-
+        
         //Kernel Execution
         err = MSGGenMerge_kernel_exec(d_mTransformedMergedMSGValueSet, d_AVCheckSet, numOfInitV, d_initVSet, d_vValueSet, eG.size(), d_eSrcSet, d_eDstSet, d_eWeightSet);
 
         cudaDeviceSynchronize();
-        //Test
-        //std::cout << cudaGetErrorString(err) << std::endl;
-        //Test end
     }
 
     //Re-package the data
     //Memory copyback
     err = cudaMemcpy(mTransformedMergedMSGValueSet, d_mTransformedMergedMSGValueSet, g.vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
-    //Test
-    //std::cout << cudaGetErrorString(err) << std::endl;
-    //Test end
-
+    
     cudaDeviceSynchronize();
-
-    //Test
-    /*
-    for(int i = 0; i < g.vCount * numOfInitV; i++)
-    {
-        std::cout << mTransformedMergedMSGValueSet[i] << " ";
-        if(i % numOfInitV == numOfInitV - 1) std::cout << std::endl;
-    }
-    */
-    //Test end
 
     //Transform back to original double form
     for(int i = 0; i < g.vCount * numOfInitV; i++)
         mMergedMSGValueSet[i] = longLongIntAsDouble(mTransformedMergedMSGValueSet[i]);
 
-    //Test
-    /*
-    for(int i = 0; i < g.vCount * numOfInitV; i++)
-    {
-        std::cout << mMergedMSGValueSet[i] << " ";
-        if(i % numOfInitV == numOfInitV - 1) std::cout << std::endl;
-    }
-    */
-    //Test end
-
     //Package mMergedMSGValueSet to result mSet
     for(int i = 0; i < g.vCount * numOfInitV; i++)
     {
-        if(mMergedMSGValueSet[i] != INT32_MAX)
+        if(mMergedMSGValueSet[i] != INVALID_MASSAGE)
         {
             int dst = i / numOfInitV;
             int initV = initVSet[i % numOfInitV];
             mSet.insertMsg(Message(initV, dst, mMergedMSGValueSet[i]));
         }
     }
+}
+
+void BellmanFordGPU::MSGApply_array(int vCount, int numOfInitV, int *initVSet, bool *AVCheckSet, double *vValues, double *mValues)
+{
+    //Availability check
+    if(vCount == 0) return;
+
+    //CUDA init
+    cudaError_t err = cudaSuccess;
+
+    //initVSet Init
+    err = cudaMemcpy(this->d_initVSet, initVSet, numOfInitV * sizeof(int), cudaMemcpyHostToDevice);
+
+    //vValueSet Init
+    err = cudaMemcpy(this->d_vValueSet, vValues, vCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+
+    //AVCheckSet Init
+    for(int i = 0; i < vCount; i++) AVCheckSet[i] = false;
+
+    err = cudaMemcpy(this->d_AVCheckSet, AVCheckSet, vCount * sizeof(bool), cudaMemcpyHostToDevice);
+
+    //Apply msgs to v
+    int mGCount = 0;
+    for(int i = 0; i < vCount * numOfInitV; i++)
+    {
+        if(mValues[i] != INVALID_MASSAGE) //Adding msgs to batchs
+        {
+            this->mInitVSet[mGCount] = initVSet[i % numOfInitV];
+            this->mDstSet[mGCount] = i / numOfInitV;
+            this->mValueSet[mGCount] = mValues[i];
+            mGCount++;
+        }
+        if(mGCount == this->mPerMSGSet || i == vCount * numOfInitV - 1) //A batch of msgs will be transferred into GPU. Don't forget last batch!
+        {
+            //Memory copy
+            err = cudaMemcpy(this->d_mInitVSet, this->mInitVSet, mGCount * sizeof(int), cudaMemcpyHostToDevice);
+            err = cudaMemcpy(this->d_mDstSet, this->mDstSet, mGCount * sizeof(int), cudaMemcpyHostToDevice);
+            err = cudaMemcpy(this->d_mValueSet, this->mValueSet, mGCount * sizeof(double), cudaMemcpyHostToDevice);
+
+            //Kernel Execution
+            err = MSGApply_kernel_exec(numOfInitV, this->d_initVSet, this->d_vValueSet, mGCount, this->d_mDstSet, this->d_mInitVSet, this->d_mValueSet, this->d_AVCheckSet);
+
+            mGCount = 0;
+        }
+    }
+
+    //Re-package the data
+
+    //Memory copyback
+    err = cudaMemcpy(AVCheckSet, this->d_AVCheckSet, vCount * sizeof(bool), cudaMemcpyDeviceToHost);
+    err = cudaMemcpy(vValues, this->d_vValueSet, vCount * numOfInitV * sizeof(double), cudaMemcpyDeviceToHost);
+}
+
+void BellmanFordGPU::MSGGen_array(int vCount, int eCount, int numOfInitV, int *initVSet, double *vValues, int *eSrcSet, int *eDstSet, double *eWeightSet, int &numOfMSG, int *mInitVSet, int *mDstSet, double *mValueSet, bool *AVCheckSet)
+{
+    //Availability check
+    if(vCount == 0) return;
+
+    //CUDA init
+    cudaError_t err = cudaSuccess;
+
+    //AVCheckSet Init
+    err = cudaMemcpy(this->d_AVCheckSet, AVCheckSet, vCount * sizeof(bool), cudaMemcpyHostToDevice);
+
+    //initVSet Init
+    err = cudaMemcpy(this->d_initVSet, initVSet, numOfInitV * sizeof(int), cudaMemcpyHostToDevice);
+
+    //vValueSet Init
+    err = cudaMemcpy(this->d_vValueSet, vValues, vCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+
+    //Gen msgs using e
+    numOfMSG = 0;
+    int eGCount = 0;
+    for(int i = 0; i < eCount; i++)
+    {
+        if(AVCheckSet[eSrcSet[i]]) //Add es to batchs
+        {
+            this->eSrcSet[eGCount] = eSrcSet[i];
+            this->eDstSet[eGCount] = eDstSet[i];
+            this->eWeightSet[eGCount] = eWeightSet[i];
+            this->mInitVSet[eGCount] = NULLMSG;
+            this->mDstSet[eGCount] = NULLMSG;
+            this->mValueSet[eGCount] = NULLMSG;
+            eGCount++;
+        }
+        if(eGCount == this->ePerEdgeSet || i == eCount - 1) //A batch of es will be transferred into GPU. Don't forget last batch!
+        {
+            //Memory copy
+            err = cudaMemcpy(this->d_eSrcSet, this->eSrcSet, eGCount * sizeof(int), cudaMemcpyHostToDevice);
+            err = cudaMemcpy(this->d_eDstSet, this->eDstSet, eGCount * sizeof(int), cudaMemcpyHostToDevice);
+            err = cudaMemcpy(this->d_eWeightSet, this->eWeightSet, eGCount * sizeof(double), cudaMemcpyHostToDevice);
+            err = cudaMemcpy(this->d_mInitVSet, this->mInitVSet, eGCount * numOfInitV * sizeof(int), cudaMemcpyHostToDevice);
+            err = cudaMemcpy(this->d_mDstSet, this->mDstSet, eGCount * numOfInitV * sizeof(int), cudaMemcpyHostToDevice);
+            err = cudaMemcpy(this->d_mValueSet, this->mValueSet, eGCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+
+            //Kernel Execution
+            err = MSGGen_kernel_exec(eGCount, this->d_AVCheckSet, this->d_eSrcSet, this->d_eDstSet, this->d_eWeightSet, numOfInitV, this->d_initVSet, this->d_vValueSet, this->d_mDstSet, this->d_mInitVSet, this->d_mValueSet);
+
+            //Re-package the data
+            //info necessary: mSetCheck table for each e in eGroup
+            //Size: eGroup.size() * numOfInitV
+
+            //Memory copyback
+            err = cudaMemcpy(this->mDstSet, this->d_mDstSet, eGCount * numOfInitV * sizeof(int), cudaMemcpyDeviceToHost);
+            err = cudaMemcpy(this->mInitVSet, this->d_mInitVSet, eGCount * numOfInitV * sizeof(int), cudaMemcpyDeviceToHost);
+            err = cudaMemcpy(this->mValueSet, this->d_mValueSet, eGCount * numOfInitV * sizeof(double), cudaMemcpyDeviceToHost);
+
+            //Gathers mSet from each mSetCheck table
+            for(int i = 0; i < eGCount * numOfInitV; i++)
+            {
+                if(this->mDstSet[i] != NULLMSG)
+                {
+                    mInitVSet[numOfMSG] = this->mInitVSet[i];
+                    mDstSet[numOfMSG] = this->mDstSet[i];
+                    mValueSet[numOfMSG] = this->mValueSet[i];
+                    numOfMSG++;
+                }
+            }
+
+            eGCount = 0;
+        }
+    }
+}
+
+void BellmanFordGPU::MSGMerge_array(int vCount, int numOfInitV, int *initVSet, int numOfMSG, int *mInitVSet, int *mDstSet, double *mValueSet, double *mValues)
+{
+    //Availability check
+    if(numOfMSG == 0) return;
+
+    //Init
+    cudaError_t err = cudaSuccess;
+
+    //initVSet Init
+    err = cudaMemcpy(this->d_initVSet, initVSet, numOfInitV * sizeof(int), cudaMemcpyHostToDevice);
+
+    //mMergedMSGValueSet Init
+    for(int i = 0; i < vCount * numOfInitV; i++)
+        mValues[i] = INVALID_MASSAGE;
+
+    //Transform to the long long int form which CUDA can do atomic ops
+    //unsigned long long int *mTransformedMergedMSGValueSet = new unsigned long long int [g.vCount * numOfInitV];
+    for(int i = 0; i < vCount * numOfInitV; i++)
+        this->mTransformedMergedMSGValueSet[i] = doubleAsLongLongInt(mValues[i]);
+    
+    err = cudaMemcpy(this->d_mTransformedMergedMSGValueSet, this->mTransformedMergedMSGValueSet, vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyHostToDevice);
+
+    //Batch merge msgs
+    int mGCount = 0;
+    for(int i = 0; i < numOfMSG; i++)
+    {
+        //msg info Set
+        this->mInitVSet[mGCount] = mInitVSet[i];
+        this->mDstSet[mGCount] = mDstSet[i];
+        this->mValueSet[mGCount] = mValueSet[i];
+        this->mValueTSet[mGCount] = doubleAsLongLongInt(this->mValueSet[mGCount]);
+        if(mGCount == this->mPerMSGSet || i == numOfMSG - 1) //A batch of msgs will be transferred into GPU. Don't forget last batch!
+        {
+            //Memory copy
+            err = cudaMemcpy(this->d_mInitVSet, this->mInitVSet, mGCount * sizeof(int), cudaMemcpyHostToDevice);
+            err = cudaMemcpy(this->d_mDstSet, this->mDstSet, mGCount * sizeof(int), cudaMemcpyHostToDevice);
+            err = cudaMemcpy(this->d_mValueTSet, this->mValueTSet, mGCount * sizeof(unsigned long long int), cudaMemcpyHostToDevice);
+
+            //Kernel Execution
+            err = MSGMerge_kernel_exec(this->d_mTransformedMergedMSGValueSet, numOfInitV, this->d_initVSet, mGCount, this->d_mDstSet, this->d_mInitVSet, this->d_mValueTSet);
+
+            mGCount = 0;
+        }
+    }
+
+    //Re-package the data
+    //Memory copyback
+    err = cudaMemcpy(this->mTransformedMergedMSGValueSet, this->d_mTransformedMergedMSGValueSet, vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
+
+    //Transform back to original double form
+    for(int i = 0; i < vCount * numOfInitV; i++)
+        mValues[i] = longLongIntAsDouble(mTransformedMergedMSGValueSet[i]);
+}
+
+void BellmanFordGPU::MSGGenMerge_array(int vCount, int eCount, int numOfInitV, int *initVSet, double *vValues, int *eSrcSet, int *eDstSet, double *eWeightSet, double *mValues, bool *AVCheckSet)
+{
+    //Generate merged msgs directly
+
+    //Availability check
+    if(vCount == 0) return;
+
+    //Memory allocation
+    cudaError_t err = cudaSuccess;
+
+    //AVCheckSet Init
+    err = cudaMemcpy(this->d_AVCheckSet, AVCheckSet, g.vCount * sizeof(bool), cudaMemcpyHostToDevice);
+
+    //initVSet Init
+    err = cudaMemcpy(this->d_initVSet, initVSet, numOfInitV * sizeof(int), cudaMemcpyHostToDevice);
+
+    //vValueSet Init
+    err = cudaMemcpy(this->d_vValueSet, vValues, g.vCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+
+    //mMergedMSGValueSet Init
+    for(int i = 0; i < vCount * numOfInitV; i++)
+        mValues[i] = INVALID_MASSAGE;
+
+    //Transform to the long long int form which CUDA can do atomic ops
+    //unsigned long long int *mTransformedMergedMSGValueSet = new unsigned long long int [g.vCount * numOfInitV];
+    for(int i = 0; i < vCount * numOfInitV; i++)
+        this->mTransformedMergedMSGValueSet[i] = doubleAsLongLongInt(mValues[i]);
+    
+    err = cudaMemcpy(this->d_mTransformedMergedMSGValueSet, this->mTransformedMergedMSGValueSet, vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyHostToDevice);
+
+    //e batch processing
+    int eGCount = 0;
+    for(int i = 0; i < eCount; i++)
+    {
+        if(AVCheckSet[eSrcSet[i]]) //Add es to batchs
+        {
+            this->eSrcSet[eGCount] = eSrcSet[i];
+            this->eDstSet[eGCount] = eDstSet[i];
+            this->eWeightSet[eGCount] = eWeightSet[i];
+            eGCount++;
+        }
+        if(eGCount == this->ePerEdgeSet || i == eCount - 1) //A batch of es will be transferred into GPU. Don't forget last batch!
+        {
+            //Memory copy
+            err = cudaMemcpy(this->d_eSrcSet, this->eSrcSet, eGCount * sizeof(int), cudaMemcpyHostToDevice);
+            err = cudaMemcpy(this->d_eDstSet, this->eDstSet, eGCount * sizeof(int), cudaMemcpyHostToDevice);
+            err = cudaMemcpy(this->d_eWeightSet, this->eWeightSet, eGCount * sizeof(double), cudaMemcpyHostToDevice);
+
+            //Kernel Execution
+            err = MSGGenMerge_kernel_exec(this->d_mTransformedMergedMSGValueSet, this->d_AVCheckSet, numOfInitV, this->d_initVSet, this->d_vValueSet, eGCount, this->d_eSrcSet, this->d_eDstSet, this->d_eWeightSet);
+
+            eGCount = 0;
+        }
+    }
+
+    //Re-package the data
+    //Memory copyback
+    err = cudaMemcpy(this->mTransformedMergedMSGValueSet, this->d_mTransformedMergedMSGValueSet, vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
+    
+    //Transform back to original double form
+    for(int i = 0; i < g.vCount * numOfInitV; i++)
+        mValues[i] = longLongIntAsDouble(mTransformedMergedMSGValueSet[i]);
 }

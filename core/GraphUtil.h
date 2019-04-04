@@ -18,6 +18,14 @@ public:
     virtual void MSGMerge(const Graph &g, MessageSet &result, const MessageSet &source) = 0;
     virtual void MSGGenMerge(const Graph &g, const std::set<int> &activeVertice, MessageSet &mSet) = 0;
 
+    //For transportation between jni part and processing part by using share memory
+    //Also for less data transformation in order to achieve higher performance
+    //Data struct Graph is not necessary!?
+    virtual void MSGApply_array(int vCount, int numOfInitV, int *initVSet, bool *AVCheckSet, double *vValues, double *mValues) = 0;
+    virtual void MSGGen_array(int vCount, int eCount, int numOfInitV, int *initVSet, double *vValues, int *eSrcSet, int *eDstSet, double *eWeightSet, int &numOfMSG, int *mInitVSet, int *mDstSet, double *mValueSet, bool *AVCheckSet) = 0;
+    virtual void MSGMerge_array(int vCount, int numOfInitV, int *initVSet, int numOfMSG, int *mInitVSet, int *mDstSet, double *mValueSet, double *mValues) = 0;
+    virtual void MSGGenMerge_array(int vCount, int eCount, int numOfInitV, int *initVSet, double *vValues, int *eSrcSet, int *eDstSet, double *eWeightSet, double *mValues, bool *AVCheckSet) = 0;
+
     //Master function
     virtual void Init(Graph &g, std::set<int> &activeVertice, const std::vector<int> &initVList) = 0;
     virtual void Free(Graph &g) = 0;
