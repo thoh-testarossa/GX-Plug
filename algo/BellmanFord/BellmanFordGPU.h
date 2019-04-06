@@ -15,8 +15,8 @@ public:
     BellmanFordGPU();
 
     void Init(Graph &g, std::set<int> &activeVertice, const std::vector<int> &initVList) override;
-    void Deploy(Graph &g, int numOfInitV) override;
-    void Free(Graph &g) override;
+    void Deploy(int vCount, int numOfInitV) override;
+    void Free() override;
 
     void MSGApply(Graph &g, std::set<int> &activeVertice, const MessageSet &mSet) override;
     void MSGGen(const Graph &g, const std::set<int> &activeVertice, MessageSet &mSet) override;

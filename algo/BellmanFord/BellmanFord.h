@@ -31,8 +31,8 @@ public:
     void MergeMergedMSG(MessageSet &mergedMSG, const std::vector<MessageSet> &mergedMSGSet) override;
 
     void Init(Graph &g, std::set<int> &activeVertice, const std::vector<int> &initVList) override;
-    void Deploy(Graph &g, int numOfInitV) override;
-    void Free(Graph &g) override;
+    void Deploy(int vCount, int numOfInitV) override;
+    void Free() override;
 
     void ApplyStep(Graph &g, std::set<int> &activeVertice);
     void Apply(Graph &g, const std::vector<int> &initVList);

@@ -29,9 +29,9 @@ int main()
     Gin.close();
 
     std::vector<int> initVList = std::vector<int>();
+    initVList.push_back(0);
     initVList.push_back(1);
     initVList.push_back(2);
-    initVList.push_back(4);
 
     BellmanFord executor = BellmanFord();
     //executor.Apply(test, initVList);

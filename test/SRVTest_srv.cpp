@@ -4,6 +4,9 @@
 
 #include "../srv/UNIX_shm.h"
 #include "../srv/UNIX_msg.h"
+#include "../srv/UtilServer.h"
+#include "../srv/UtilServer.cpp"
+#include "../srv/UtilClient.h"
 
 #include <iostream>
 #include <string>

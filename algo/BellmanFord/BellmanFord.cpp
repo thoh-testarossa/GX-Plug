@@ -222,12 +222,12 @@ void BellmanFord::Init(Graph &g, std::set<int> &activeVertice, const std::vector
     }
 }
 
-void BellmanFord::Deploy(Graph &g, int numOfInitV)
+void BellmanFord::Deploy(int vCount, int numOfInitV)
 {
     this->numOfInitV = numOfInitV;
 }
 
-void BellmanFord::Free(Graph &g)
+void BellmanFord::Free()
 {
 
 }
@@ -381,12 +381,12 @@ void BellmanFord::Apply(Graph &g, const std::vector<int> &initVList)
 
     Init(g, activeVertice, initVList);
 
-    Deploy(g, initVList.size());
+    Deploy(g.vCount, initVList.size());
 
     while(activeVertice.size() > 0)
         ApplyStep(g, activeVertice);
 
-    Free(g);
+    Free();
 }
 
 void BellmanFord::ApplyD(Graph &g, const std::vector<int> &initVList, int partitionCount)
@@ -403,7 +403,7 @@ void BellmanFord::ApplyD(Graph &g, const std::vector<int> &initVList, int partit
 
     Init(g, activeVertice, initVList);
 
-    Deploy(g, initVList.size());
+    Deploy(g.vCount, initVList.size());
 
     int iterCount = 0;
 
@@ -502,7 +502,7 @@ void BellmanFord::ApplyD(Graph &g, const std::vector<int> &initVList, int partit
         //Test end
     }
 
-    Free(g);
+    Free();
 
     //Test
     std::cout << "end" << ":" << clock() << std::endl;

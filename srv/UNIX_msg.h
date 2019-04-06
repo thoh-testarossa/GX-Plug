@@ -9,9 +9,6 @@
 
 #include "sys/msg.h"
 
-#define SRV_MSG_TYPE 1
-#define CLI_MSG_TYPE 2
-
 typedef struct Umsg
 {
     long type;

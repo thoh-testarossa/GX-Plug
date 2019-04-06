@@ -38,11 +38,32 @@ add_executable(srv_Test_srv
 
 target_link_libraries(srv_Test_srv
         srv_UNIX_shm
-        srv_UNIX_msg)
+        srv_UNIX_msg
+        srv_UtilServer
+        srv_UtilClient)
 
 add_executable(srv_Test_cli
         SRVTest_cli.cpp)
 
 target_link_libraries(srv_Test_cli
         srv_UNIX_shm
-        srv_UNIX_msg)
+        srv_UNIX_msg
+        srv_UtilServer
+        srv_UtilClient)
+
+add_executable(srv_UtilServerTest_BellmanFord
+        UtilServerTest_BellmanFord.cpp)
+
+target_link_libraries(srv_UtilServerTest_BellmanFord
+        srv_UNIX_shm
+        srv_UNIX_msg
+        srv_UtilServer
+        algo_BellmanFord)
+
+add_executable(srv_UtilClientTest
+        UtilClientTest.cpp)
+
+target_link_libraries(srv_UtilClientTest
+        srv_UNIX_shm
+        srv_UNIX_msg
+        srv_UtilClient)

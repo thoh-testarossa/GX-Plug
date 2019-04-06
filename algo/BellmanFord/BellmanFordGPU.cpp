@@ -26,7 +26,6 @@ double longLongIntAsDouble(unsigned long long int a)
 }
 //Transformation functions end
 
-//Needed to be moved to Init()
 BellmanFordGPU::BellmanFordGPU()
 {
 }
@@ -36,9 +35,9 @@ void BellmanFordGPU::Init(Graph &g, std::set<int> &activeVertice, const std::vec
     BellmanFord::Init(g, activeVertice, initVList);
 }
 
-void BellmanFordGPU::Deploy(Graph &g, int numOfInitV)
+void BellmanFordGPU::Deploy(int vCount, int numOfInitV)
 {
-    BellmanFord::Deploy(g, numOfInitV);
+    BellmanFord::Deploy(vCount, numOfInitV);
 
     cudaError_t err = cudaSuccess;
 
@@ -48,11 +47,11 @@ void BellmanFordGPU::Deploy(Graph &g, int numOfInitV)
     this->initVSet = new int [numOfInitV];
     err = cudaMalloc((void **)&this->d_initVSet, this->numOfInitV * sizeof(int));
 
-    this->vValueSet = new double [g.vCount * this->numOfInitV];
-    err = cudaMalloc((void **)&this->d_vValueSet, g.vCount * this->numOfInitV * sizeof(double));
+    this->vValueSet = new double [vCount * this->numOfInitV];
+    err = cudaMalloc((void **)&this->d_vValueSet, vCount * this->numOfInitV * sizeof(double));
 
-    this->AVCheckSet = new bool [g.vCount];
-    err = cudaMalloc((void **)&this->d_AVCheckSet, g.vCount * sizeof(bool));
+    this->AVCheckSet = new bool [vCount];
+    err = cudaMalloc((void **)&this->d_AVCheckSet, vCount * sizeof(bool));
 
     this->eSrcSet = new int [ePerEdgeSet];
     err = cudaMalloc((void **)&this->d_eSrcSet, ePerEdgeSet * sizeof(int));
@@ -70,20 +69,20 @@ void BellmanFordGPU::Deploy(Graph &g, int numOfInitV)
     this->mValueSet = new double [mSize];
     err = cudaMalloc((void **)&this->d_mValueSet, mSize * sizeof(double));
 
-    this->activeVerticeSet = new int [g.vCount];
-    err = cudaMalloc((void **)&this->d_activeVerticeSet, g.vCount * sizeof(int));
+    this->activeVerticeSet = new int [vCount];
+    err = cudaMalloc((void **)&this->d_activeVerticeSet, vCount * sizeof(int));
 
-    this->mMergedMSGValueSet = new double [g.vCount * numOfInitV];
-    this->mTransformedMergedMSGValueSet = new unsigned long long int [g.vCount * numOfInitV];
-    err = cudaMalloc((void **)&d_mTransformedMergedMSGValueSet, numOfInitV * g.vCount * sizeof(unsigned long long int));
+    this->mMergedMSGValueSet = new double [vCount * numOfInitV];
+    this->mTransformedMergedMSGValueSet = new unsigned long long int [vCount * numOfInitV];
+    err = cudaMalloc((void **)&d_mTransformedMergedMSGValueSet, numOfInitV * vCount * sizeof(unsigned long long int));
 
     this->mValueTSet = new unsigned long long int [mPerMSGSet];
     err = cudaMalloc((void **)&this->d_mValueTSet, mPerMSGSet * sizeof(unsigned long long int));
 }
 
-void BellmanFordGPU::Free(Graph &g)
+void BellmanFordGPU::Free()
 {
-    BellmanFord::Free(g);
+    BellmanFord::Free();
 
     free(this->initVSet);
     cudaFree(this->d_initVSet);

@@ -28,8 +28,8 @@ public:
 
     //Master function
     virtual void Init(Graph &g, std::set<int> &activeVertice, const std::vector<int> &initVList) = 0;
-    virtual void Free(Graph &g) = 0;
-    virtual void Deploy(Graph &g, int numOfInitV) = 0;
+    virtual void Free() = 0;
+    virtual void Deploy(int vCount, int numOfInitV) = 0;
     virtual void MergeGraph(Graph &g, const std::vector<Graph> &subGSet,
                             std::set<int> &activeVertice, const std::vector<std::set<int>> &activeVerticeSet,
                             const std::vector<int> &initVList) = 0;
