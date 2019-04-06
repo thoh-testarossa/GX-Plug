@@ -704,13 +704,13 @@ void BellmanFordGPU::MSGGenMerge_array(int vCount, int eCount, int numOfInitV, i
     cudaError_t err = cudaSuccess;
 
     //AVCheckSet Init
-    err = cudaMemcpy(this->d_AVCheckSet, AVCheckSet, g.vCount * sizeof(bool), cudaMemcpyHostToDevice);
+    err = cudaMemcpy(this->d_AVCheckSet, AVCheckSet, vCount * sizeof(bool), cudaMemcpyHostToDevice);
 
     //initVSet Init
     err = cudaMemcpy(this->d_initVSet, initVSet, numOfInitV * sizeof(int), cudaMemcpyHostToDevice);
 
     //vValueSet Init
-    err = cudaMemcpy(this->d_vValueSet, vValues, g.vCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+    err = cudaMemcpy(this->d_vValueSet, vValues, vCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
 
     //mMergedMSGValueSet Init
     for(int i = 0; i < vCount * numOfInitV; i++)
@@ -753,6 +753,6 @@ void BellmanFordGPU::MSGGenMerge_array(int vCount, int eCount, int numOfInitV, i
     err = cudaMemcpy(this->mTransformedMergedMSGValueSet, this->d_mTransformedMergedMSGValueSet, vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
     
     //Transform back to original double form
-    for(int i = 0; i < g.vCount * numOfInitV; i++)
+    for(int i = 0; i < vCount * numOfInitV; i++)
         mValues[i] = longLongIntAsDouble(mTransformedMergedMSGValueSet[i]);
 }

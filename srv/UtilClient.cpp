@@ -2,6 +2,7 @@
 // Created by Thoh Testarossa on 2019-04-05.
 //
 
+#include <cstring>
 #include "UtilClient.h"
 
 UtilClient::UtilClient(int vCount, int eCount, int numOfInitV, int nodeNo)
@@ -21,6 +22,13 @@ UtilClient::UtilClient(int vCount, int eCount, int numOfInitV, int nodeNo)
 
     this->server_msq = UNIX_msg();
     this->client_msq = UNIX_msg();
+
+    this->vValues = nullptr;
+    this->eSrcSet = nullptr;
+    this->eDstSet = nullptr;
+    this->eWeightSet = nullptr;
+    this->AVCheckSet = nullptr;
+    this->initVSet = nullptr;
 }
 
 int UtilClient::connect()
@@ -61,6 +69,13 @@ int UtilClient::transfer(double *vValues, int *eSrcSet, int *eDstSet, double *eW
 {
     if(this->vCount > 0 && this->eCount > 0 && this->numOfInitV > 0)
     {
+        if(this->vValues == nullptr) return -1;
+        if(this->eSrcSet == nullptr) return -1;
+        if(this->eDstSet == nullptr) return -1;
+        if(this->eWeightSet == nullptr) return -1;
+        if(this->AVCheckSet == nullptr) return -1;
+        if(this->initVSet == nullptr) return -1;
+
         memcpy(this->vValues, vValues, this->vCount * this->numOfInitV * sizeof(double));
         memcpy(this->eSrcSet, eSrcSet, this->eCount * sizeof(int));
         memcpy(this->eDstSet, eDstSet, this->eCount * sizeof(int));
@@ -76,6 +91,9 @@ int UtilClient::update(double *vValues, bool *AVCheckSet)
 {
     if(this->vCount > 0 && this->eCount > 0 && this->numOfInitV > 0)
     {
+        if(this->vValues == nullptr) return -1;
+        if(this->AVCheckSet == nullptr) return -1;
+
         memcpy(this->vValues, vValues, this->vCount * this->numOfInitV * sizeof(double));
         memcpy(this->AVCheckSet, AVCheckSet, this->vCount * sizeof(bool));
         return 0;
@@ -99,6 +117,13 @@ void UtilClient::disconnect()
     this->eWeightSet_shm.detach();
     this->AVCheckSet_shm.detach();
     this->initVSet_shm.detach();
+
+    this->vValues = nullptr;
+    this->eSrcSet = nullptr;
+    this->eDstSet = nullptr;
+    this->eWeightSet = nullptr;
+    this->AVCheckSet = nullptr;
+    this->initVSet = nullptr;
 }
 
 void UtilClient::shutdown()

@@ -32,12 +32,13 @@ int main(int argc, char *argv[])
     }
 
     //Init the Graph
+    bool *AVCheckSet = new bool [vCount];
+    int *initVSet = new int [numOfInitV];
     double *vValues = new double [vCount * numOfInitV];
+
     int *eSrcSet = new int [eCount];
     int *eDstSet = new int [eCount];
     double *eWeightSet = new double [eCount];
-    bool *AVCheckSet = new bool [vCount];
-    int *initVSet = new int [numOfInitV];
 
     std::ifstream Gin("testGraph.txt");
     if(!Gin.is_open())
