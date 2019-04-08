@@ -4,10 +4,15 @@
 
 #include "UtilServer.h"
 #include <string>
+#include <iostream>
 
 template<typename T>
 UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
 {
+    //Test
+    std::cout << "Server init" << std::endl;
+    //Test end
+
     this->nodeNo = nodeNo;
 
     this->vCount = vCount;
@@ -29,6 +34,8 @@ UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
 
     if(this->isLegal)
     {
+        int chk = 0;
+
         this->numOfInitV = numOfInitV;
         this->vCount = vCount;
         this->eCount = eCount;
@@ -46,70 +53,90 @@ UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
         this->server_msq = UNIX_msg();
         this->client_msq = UNIX_msg();
 
-        this->vValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (VVALUES_SHM << SHM_OFFSET)),
+        if(chk != -1)
+            chk = this->vValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (VVALUES_SHM << SHM_OFFSET)),
                 this->vCount * this->numOfInitV * sizeof(double),
                 0666);
-        this->eSrcSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (ESRCSET_SHM << SHM_OFFSET)),
+        if(chk != -1)
+            chk = this->eSrcSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (ESRCSET_SHM << SHM_OFFSET)),
                 this->eCount * sizeof(int),
                 0666);
-        this->eDstSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (EDSTSET_SHM << SHM_OFFSET)),
+        if(chk != -1)
+            chk = this->eDstSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (EDSTSET_SHM << SHM_OFFSET)),
                 this->eCount * sizeof(int),
                 0666);
-        this->eWeightSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (EWEIGHTSET_SHM << SHM_OFFSET)),
+        if(chk != -1)
+            chk = this->eWeightSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (EWEIGHTSET_SHM << SHM_OFFSET)),
                 this->eCount * sizeof(double),
                 0666);
-        this->AVCheckSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (AVCHECKSET_SHM << SHM_OFFSET)),
+        if(chk != -1)
+            chk = this->AVCheckSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (AVCHECKSET_SHM << SHM_OFFSET)),
                 this->vCount * sizeof(bool),
                 0666);
-        this->initVSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (INITVSET_SHM << SHM_OFFSET)),
+        if(chk != -1)
+            chk = this->initVSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (INITVSET_SHM << SHM_OFFSET)),
                 this->numOfInitV * sizeof(int),
                 0666);
 
-        this->server_msq.create(((this->nodeNo << NODE_NUM_OFFSET) | (SRV_MSG_TYPE << MSG_TYPE_OFFSET)),
+        if(chk != -1)
+            chk = this->server_msq.create(((this->nodeNo << NODE_NUM_OFFSET) | (SRV_MSG_TYPE << MSG_TYPE_OFFSET)),
                 0666);
-        this->client_msq.create(((this->nodeNo << NODE_NUM_OFFSET) | (CLI_MSG_TYPE << MSG_TYPE_OFFSET)),
+        if(chk != -1)
+            chk = this->client_msq.create(((this->nodeNo << NODE_NUM_OFFSET) | (CLI_MSG_TYPE << MSG_TYPE_OFFSET)),
                 0666);
 
-        this->vValues_shm.attach(0666);
-        this->eSrcSet_shm.attach(0666);
-        this->eDstSet_shm.attach(0666);
-        this->eWeightSet_shm.attach(0666);
-        this->AVCheckSet_shm.attach(0666);
-        this->initVSet_shm.attach(0666);
+        if(chk != -1)
+        {
+            this->vValues_shm.attach(0666);
+            this->eSrcSet_shm.attach(0666);
+            this->eDstSet_shm.attach(0666);
+            this->eWeightSet_shm.attach(0666);
+            this->AVCheckSet_shm.attach(0666);
+            this->initVSet_shm.attach(0666);
 
-        this->vValues = (double *)this->vValues_shm.shmaddr;
-        this->eSrcSet = (int *)this->eSrcSet_shm.shmaddr;
-        this->eDstSet = (int *)this->eDstSet_shm.shmaddr;
-        this->eWeightSet = (double *)this->eWeightSet_shm.shmaddr;
-        this->AVCheckSet = (bool *)this->AVCheckSet_shm.shmaddr;
-        this->initVSet = (int *)this->initVSet_shm.shmaddr;
+            this->vValues = (double *) this->vValues_shm.shmaddr;
+            this->eSrcSet = (int *) this->eSrcSet_shm.shmaddr;
+            this->eDstSet = (int *) this->eDstSet_shm.shmaddr;
+            this->eWeightSet = (double *) this->eWeightSet_shm.shmaddr;
+            this->AVCheckSet = (bool *) this->AVCheckSet_shm.shmaddr;
+            this->initVSet = (int *) this->initVSet_shm.shmaddr;
+
+            //Test
+            std::cout << "Init succeeded." << std::endl;
+            //Test end
+        }
+        else
+        {
+            this->isLegal = false;
+
+            //Test
+            std::cout << "Init failed with errno " << errno << std::endl;
+            //Test end
+        }
     }
 }
 
 template<typename T>
 UtilServer<T>::~UtilServer()
 {
-    if(this->isLegal)
-    {
-        this->executor.Free();
+    this->executor.Free();
 
-        this->vValues = nullptr;
-        this->eSrcSet = nullptr;
-        this->eDstSet = nullptr;
-        this->eWeightSet = nullptr;
-        this->AVCheckSet = nullptr;
-        this->initVSet = nullptr;
+    this->vValues = nullptr;
+    this->eSrcSet = nullptr;
+    this->eDstSet = nullptr;
+    this->eWeightSet = nullptr;
+    this->AVCheckSet = nullptr;
+    this->initVSet = nullptr;
 
-        this->vValues_shm.control(IPC_RMID);
-        this->eSrcSet_shm.control(IPC_RMID);
-        this->eDstSet_shm.control(IPC_RMID);
-        this->eWeightSet_shm.control(IPC_RMID);
-        this->AVCheckSet_shm.control(IPC_RMID);
-        this->initVSet_shm.control(IPC_RMID);
+    this->vValues_shm.control(IPC_RMID);
+    this->eSrcSet_shm.control(IPC_RMID);
+    this->eDstSet_shm.control(IPC_RMID);
+    this->eWeightSet_shm.control(IPC_RMID);
+    this->AVCheckSet_shm.control(IPC_RMID);
+    this->initVSet_shm.control(IPC_RMID);
 
-        this->server_msq.control(IPC_RMID);
-        this->client_msq.control(IPC_RMID);
-    }
+    this->server_msq.control(IPC_RMID);
+    this->client_msq.control(IPC_RMID);
 }
 
 template<typename T>
@@ -121,8 +148,14 @@ void UtilServer<T>::run()
     char msgp[256];
     std::string cmd = std::string("");
 
+    int iterCount = 0;
+
     while(this->client_msq.recv(msgp, (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256) != -1)
     {
+        //Test
+        std::cout << "Processing at iter " << ++iterCount << std::endl;
+        //Test end
+
         cmd = msgp;
         if(std::string("execute") == cmd)
         {
@@ -138,5 +171,9 @@ void UtilServer<T>::run()
             break;
         else break;
     }
+
+    //Test
+    std::cout << "Shutdown properly" << std::endl;
+    //Test end
 }
 
