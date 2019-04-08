@@ -11,6 +11,16 @@
 #include <fstream>
 #include <vector>
 
+#include <future>
+
+void testFut(UtilClient *uc, double *vValues, bool *AVCheckSet)
+{
+    uc->connect();
+    uc->update(vValues, AVCheckSet);
+    uc->request();
+    uc->disconnect();
+}
+
 int main(int argc, char *argv[])
 {
     if(argc != 4 && argc != 5)
@@ -73,7 +83,7 @@ int main(int argc, char *argv[])
     //Client Init Data Transfer
     auto clientVec = std::vector<UtilClient>();
     for(int i = 0; i < nodeCount; i++)
-        clientVec.push_back(UtilClient(vCount, eCount, numOfInitV, i));
+        clientVec.push_back(UtilClient(vCount, ((i + 1) * eCount) / nodeCount - (i * eCount) / nodeCount, numOfInitV, i));
     int chk = 0;
     for(int i = 0; i < nodeCount && chk != -1; i++)
     {
@@ -84,7 +94,7 @@ int main(int argc, char *argv[])
             return 2;
         }
 
-        chk = clientVec.at(i).transfer(vValues, eSrcSet, eDstSet, eWeightSet, AVCheckSet, initVSet);
+        chk = clientVec.at(i).transfer(vValues, &eSrcSet[(i * eCount) / nodeCount], &eDstSet[(i * eCount) / nodeCount], &eWeightSet[(i * eCount) / nodeCount], AVCheckSet, initVSet);
 
         if(chk == -1)
         {
@@ -98,13 +108,31 @@ int main(int argc, char *argv[])
     bool isActive = false;
     for(int i = 0; i < vCount; i++) isActive |= AVCheckSet[i];
 
+    bool *ret_AVCheckSet = new bool [vCount];
+    int iterCount = 0;
+
     while(isActive)
     {
+        //Test
+        std::cout << "Processing at iter " << ++iterCount << std::endl;
+        //Test end
+
+        for(int i = 0; i < vCount; i++) ret_AVCheckSet[i] = false;
+
+        auto futList = new std::future<void> [nodeCount];
+        for(int i = 0; i < nodeCount; i++)
+        {
+            std::future<void> tmpFut = std::async(testFut, &clientVec.at(i), vValues, AVCheckSet);
+            futList[i] = std::move(tmpFut);
+        }
+
+        for(int i = 0; i < nodeCount; i++)
+            futList[i].get();
+
+        //Retrieve data
         for(int i = 0; i < nodeCount; i++)
         {
             clientVec.at(i).connect();
-            clientVec.at(i).update(vValues, AVCheckSet);
-            clientVec.at(i).request();
 
             //Collect data
             for(int j = 0; j < vCount * numOfInitV; j++)
@@ -114,13 +142,27 @@ int main(int argc, char *argv[])
             }
 
             for(int j = 0; j < vCount; j++)
-                AVCheckSet[j] = false | clientVec.at(i).AVCheckSet[j];
+                ret_AVCheckSet[j] |= clientVec.at(i).AVCheckSet[j];
 
             clientVec.at(i).disconnect();
         }
 
+        memcpy(AVCheckSet, ret_AVCheckSet, vCount);
+
         isActive = false;
         for(int i = 0; i < vCount; i++) isActive |= AVCheckSet[i];
+
+        //Test
+        for(int i = 0; i < vCount * numOfInitV; i++)
+        {
+            std::cout << vValues[i] << " ";
+            if(i % numOfInitV == numOfInitV - 1) std::cout << std::endl;
+        }
+        for(int i = 0; i < vCount; i++)
+            std::cout << AVCheckSet[i];
+        std::cout << std::endl;
+        std::cout << isActive << std::endl;
+        //Test end
     }
 
     for(int i = 0; i < nodeCount; i++) clientVec.at(i).shutdown();
