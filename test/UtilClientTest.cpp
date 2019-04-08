@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <future>
+#include <cstring>
 
 void testFut(UtilClient *uc, double *vValues, bool *AVCheckSet)
 {

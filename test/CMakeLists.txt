@@ -64,6 +64,7 @@ add_executable(srv_UtilClientTest
         UtilClientTest.cpp)
 
 target_link_libraries(srv_UtilClientTest
+        pthread
         srv_UNIX_shm
         srv_UNIX_msg
         srv_UtilClient)
