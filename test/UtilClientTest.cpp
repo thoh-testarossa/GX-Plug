@@ -154,6 +154,7 @@ int main(int argc, char *argv[])
         for(int i = 0; i < vCount; i++) isActive |= AVCheckSet[i];
 
         //Test
+        /*
         for(int i = 0; i < vCount * numOfInitV; i++)
         {
             std::cout << vValues[i] << " ";
@@ -163,6 +164,7 @@ int main(int argc, char *argv[])
             std::cout << AVCheckSet[i];
         std::cout << std::endl;
         std::cout << isActive << std::endl;
+        */
         //Test end
     }
 

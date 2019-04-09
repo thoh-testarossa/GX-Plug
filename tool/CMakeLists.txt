@@ -3,5 +3,5 @@ project(Graph_Algo)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(util_RandGraphGen
+add_executable(tool_RandGraphGen
         RandGraphGen.cpp)
