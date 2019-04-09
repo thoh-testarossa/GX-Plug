@@ -3,6 +3,8 @@ project(Graph_Algo)
 
 set(CMAKE_CXX_STANDARD 14)
 
+find_package(CUDA)
+
 if(UNIX)
     add_library(srv_UNIX_shm
             UNIX_shm.h
