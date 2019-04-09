@@ -4,8 +4,8 @@
 
 #pragma once
 
-#ifndef GRAPH_ALGO_TISEXTENDED_H
-#define GRAPH_ALGO_TISEXTENDED_H
+#ifndef GRAPH_ALGO_TISEXTENDED_HPP
+#define GRAPH_ALGO_TISEXTENDED_HPP
 
 template<typename T, typename TBase>
 class TIsExtended
@@ -22,4 +22,4 @@ public:
     };
 };
 
-#endif //GRAPH_ALGO_TISEXTENDED_H
+#endif //GRAPH_ALGO_TISEXTENDED_HPP

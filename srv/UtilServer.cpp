@@ -2,7 +2,8 @@
 // Created by Thoh Testarossa on 2019-04-05.
 //
 
-#include "UtilServer.h"
+#include "../srv/UtilServer.h"
+#include "../util/TIsExtended.hpp"
 #include <string>
 #include <iostream>
 

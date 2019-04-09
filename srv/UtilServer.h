@@ -10,7 +10,6 @@
 #include "../core/GraphUtil.h"
 #include "../srv/UNIX_shm.h"
 #include "../srv/UNIX_msg.h"
-#include "../include/TIsExtended.h"
 #include "../include/UNIX_marco.h"
 
 template<typename T>

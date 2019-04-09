@@ -3,37 +3,39 @@ project(Graph_Algo)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_library(srv_UNIX_shm
-        UNIX_shm.h
-        UNIX_shm.cpp)
+if(UNIX)
+    add_library(srv_UNIX_shm
+            UNIX_shm.h
+            UNIX_shm.cpp)
 
-add_library(srv_UNIX_msg
-        UNIX_msg.h
-        UNIX_msg.cpp)
+    add_library(srv_UNIX_msg
+            UNIX_msg.h
+            UNIX_msg.cpp)
 
-if(CUDA_FOUND)
-    add_library(srv_UtilServer
-            UtilServer.h
-            UtilServer.cpp
-            UtilServer_impl.cpp
-            UtilServer_implGPU.cpp)
-else()
-    add_library(srv_UtilServer
-            UtilServer.h
-            UtilServer.cpp
-            UtilServer_impl.cpp)
-endif(CUDA_FOUND)
+    if(CUDA_FOUND)
+        add_library(srv_UtilServer
+                UtilServer.h
+                UtilServer.cpp
+                UtilServer_impl.cpp
+                UtilServer_implGPU.cpp)
+    else()
+        add_library(srv_UtilServer
+                UtilServer.h
+                UtilServer.cpp
+                UtilServer_impl.cpp)
+    endif(CUDA_FOUND)
 
-target_link_libraries(srv_UtilServer
-        srv_UNIX_msg
-        srv_UNIX_shm
-        core_GraphUtil)
+    target_link_libraries(srv_UtilServer
+            srv_UNIX_msg
+            srv_UNIX_shm
+            core_GraphUtil)
 
-add_library(srv_UtilClient
-        UtilClient.h
-        UtilClient.cpp)
+    add_library(srv_UtilClient
+            UtilClient.h
+            UtilClient.cpp)
 
-target_link_libraries(srv_UtilClient
-        srv_UNIX_msg
-        srv_UNIX_shm
-        core_GraphUtil)
+    target_link_libraries(srv_UtilClient
+            srv_UNIX_msg
+            srv_UNIX_shm
+            core_GraphUtil)
+ENDIF(UNIX)
