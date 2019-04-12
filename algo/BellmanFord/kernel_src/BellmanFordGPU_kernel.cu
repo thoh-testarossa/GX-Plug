@@ -2,7 +2,7 @@
 
 __global__ void MSGApply_kernel(int numOfInitV, int *initVSet, double *vValues,
         int numOfMsg, int *mDstSet, int *mInitVSet, double *mValueSet,
-        bool *AVCheckSet)
+        bool *AVCheckSet, int *initVIndexSet)
 {
 	int tid = threadIdx.x;
 
@@ -10,16 +10,7 @@ __global__ void MSGApply_kernel(int numOfInitV, int *initVSet, double *vValues,
 	{
 		int vID = mDstSet[tid];
 
-		int initVID = mInitVSet[tid];
-		int vInitVIndex = -1;
-		for(int i = 0; i < numOfInitV; i++)
-		{
-			if(initVSet[i] == initVID)
-			{
-				vInitVIndex = i;
-				break;
-			}
-		}
+		int vInitVIndex = initVIndexSet[mInitVSet[tid]];
 
 		if(vInitVIndex != -1)
 		{
@@ -35,11 +26,11 @@ __global__ void MSGApply_kernel(int numOfInitV, int *initVSet, double *vValues,
 
 cudaError_t MSGApply_kernel_exec(int numOfInitV, int *initVSet, double *vValues,
 	int numOfMsg, int *mDstSet, int *mInitVSet, double *mValueSet,
-	bool *AVCheckSet)
+	bool *AVCheckSet, int *initVIndexSet)
 {
 	cudaError_t err = cudaSuccess;
 	
-	MSGApply_kernel<<<1, NUMOFGPUCORE>>>(numOfInitV, initVSet, vValues, numOfMsg, mDstSet, mInitVSet, mValueSet, AVCheckSet);
+	MSGApply_kernel<<<1, NUMOFGPUCORE>>>(numOfInitV, initVSet, vValues, numOfMsg, mDstSet, mInitVSet, mValueSet, AVCheckSet, initVIndexSet);
     err = cudaGetLastError();
 
 	cudaDeviceSynchronize();
@@ -90,23 +81,15 @@ cudaError_t MSGGen_kernel_exec(int numOfEdge, bool *AVCheckSet,
 
 __global__ void MSGMerge_kernel(unsigned long long int *mTransformdMergedMSGValueSet,
 	int numOfInitV, int *initVSet, 
-	int numOfMsg, int *mDstSet, int *mInitVSet, unsigned long long int *mValueTSet)
+	int numOfMsg, int *mDstSet, int *mInitVSet, unsigned long long int *mValueTSet, 
+	int *initVIndexSet)
 {
 	int tid = threadIdx.x;
 
 	if(tid < numOfMsg)
 	{
 		int vID = mDstSet[tid];
-		int initVID = mInitVSet[tid];
-		int vInitVIndex = -1;
-		for(int i = 0; i < numOfInitV; i++)
-		{
-			if(initVSet[i] == initVID)
-			{
-				vInitVIndex = i;
-				break;
-			}
-		}
+		int vInitVIndex = initVIndexSet[mInitVSet[tid]];
 
 		if(vInitVIndex != -1)
 		//Original mValue is needed to be changed to long long int form to execute atomic ops
@@ -116,11 +99,12 @@ __global__ void MSGMerge_kernel(unsigned long long int *mTransformdMergedMSGValu
 
 cudaError_t MSGMerge_kernel_exec(unsigned long long int *mTransformdMergedMSGValueSet, 
 	int numOfInitV, int *initVSet, 
-	int numOfMsg, int *mDstSet, int *mInitVSet, unsigned long long int *mValueTSet)
+	int numOfMsg, int *mDstSet, int *mInitVSet, unsigned long long int *mValueTSet, 
+	int *initVIndexSet)
 {
 	cudaError_t err = cudaSuccess;
 
-	MSGMerge_kernel<<<1, NUMOFGPUCORE>>>(mTransformdMergedMSGValueSet, numOfInitV, initVSet, numOfMsg, mDstSet, mInitVSet, mValueTSet);
+	MSGMerge_kernel<<<1, NUMOFGPUCORE>>>(mTransformdMergedMSGValueSet, numOfInitV, initVSet, numOfMsg, mDstSet, mInitVSet, mValueTSet, initVIndexSet);
 	err = cudaGetLastError();
 
 	cudaDeviceSynchronize();
@@ -130,19 +114,19 @@ cudaError_t MSGMerge_kernel_exec(unsigned long long int *mTransformdMergedMSGVal
 
 __global__ void MSGGenMerge_kernel(unsigned long long int *mTransformdMergedMSGValueSet,
 	bool *AVCheckSet, int numOfInitV, int *initVSet, double *vValues,
-	int numOfEdge, int *eSrcSet, int *eDstSet, double *eWeightSet)
+	int numOfEdge, Edge *eSet)
 {
 	int tid = threadIdx.x;
 
 	if(tid < numOfEdge)
 	{
 		int vID = -1;
-		if(AVCheckSet[eSrcSet[tid]] == true) vID = eDstSet[tid];
+		if(AVCheckSet[eSet[tid].src] == true) vID = eSet[tid].dst;
 
 		if(vID != -1)
 		{
 			for(int i = 0; i < numOfInitV; i++)
-				atomicMin(&mTransformdMergedMSGValueSet[vID * numOfInitV + i], __double_as_longlong(vValues[eSrcSet[tid] * numOfInitV + i] + eWeightSet[tid]));
+				atomicMin(&mTransformdMergedMSGValueSet[vID * numOfInitV + i], __double_as_longlong(vValues[eSet[tid].src * numOfInitV + i] + eSet[tid].weight));
 		}
 		else;
 	}
@@ -150,11 +134,11 @@ __global__ void MSGGenMerge_kernel(unsigned long long int *mTransformdMergedMSGV
 
 cudaError_t MSGGenMerge_kernel_exec(unsigned long long int *mTransformdMergedMSGValueSet,
 	bool *AVCheckSet, int numOfInitV, int *initVSet, double *vValues,
-	int numOfEdge, int *eSrcSet, int *eDstSet, double *eWeightSet)
+	int numOfEdge, Edge *eSet)
 {
 	cudaError_t err = cudaSuccess;
 
-	MSGGenMerge_kernel<<<1, NUMOFGPUCORE>>>(mTransformdMergedMSGValueSet, AVCheckSet, numOfInitV, initVSet, vValues, numOfEdge, eSrcSet, eDstSet, eWeightSet);
+	MSGGenMerge_kernel<<<1, NUMOFGPUCORE>>>(mTransformdMergedMSGValueSet, AVCheckSet, numOfInitV, initVSet, vValues, numOfEdge, eSet);
 	err = cudaGetLastError();
 
 	cudaDeviceSynchronize();

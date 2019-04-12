@@ -14,16 +14,16 @@ class BellmanFord : public GraphUtil
 public:
     BellmanFord();
 
-    void MSGApply(Graph &g, std::set<int> &activeVertice, const MessageSet &mSet) override;
-    void MSGGen(const Graph &g, const std::set<int> &activeVertice, MessageSet &mSet) override;
-    void MSGMerge(const Graph &g, MessageSet &result, const MessageSet &source) override;
-    void MSGGenMerge(const Graph &g, const std::set<int> &activeVertice, MessageSet &mSet) override;
+    void MSGApply(Graph &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet &mSet) override;
+    //void MSGGen(const Graph &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet &mSet) override;
+    //void MSGMerge(const Graph &g, const std::vector<int> &initVSet, MessageSet &result, const MessageSet &source) override;
+    void MSGGenMerge(const Graph &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet &mSet) override;
 
     //Unified interface but actually algo_BellmanFord didn't use this form
-    void MSGApply_array(int vCount, int numOfInitV, int *initVSet, bool *AVCheckSet, double *vValues, double *mValues) override;
-    void MSGGen_array(int vCount, int eCount, int numOfInitV, int *initVSet, double *vValues, int *eSrcSet, int *eDstSet, double *eWeightSet, int &numOfMSG, int *mInitVSet, int *mDstSet, double *mValueSet, bool *AVCheckSet) override;
-    void MSGMerge_array(int vCount, int numOfInitV, int *initVSet, int numOfMSG, int *mInitVSet, int *mDstSet, double *mValueSet, double *mValues) override;
-    void MSGGenMerge_array(int vCount, int eCount, int numOfInitV, int *initVSet, double *vValues, int *eSrcSet, int *eDstSet, double *eWeightSet, double *mValues, bool *AVCheckSet) override;
+    void MSGApply_array(int vCount, int numOfInitV, const int *initVSet, bool *AVCheckSet, double *vValues, double *mValues, int *initVIndexSet) override;
+    //void MSGGen_array(int vCount, int eCount, int numOfInitV, const int *initVSet, double *vValues, int *eSrcSet, int *eDstSet, double *eWeightSet, int &numOfMSG, int *mInitVSet, int *mDstSet, double *mValueSet, bool *AVCheckSet) override;
+    //void MSGMerge_array(int vCount, int numOfInitV, const int *initVSet, int numOfMSG, int *mInitVSet, int *mDstSet, double *mValueSet, double *mValues, int *initVIndexSet) override;
+    void MSGGenMerge_array(int vCount, int eCount, int numOfInitV, int *initVSet, double *vValues, Edge *eSet, double *mValues, bool *AVCheckSet) override;
 
     void MergeGraph(Graph &g, const std::vector<Graph> &subGSet,
                     std::set<int> &activeVertice, const std::vector<std::set<int>> &activeVerticeSet,
@@ -34,7 +34,7 @@ public:
     void Deploy(int vCount, int numOfInitV) override;
     void Free() override;
 
-    void ApplyStep(Graph &g, std::set<int> &activeVertice);
+    void ApplyStep(Graph &g, const std::vector<int> &initVSet, std::set<int> &activeVertice);
     void Apply(Graph &g, const std::vector<int> &initVList);
 
     void ApplyD(Graph &g, const std::vector<int> &initVList, int partitionCount);

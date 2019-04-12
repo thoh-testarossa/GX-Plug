@@ -11,16 +11,8 @@ std::vector<Graph> GraphUtil::DivideGraphByEdge(const Graph &g, int partitionCou
     for(int i = 0; i < partitionCount; i++) res.push_back(Graph(0));
     for(int i = 0; i < partitionCount; i++)
     {
-        res.at(i) = Graph(g.vCount);
-        //Copy v info
-        for(int j = 0; j < g.vCount; j++)
-        {
-            if(res.at(i).vList.at(j).vertexID == g.vList.at(j).vertexID) //It should be of equal value
-            {
-                res.at(i).vList.at(j).value = g.vList.at(j).value;
-                res.at(i).vList.at(j).isActive = g.vList.at(j).isActive;
-            }
-        }
+        //Copy v & vValues info but do not copy e info
+        res.at(i) = Graph(g.vList, std::vector<Edge>(), g.verticeValue);
 
         //Distribute e info
         for(int k = i * g.eCount / partitionCount; k < (i + 1) * g.eCount / partitionCount; k++)

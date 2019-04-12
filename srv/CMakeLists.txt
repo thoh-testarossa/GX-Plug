@@ -30,6 +30,7 @@ if(UNIX)
     target_link_libraries(srv_UtilServer
             srv_UNIX_msg
             srv_UNIX_shm
+            core_Graph
             core_GraphUtil)
 
     add_library(srv_UtilClient
@@ -39,5 +40,6 @@ if(UNIX)
     target_link_libraries(srv_UtilClient
             srv_UNIX_msg
             srv_UNIX_shm
+            core_Graph
             core_GraphUtil)
 ENDIF(UNIX)

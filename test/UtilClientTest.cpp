@@ -2,6 +2,7 @@
 // Created by Thoh Testarossa on 2019-04-06.
 //
 
+#include "../core/Graph.h"
 #include "../core/GraphUtil.h"
 #include "../srv/UtilClient.h"
 #include "../srv/UNIX_shm.h"
@@ -47,9 +48,7 @@ int main(int argc, char *argv[])
     int *initVSet = new int [numOfInitV];
     double *vValues = new double [vCount * numOfInitV];
 
-    int *eSrcSet = new int [eCount];
-    int *eDstSet = new int [eCount];
-    double *eWeightSet = new double [eCount];
+    std::vector<Edge> eSet = std::vector<Edge>();
 
     std::ifstream Gin("testGraph.txt");
     if(!Gin.is_open())
@@ -73,13 +72,24 @@ int main(int argc, char *argv[])
     }
 
     for(int i = 0; i < vCount * numOfInitV; i++) vValues[i] = INT32_MAX  >> 1;
-    for(int i = 0; i < eCount; i++) Gin >> eSrcSet[i] >> eDstSet[i] >> eWeightSet[i];
+    for(int i = 0; i < eCount; i++)
+    {
+        int src, dst;
+        double weight;
+        Gin >> src >> dst >> weight;
+        eSet.emplace_back(Edge(src, dst, weight));
+    }
+    for(int i = 0; i < vCount; i++) AVCheckSet[i] = false;
     //Easy init
-    for(int i = 0; i < numOfInitV; i++) initVSet[i] = i;
-    for(int i = 0; i < vCount; i++) AVCheckSet[i] = i < numOfInitV;
-    for(int i = 0; i < numOfInitV; i++) vValues[i * numOfInitV + i] = 0;
+    for(int i = 0; i < numOfInitV; i++) initVSet[i] = 1 << i;
+    for(int i = 0; i < numOfInitV; i++) AVCheckSet[1 << i] = true;
+    for(int i = 0; i < numOfInitV; i++) vValues[(1 << i) * numOfInitV + i] = 0;
 
     Gin.close();
+
+    int *initVIndexSet = new int [vCount];
+    for(int i = 0; i < vCount; i++) initVIndexSet[i] = -1;
+    for(int i = 0; i < numOfInitV; i++) initVIndexSet[initVSet[i]] = i;
 
     //Client Init Data Transfer
     auto clientVec = std::vector<UtilClient>();
@@ -95,7 +105,7 @@ int main(int argc, char *argv[])
             return 2;
         }
 
-        chk = clientVec.at(i).transfer(vValues, &eSrcSet[(i * eCount) / nodeCount], &eDstSet[(i * eCount) / nodeCount], &eWeightSet[(i * eCount) / nodeCount], AVCheckSet, initVSet);
+        chk = clientVec.at(i).transfer(vValues, &eSet[(i * eCount) / nodeCount], AVCheckSet, initVSet, initVIndexSet);
 
         if(chk == -1)
         {
@@ -111,6 +121,10 @@ int main(int argc, char *argv[])
 
     bool *ret_AVCheckSet = new bool [vCount];
     int iterCount = 0;
+
+    //Test
+    std::cout << "Init finished" << std::endl;
+    //Test end
 
     while(isActive)
     {
@@ -152,20 +166,6 @@ int main(int argc, char *argv[])
 
         isActive = false;
         for(int i = 0; i < vCount; i++) isActive |= AVCheckSet[i];
-
-        //Test
-        /*
-        for(int i = 0; i < vCount * numOfInitV; i++)
-        {
-            std::cout << vValues[i] << " ";
-            if(i % numOfInitV == numOfInitV - 1) std::cout << std::endl;
-        }
-        for(int i = 0; i < vCount; i++)
-            std::cout << AVCheckSet[i];
-        std::cout << std::endl;
-        std::cout << isActive << std::endl;
-        */
-        //Test end
     }
 
     for(int i = 0; i < nodeCount; i++) clientVec.at(i).shutdown();
@@ -173,7 +173,8 @@ int main(int argc, char *argv[])
     //result check
     for(int i = 0; i < vCount * numOfInitV; i++)
     {
-        std::cout << vValues[i] << " ";
+        if(i % numOfInitV == 0) std::cout << i / numOfInitV << ": ";
+        std::cout << "(" << initVSet[i % numOfInitV] << " -> " << vValues[i] << ")";
         if(i % numOfInitV == numOfInitV - 1) std::cout << std::endl;
     }
 }

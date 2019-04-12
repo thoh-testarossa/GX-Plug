@@ -31,18 +31,16 @@ public:
 
     int *initVSet;
     double *vValues;
-    int *eSrcSet;
-    int *eDstSet;
-    double *eWeightSet;
+    Edge *eSet;
     bool *AVCheckSet;
+    int *initVIndexSet;
 
 private:
     UNIX_shm initVSet_shm;
     UNIX_shm vValues_shm;
-    UNIX_shm eSrcSet_shm;
-    UNIX_shm eDstSet_shm;
-    UNIX_shm eWeightSet_shm;
+    UNIX_shm eSet_shm;
     UNIX_shm AVCheckSet_shm;
+    UNIX_shm initVIndexSet_shm;
 
     UNIX_msg server_msq;
     UNIX_msg client_msq;

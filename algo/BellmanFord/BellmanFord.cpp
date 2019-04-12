@@ -11,7 +11,7 @@ BellmanFord::BellmanFord()
 {
 }
 
-void BellmanFord::MSGApply(Graph &g, std::set<int> &activeVertice, const MessageSet &mSet)
+void BellmanFord::MSGApply(Graph &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet &mSet)
 {
     //Reset active vertices info
     for(auto &v : g.vList)
@@ -19,16 +19,17 @@ void BellmanFord::MSGApply(Graph &g, std::set<int> &activeVertice, const Message
 
     for(auto m : mSet.mSet)
     {
-        if(g.vList.at(m.dst).value.find(m.src)->second > m.value)
+        if(g.verticeValue.at(m.dst * this->numOfInitV + g.vList.at(m.src).initVIndex) > m.value)
         {
-            g.vList.at(m.dst).value.find(m.src)->second = m.value;
+            g.verticeValue.at(m.dst * this->numOfInitV + g.vList.at(m.src).initVIndex) = m.value;
             activeVertice.insert(m.dst);
             g.vList.at(m.dst).isActive = true;
         }
     }
 }
 
-void BellmanFord::MSGGen(const Graph &g, const std::set<int> &activeVertice, MessageSet &mSet)
+/*
+void BellmanFord::MSGGen(const Graph &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet &mSet)
 {
     for(auto e : g.eList)
     {
@@ -37,189 +38,151 @@ void BellmanFord::MSGGen(const Graph &g, const std::set<int> &activeVertice, Mes
             int vID = e.src;
             if(g.vList.at(vID).vertexID == vID) // It should be of equal value
             {
-                for(auto vV : g.vList.at(vID).value)
-                    mSet.insertMsg(Message(vV.first, e.dst, vV.second + e.weight));
+                for(int i = vID * this->numOfInitV; i < (vID + 1) * this->numOfInitV; i++)
+                    mSet.insertMsg(Message(initVSet.at(i % this->numOfInitV), e.dst, g.verticeValue.at(i) + e.weight));
+            }
+            else;
+        }
+    }
+}
+*/
+
+/*
+void BellmanFord::MSGMerge(const Graph &g, const std::vector<int> &initVSet, MessageSet &result, const MessageSet &source)
+{
+    result.mSet.clear();
+    result.mSet.reserve(g.vCount * this->numOfInitV);
+    for(int i = 0; i < g.vCount * this->numOfInitV; i++)
+        result.insertMsg(Message(initVSet.at(i % this->numOfInitV), i / this->numOfInitV, INVALID_MASSAGE));
+
+    for(int i = 0; i < source.mSet.size(); i++)
+    {
+        int _src = source.mSet.at(i).src, _dst = source.mSet.at(i).dst;
+        double _value = source.mSet.at(i).value;
+        auto &m = result.mSet.at(_dst * this->numOfInitV + g.vList.at(_src).initVIndex);
+        if(m.src == _src && m.dst == _dst) //It should be equal
+        {
+            if(m.value > _value)
+                m.value = _value;
+        }
+    }
+}
+*/
+
+void BellmanFord::MSGGenMerge(const Graph &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet &mSet)
+{
+    //Generate merged msgs directly
+    mSet.mSet.clear();
+    mSet.mSet.reserve(g.vCount * this->numOfInitV);
+    for(int i = 0; i < g.vCount * this->numOfInitV; i++)
+        mSet.insertMsg(Message(initVSet.at(i % this->numOfInitV), i / this->numOfInitV, INVALID_MASSAGE));
+
+    for(auto e : g.eList)
+    {
+        if(g.vList.at(e.src).isActive)
+        {
+            int vID = e.src;
+            if(g.vList.at(vID).vertexID == vID) // It should be of equal value
+            {
+                for(int i = 0; i < this->numOfInitV; i++)
+                {
+                    auto &m = mSet.mSet.at(e.dst * this->numOfInitV + i);
+                    if(m.value > g.verticeValue.at(e.src * this->numOfInitV + i) + e.weight)
+                        m.value = g.verticeValue.at(e.src * this->numOfInitV + i) + e.weight;
+                }
             }
             else;
         }
     }
 }
 
-void BellmanFord::MSGMerge(const Graph &g, MessageSet &result, const MessageSet &source)
+void BellmanFord::MSGApply_array(int vCount, int numOfInitV, const int *initVSet, bool *AVCheckSet, double *vValues, double *mValues, int *initVIndexSet)
 {
-    //It seems that g isn't used in this method...
+    for(int i = 0; i < vCount; i++) AVCheckSet[i] = false;
 
-    std::map<int, MessageSet> mergeMap = std::map<int, MessageSet>();
-
-    for(auto m : source.mSet)
-    {
-        if(mergeMap.find(m.src) == mergeMap.end()) //result didn't contain any message about m's src
-        {
-            mergeMap.insert(std::pair<int, MessageSet>(m.src, MessageSet()));
-            mergeMap.find(m.src)->second.insertMsg(m);
-        }
-        else
-        {
-            bool isContained = false;
-
-            for(auto &m2 : mergeMap.find(m.src)->second.mSet) //result contains messages about m's src
-            {
-                if(m2.dst == m.dst) //result contains messages from m.src to m.dst
-                {
-                    if(m2.value > m.value) m2.value = m.value; //The messages in result should be updated
-                    isContained = true;
-                    break;
-                }
-            }
-
-            if(!isContained) //result didn't contain messages from m.src to m.dst
-                mergeMap.find(m.src)->second.insertMsg(m);
-        }
-    }
-
-    for(auto mSetPair : mergeMap)
-    {
-        for(auto m : mSetPair.second.mSet)
-            result.insertMsg(m);
-    }
-}
-
-void BellmanFord::MSGGenMerge(const Graph &g, const std::set<int> &activeVertice, MessageSet &mSet)
-{
-    //Old way to do this two step
-    MSGGen(g, activeVertice, mSet);
-    auto mSetBeforeMerged = mSet;
-    mSet.mSet.clear();
-    MSGMerge(g, mSet, mSetBeforeMerged);
-
-    //Generate merged msgs directly
-
-}
-
-void BellmanFord::MSGApply_array(int vCount, int numOfInitV, int *initVSet, bool *AVCheckSet, double *vValues, double *mValues)
-{
-    //Package to MSGApply form
-    bool *tAVSet = new bool [vCount];
-    for(int i = 0; i < vCount; i++) tAVSet[i] = false;
-    Graph tg = Graph(vCount, 0, numOfInitV, vValues, initVSet, nullptr, nullptr, nullptr, tAVSet);
-    MessageSet tm = MessageSet();
     for(int i = 0; i < vCount * numOfInitV; i++)
-        tm.insertMsg(Message(initVSet[i % numOfInitV], i / numOfInitV, mValues[i]));
-    auto activeVertice = std::set<int>();
-
-    MSGApply(tg, activeVertice, tm);
-
-    //Repackage back to MSGApply_array form
-    for(int i = 0; i < vCount; i++)
     {
-        AVCheckSet[i] = tg.vList.at(i).isActive;
-        for(int j = 0; j < numOfInitV; j++)
-            vValues[i * numOfInitV + j] = tg.vList.at(i).value.find(initVSet[j])->second;
+        if(vValues[i] > mValues[i])
+        {
+            vValues[i] = mValues[i];
+            AVCheckSet[i / numOfInitV] = true;
+        }
     }
 }
 
-void BellmanFord::MSGGen_array(int vCount, int eCount, int numOfInitV, int *initVSet, double *vValues, int *eSrcSet, int *eDstSet, double *eWeightSet, int &numOfMSG, int *mInitVSet, int *mDstSet, double *mValueSet, bool *AVCheckSet)
+/*
+void BellmanFord::MSGGen_array(int vCount, int eCount, int numOfInitV, const int *initVSet, double *vValues, int *eSrcSet, int *eDstSet, double *eWeightSet, int &numOfMSG, int *mInitVSet, int *mDstSet, double *mValueSet, bool *AVCheckSet)
 {
-    //Package to MSGGen form
-    Graph tg = Graph(vCount, eCount, numOfInitV, vValues, initVSet, eSrcSet, eDstSet, eWeightSet, AVCheckSet);
-    auto activeVertice = std::set<int>();
-    for(int i = 0; i < vCount; i++)
+    numOfMSG = 0;
+
+    for(int i = 0; i < eCount; i++)
     {
-        if (AVCheckSet[i])
-            activeVertice.insert(i);
+        if(AVCheckSet[eSrcSet[i]])
+        {
+            for(int j = 0; j < numOfInitV; j++)
+            {
+                mInitVSet[numOfMSG] = initVSet[j];
+                mDstSet[numOfMSG] = eDstSet[j];
+                mValueSet[numOfMSG] = vValues[eSrcSet[i] * numOfInitV + j] + eWeightSet[j];
+                numOfMSG++;
+            }
+        }
     }
-    auto mSet = MessageSet();
+}
+*/
 
-    MSGGen(tg, activeVertice, mSet);
+/*
+void BellmanFord::MSGMerge_array(int vCount, int numOfInitV, const int *initVSet, int numOfMSG, int *mInitVSet, int *mDstSet, double *mValueSet, double *mValues, int *initVIndexSet)
+{
+    for(int i = 0; i < vCount * numOfInitV; i++) mValues[i] = INVALID_MASSAGE;
 
-    //Repackage back to MSGGen_array form
-    numOfMSG = mSet.mSet.size();
     for(int i = 0; i < numOfMSG; i++)
     {
-        mInitVSet[i] = mSet.mSet.at(i).src;
-        mDstSet[i] = mSet.mSet.at(i).dst;
-        mValueSet[i] = mSet.mSet.at(i).value;
+        if(mValues[mDstSet[i] * numOfInitV + initVIndexSet[mInitVSet[i]]] > mValueSet[i])
+            mValues[mDstSet[i] * numOfInitV + initVIndexSet[mInitVSet[i]]] = mValueSet[i];
     }
 }
+*/
 
-void BellmanFord::MSGMerge_array(int vCount, int numOfInitV, int *initVSet, int numOfMSG, int *mInitVSet, int *mDstSet, double *mValueSet, double *mValues)
+void BellmanFord::MSGGenMerge_array(int vCount, int eCount, int numOfInitV, int *initVSet, double *vValues, Edge *eSet, double *mValues, bool *AVCheckSet)
 {
-    //Package to MSGMerge form
-    Graph tg = Graph(vCount);
-    MessageSet src = MessageSet(), ret = MessageSet();
-    for(int i = 0; i < numOfMSG; i++) src.insertMsg(Message(mInitVSet[i], mDstSet[i], mValueSet[i]));
+    for(int i = 0; i < vCount * numOfInitV; i++) mValues[i] = INVALID_MASSAGE;
 
-    MSGMerge(tg, ret, src);
-
-    //Repackage back to MSGMerge_array form
-    for(int i = 0; i < ret.mSet.size() && i < numOfInitV * vCount; i++)
+    for(int i = 0; i < eCount; i++)
     {
-        int initVIndex = -1;
-        for(int j = 0; j < numOfInitV; j++)
+        if(AVCheckSet[eSet[i].src])
         {
-            if(initVSet[j] == ret.mSet.at(i).src)
+            for(int j = 0; j < numOfInitV; j++)
             {
-                initVIndex = j;
-                break;
+                if(mValues[eSet[i].dst * numOfInitV + j] > vValues[eSet[i].src * numOfInitV + j] + eSet[i].weight)
+                    mValues[eSet[i].dst * numOfInitV + j] = vValues[eSet[i].src * numOfInitV + j] + eSet[i].weight;
             }
         }
-
-        if(initVIndex != -1)
-            mValues[ret.mSet.at(i).dst * numOfInitV + initVIndex] = ret.mSet.at(i).value;
-    }
-}
-
-void BellmanFord::MSGGenMerge_array(int vCount, int eCount, int numOfInitV, int *initVSet, double *vValues, int *eSrcSet, int *eDstSet, double *eWeightSet, double *mValues, bool *AVCheckSet)
-{
-    //Package to MSGGenMerge form
-    Graph tg = Graph(vCount, eCount, numOfInitV, vValues, initVSet, eSrcSet, eDstSet, eWeightSet, AVCheckSet);
-    auto activeVertice = std::set<int>();
-    for(int i = 0; i < vCount; i++)
-    {
-        if (AVCheckSet[i])
-            activeVertice.insert(i);
-    }
-    auto mSet = MessageSet();
-
-    MSGGenMerge(tg, activeVertice, mSet);
-
-    //Repackage back to MSGGenMerge_array form
-    //Repackage back to MSGMerge_array form
-    for(int i = 0; i < mSet.mSet.size() && i < numOfInitV * vCount; i++)
-    {
-        int initVIndex = -1;
-        for(int j = 0; j < numOfInitV; j++)
-        {
-            if(initVSet[j] == mSet.mSet.at(i).src)
-            {
-                initVIndex = j;
-                break;
-            }
-        }
-
-        if(initVIndex != -1)
-            mValues[mSet.mSet.at(i).dst * numOfInitV + initVIndex] = mSet.mSet.at(i).value;
     }
 }
 
 void BellmanFord::Init(Graph &g, std::set<int> &activeVertice, const std::vector<int> &initVList)
 {
-    this->numOfInitV = initVList.size();
+    int numOfinitV_init = initVList.size();
 
+    //v Init
+    for(int i = 0; i < numOfinitV_init; i++)
+        g.vList.at(initVList.at(i)).initVIndex = i;
     for(auto &v : g.vList)
     {
-        for(auto iV : initVList)
+        if(v.initVIndex != INVALID_INITV_INDEX)
         {
-            if (v.vertexID == iV)
-            {
-                v.value.insert(std::pair<int, double>(iV, 0));
-                activeVertice.insert(v.vertexID);
-                v.isActive = true;
-            }
-            else
-                v.value.insert(std::pair<int, double>(iV, INT32_MAX >> 1));
+            activeVertice.insert(v.vertexID);
+            v.isActive = true;
         }
+        else v.isActive = false;
     }
+
+    //vValues init
+    g.verticeValue.reserve(g.vCount * numOfinitV_init);
+    g.verticeValue.assign(g.vCount * numOfinitV_init, INT32_MAX >> 1);
+    for(int initID : initVList)
+        g.verticeValue.at(initID * numOfinitV_init + g.vList.at(initID).initVIndex) = 0;
 }
 
 void BellmanFord::Deploy(int vCount, int numOfInitV)
@@ -247,25 +210,25 @@ void BellmanFord::MergeGraph(Graph &g, const std::vector<Graph> &subGSet,
         resG.eList.clear();
         resG.eCount = 0;
 
-        for(auto subG : subGSet)
+        for(const auto &subG : subGSet) resG.eCount += subG.eCount;
+        resG.eList.reserve(resG.eCount);
+
+        //Merge subGraphs
+        for(const auto &subG : subGSet)
         {
             //Merge vertices info
-            for(auto v : subG.vList)
-            {
-                if(v.isActive)
-                    resG.vList.at(v.vertexID).isActive = true;
+            for(auto v : subG.vList) resG.vList.at(v.vertexID).isActive |= v.isActive;
 
-                for(auto vV : v.value)
-                {
-                    if(resG.vList.at(v.vertexID).value.find(vV.first)->second > vV.second)
-                        resG.vList.at(v.vertexID).value.find(vV.first)->second = vV.second;
-                }
+            //Merge vValues
+            for(int i = 0; i < subG.verticeValue.size(); i++)
+            {
+                if(resG.verticeValue.at(i) > subG.verticeValue.at(i))
+                    resG.verticeValue.at(i) = subG.verticeValue.at(i);
             }
 
             //Merge Edge
             //There should be not any relevant edges since subgraphs are divided by dividing edge set
-            for(auto e : subG.eList)
-                resG.insertEdge(e.src, e.dst, e.weight);
+            resG.eList.insert(resG.eList.end(), subG.eList.begin(), subG.eList.end());
         }
     }
 
@@ -301,43 +264,13 @@ void BellmanFord::MergeMergedMSG(MessageSet &mergedMSG, const std::vector<Messag
         mergedMSG.insertMsg(Message(m.first.first, m.first.second, m.second));
 }
 
-void BellmanFord::ApplyStep(Graph &g, std::set<int> &activeVertice)
+void BellmanFord::ApplyStep(Graph &g, const std::vector<int> &initVSet, std::set<int> &activeVertice)
 {
     MessageSet mGenSet = MessageSet();
     MessageSet mMergedSet = MessageSet();
 
-    //mGenSet.mSet.clear();
-    //MSGGen(g, activeVertice, mGenSet);
-
-    //Test
-    //std::cout << "Gen:" << clock() << std::endl;
-    //Test end
-
-    //Test
-    /*
-    for(int j = 0; j < mGenSet.mSet.size(); j++)
-        mGenSet.mSet.at(j).print();
-    */
-    //Test end
-
-    //mMergedSet.mSet.clear();
-    //MSGMerge(g, mMergedSet, mGenSet);
-
-    //Test
-    //std::cout << "MMerge:" << clock() << std::endl;
-    //Test end
-
-    //Test
-    /*
-    for(int j = 0; j < mMergedSet.mSet.size(); j++)
-        mMergedSet.mSet.at(j).print();
-    std::cout << std::endl;
-    std::cout << "######################################" << std::endl;
-    */
-    //Test end
-
     mMergedSet.mSet.clear();
-    MSGGenMerge(g, activeVertice, mMergedSet);
+    MSGGenMerge(g, initVSet, activeVertice, mMergedSet);
 
     //Test
     std::cout << "MGenMerge:" << clock() << std::endl;
@@ -353,7 +286,7 @@ void BellmanFord::ApplyStep(Graph &g, std::set<int> &activeVertice)
     //Test end
 
     activeVertice.clear();
-    MSGApply(g, activeVertice, mMergedSet);
+    MSGApply(g, initVSet, activeVertice, mMergedSet);
 
     //Test
     std::cout << "Apply:" << clock() << std::endl;
@@ -384,7 +317,7 @@ void BellmanFord::Apply(Graph &g, const std::vector<int> &initVList)
     Deploy(g.vCount, initVList.size());
 
     while(activeVertice.size() > 0)
-        ApplyStep(g, activeVertice);
+        ApplyStep(g, initVList, activeVertice);
 
     Free();
 }
@@ -409,6 +342,13 @@ void BellmanFord::ApplyD(Graph &g, const std::vector<int> &initVList, int partit
 
     while(activeVertice.size() > 0)
     {
+        /*
+        //Test
+        for(auto i : activeVertice) std::cout << i << " ";
+        std::cout << std::endl;
+        //Test end
+        */
+
         //Test
         std::cout << ++iterCount << ":" << clock() << std::endl;
         //Test end
@@ -420,6 +360,10 @@ void BellmanFord::ApplyD(Graph &g, const std::vector<int> &initVList, int partit
             AVSet.at(i).clear();
             AVSet.at(i) = activeVertice;
         }
+
+        //Test
+        std::cout << "GDivide:" << clock() << std::endl;
+        //Test end
 
         //Test
         /*
@@ -438,7 +382,7 @@ void BellmanFord::ApplyD(Graph &g, const std::vector<int> &initVList, int partit
         //Test end
 
         for(int i = 0; i < partitionCount; i++)
-            ApplyStep(subGraphSet.at(i), AVSet.at(i));
+            ApplyStep(subGraphSet.at(i), initVList, AVSet.at(i));
 
 
         /*
@@ -455,8 +399,6 @@ void BellmanFord::ApplyD(Graph &g, const std::vector<int> &initVList, int partit
             mMergedSetSet.at(i).mSet.clear();
             MSGMerge(g, mMergedSetSet.at(i), mGenSetSet.at(i));
         }
-
-
 
         */
 

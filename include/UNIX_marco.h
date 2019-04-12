@@ -13,9 +13,11 @@
 #define VVALUES_SHM 1
 #define AVCHECKSET_SHM 2
 #define INITVSET_SHM 3
+#define INITVINDEXSET_SHM 4
 #define ESRCSET_SHM 11
 #define EDSTSET_SHM 12
 #define EWEIGHTSET_SHM 13
+#define ESET_SHM 10
 
 #define SRV_MSG_TYPE 1
 #define CLI_MSG_TYPE 2

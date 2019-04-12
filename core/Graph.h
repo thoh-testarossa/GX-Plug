@@ -9,14 +9,16 @@
 
 #include "../include/deps.h"
 
+#define INVALID_INITV_INDEX -1
+
 class Vertex
 {
 public:
-    Vertex(int vertexID, bool activeness, std::map<int, double> value);
+    Vertex(int vertexID, bool activeness, int initVIndex);
 
     int vertexID;
     bool isActive;
-    std::map<int, double> value;
+    int initVIndex;
 };
 
 class Edge
@@ -33,7 +35,7 @@ class Graph
 {
 public:
     Graph(int vCount);
-    Graph(int vCount, std::map<int, std::map<int, double>> &vertex, std::vector<Edge> &edge, std::set<int>& activeID, std::set<int> &markID);
+    Graph(const std::vector<Vertex> &vSet, const std::vector<Edge> &eSet, const std::vector<double> &verticeValue);
     Graph(int vCount, int eCount, int numOfInitV, double *vValues, int *initVSet, int *eSrcSet, int *eDstSet, double *eWeightSet, bool *AVCheckSet);
 
     void insertEdge(int src, int dst, double weight);
@@ -43,6 +45,9 @@ public:
 
     std::vector<Vertex> vList;
     std::vector<Edge> eList;
+
+    std::vector<double> verticeValue;
+    double *verticeValue_IPCArray_ptr;
 };
 
 #endif //GRAPH_ALGO_GRAPH_H

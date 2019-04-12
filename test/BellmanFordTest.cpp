@@ -29,19 +29,18 @@ int main()
     Gin.close();
 
     std::vector<int> initVList = std::vector<int>();
-    initVList.push_back(0);
     initVList.push_back(1);
     initVList.push_back(2);
+    initVList.push_back(4);
 
     BellmanFord executor = BellmanFord();
     //executor.Apply(test, initVList);
     executor.ApplyD(test, initVList, 4);
 
-    for(auto v : test.vList)
+    for(int i = 0; i < test.vCount * initVList.size(); i++)
     {
-        std::cout << v.vertexID << ": ";
-        for(auto iter = v.value.begin(); iter != v.value.end(); iter++)
-            std::cout << "(" << iter->first << " -> " << iter->second << ")";
-        std::cout << std::endl;
+        if(i % initVList.size() == 0) std::cout << i / initVList.size() << ": ";
+        std::cout << "(" << initVList.at(i % initVList.size()) << " -> " << test.verticeValue.at(i) << ")";
+        if(i % initVList.size() == initVList.size() - 1) std::cout << std::endl;
     }
 }
