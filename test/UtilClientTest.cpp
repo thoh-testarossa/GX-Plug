@@ -15,10 +15,10 @@
 #include <future>
 #include <cstring>
 
-void testFut(UtilClient *uc, double *vValues, bool *AVCheckSet)
+void testFut(UtilClient *uc, double *vValues, Vertex *vSet)
 {
     uc->connect();
-    uc->update(vValues, AVCheckSet);
+    uc->update(vValues, vSet);
     uc->request();
     uc->disconnect();
 }
@@ -44,10 +44,10 @@ int main(int argc, char *argv[])
     }
 
     //Init the Graph
-    bool *AVCheckSet = new bool [vCount];
     int *initVSet = new int [numOfInitV];
     double *vValues = new double [vCount * numOfInitV];
 
+    std::vector<Vertex> vSet = std::vector<Vertex>();
     std::vector<Edge> eSet = std::vector<Edge>();
 
     std::ifstream Gin("testGraph.txt");
@@ -72,24 +72,26 @@ int main(int argc, char *argv[])
     }
 
     for(int i = 0; i < vCount * numOfInitV; i++) vValues[i] = INT32_MAX  >> 1;
+    //Easy init
+    for(int i = 0; i < numOfInitV; i++) initVSet[i] = 1 << i;
+    for(int i = 0; i < numOfInitV; i++) vValues[(1 << i) * numOfInitV + i] = 0;
+
+    for(int i = 0; i < vCount; i++) vSet.emplace_back(i, false, -1);
+    for(int i = 0; i < numOfInitV; i++)
+    {
+        vSet.at(initVSet[i]).initVIndex = i;
+        vSet.at(initVSet[i]).isActive = true;
+    }
+
     for(int i = 0; i < eCount; i++)
     {
         int src, dst;
         double weight;
         Gin >> src >> dst >> weight;
-        eSet.emplace_back(Edge(src, dst, weight));
+        eSet.emplace_back(src, dst, weight);
     }
-    for(int i = 0; i < vCount; i++) AVCheckSet[i] = false;
-    //Easy init
-    for(int i = 0; i < numOfInitV; i++) initVSet[i] = 1 << i;
-    for(int i = 0; i < numOfInitV; i++) AVCheckSet[1 << i] = true;
-    for(int i = 0; i < numOfInitV; i++) vValues[(1 << i) * numOfInitV + i] = 0;
 
     Gin.close();
-
-    int *initVIndexSet = new int [vCount];
-    for(int i = 0; i < vCount; i++) initVIndexSet[i] = -1;
-    for(int i = 0; i < numOfInitV; i++) initVIndexSet[initVSet[i]] = i;
 
     //Client Init Data Transfer
     auto clientVec = std::vector<UtilClient>();
@@ -105,7 +107,7 @@ int main(int argc, char *argv[])
             return 2;
         }
 
-        chk = clientVec.at(i).transfer(vValues, &eSet[(i * eCount) / nodeCount], AVCheckSet, initVSet, initVIndexSet);
+        chk = clientVec.at(i).transfer(vValues, &vSet[0], &eSet[(i * eCount) / nodeCount], initVSet);
 
         if(chk == -1)
         {
@@ -117,7 +119,7 @@ int main(int argc, char *argv[])
     }
 
     bool isActive = false;
-    for(int i = 0; i < vCount; i++) isActive |= AVCheckSet[i];
+    for(int i = 0; i < vCount; i++) isActive |= vSet[i].isActive;
 
     bool *ret_AVCheckSet = new bool [vCount];
     int iterCount = 0;
@@ -137,7 +139,7 @@ int main(int argc, char *argv[])
         auto futList = new std::future<void> [nodeCount];
         for(int i = 0; i < nodeCount; i++)
         {
-            std::future<void> tmpFut = std::async(testFut, &clientVec.at(i), vValues, AVCheckSet);
+            std::future<void> tmpFut = std::async(testFut, &clientVec.at(i), vValues, &vSet[0]);
             futList[i] = std::move(tmpFut);
         }
 
@@ -157,15 +159,15 @@ int main(int argc, char *argv[])
             }
 
             for(int j = 0; j < vCount; j++)
-                ret_AVCheckSet[j] |= clientVec.at(i).AVCheckSet[j];
+                ret_AVCheckSet[j] |= clientVec.at(i).vSet[j].isActive;
 
             clientVec.at(i).disconnect();
         }
 
-        memcpy(AVCheckSet, ret_AVCheckSet, vCount);
+        for(int i = 0; i < vCount; i++) vSet[i].isActive = ret_AVCheckSet[i];
 
         isActive = false;
-        for(int i = 0; i < vCount; i++) isActive |= AVCheckSet[i];
+        for(int i = 0; i < vCount; i++) isActive |= vSet[i].isActive;
     }
 
     for(int i = 0; i < nodeCount; i++) clientVec.at(i).shutdown();

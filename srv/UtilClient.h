@@ -19,8 +19,8 @@ public:
     ~UtilClient() = default;
 
     int connect();
-    int transfer(double *vValues, Edge *eSet, bool *AVCheckSet, int *initVSet, int *initVIndexSet);
-    int update(double *vValues, bool *AVCheckSet);
+    int transfer(double *vValues, Vertex *vSet, Edge *eSet, int *initVSet);
+    int update(double *vValues, Vertex *vSet);
     void request();
     void disconnect();
     void shutdown();
@@ -33,16 +33,14 @@ public:
 
     int *initVSet;
     double *vValues;
+    Vertex *vSet;
     Edge *eSet;
-    bool *AVCheckSet;
-    int *initVIndexSet;
 
 private:
     UNIX_shm initVSet_shm;
     UNIX_shm vValues_shm;
+    UNIX_shm vSet_shm;
     UNIX_shm eSet_shm;
-    UNIX_shm AVCheckSet_shm;
-    UNIX_shm initVIndexSet_shm;
 
     UNIX_msg server_msq;
     UNIX_msg client_msq;

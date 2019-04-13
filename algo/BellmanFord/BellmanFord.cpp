@@ -28,47 +28,6 @@ void BellmanFord::MSGApply(Graph &g, const std::vector<int> &initVSet, std::set<
     }
 }
 
-/*
-void BellmanFord::MSGGen(const Graph &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet &mSet)
-{
-    for(auto e : g.eList)
-    {
-        if(g.vList.at(e.src).isActive)
-        {
-            int vID = e.src;
-            if(g.vList.at(vID).vertexID == vID) // It should be of equal value
-            {
-                for(int i = vID * this->numOfInitV; i < (vID + 1) * this->numOfInitV; i++)
-                    mSet.insertMsg(Message(initVSet.at(i % this->numOfInitV), e.dst, g.verticeValue.at(i) + e.weight));
-            }
-            else;
-        }
-    }
-}
-*/
-
-/*
-void BellmanFord::MSGMerge(const Graph &g, const std::vector<int> &initVSet, MessageSet &result, const MessageSet &source)
-{
-    result.mSet.clear();
-    result.mSet.reserve(g.vCount * this->numOfInitV);
-    for(int i = 0; i < g.vCount * this->numOfInitV; i++)
-        result.insertMsg(Message(initVSet.at(i % this->numOfInitV), i / this->numOfInitV, INVALID_MASSAGE));
-
-    for(int i = 0; i < source.mSet.size(); i++)
-    {
-        int _src = source.mSet.at(i).src, _dst = source.mSet.at(i).dst;
-        double _value = source.mSet.at(i).value;
-        auto &m = result.mSet.at(_dst * this->numOfInitV + g.vList.at(_src).initVIndex);
-        if(m.src == _src && m.dst == _dst) //It should be equal
-        {
-            if(m.value > _value)
-                m.value = _value;
-        }
-    }
-}
-*/
-
 void BellmanFord::MSGGenMerge(const Graph &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet &mSet)
 {
     //Generate merged msgs directly
@@ -96,61 +55,27 @@ void BellmanFord::MSGGenMerge(const Graph &g, const std::vector<int> &initVSet, 
     }
 }
 
-void BellmanFord::MSGApply_array(int vCount, int numOfInitV, const int *initVSet, bool *AVCheckSet, double *vValues, double *mValues, int *initVIndexSet)
+void BellmanFord::MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, const int *initVSet, double *vValues, double *mValues)
 {
-    for(int i = 0; i < vCount; i++) AVCheckSet[i] = false;
+    for(int i = 0; i < vCount; i++) vSet[i].isActive = false;
 
     for(int i = 0; i < vCount * numOfInitV; i++)
     {
         if(vValues[i] > mValues[i])
         {
             vValues[i] = mValues[i];
-            AVCheckSet[i / numOfInitV] = true;
+            vSet[i / numOfInitV].isActive = true;
         }
     }
 }
 
-/*
-void BellmanFord::MSGGen_array(int vCount, int eCount, int numOfInitV, const int *initVSet, double *vValues, int *eSrcSet, int *eDstSet, double *eWeightSet, int &numOfMSG, int *mInitVSet, int *mDstSet, double *mValueSet, bool *AVCheckSet)
-{
-    numOfMSG = 0;
-
-    for(int i = 0; i < eCount; i++)
-    {
-        if(AVCheckSet[eSrcSet[i]])
-        {
-            for(int j = 0; j < numOfInitV; j++)
-            {
-                mInitVSet[numOfMSG] = initVSet[j];
-                mDstSet[numOfMSG] = eDstSet[j];
-                mValueSet[numOfMSG] = vValues[eSrcSet[i] * numOfInitV + j] + eWeightSet[j];
-                numOfMSG++;
-            }
-        }
-    }
-}
-*/
-
-/*
-void BellmanFord::MSGMerge_array(int vCount, int numOfInitV, const int *initVSet, int numOfMSG, int *mInitVSet, int *mDstSet, double *mValueSet, double *mValues, int *initVIndexSet)
-{
-    for(int i = 0; i < vCount * numOfInitV; i++) mValues[i] = INVALID_MASSAGE;
-
-    for(int i = 0; i < numOfMSG; i++)
-    {
-        if(mValues[mDstSet[i] * numOfInitV + initVIndexSet[mInitVSet[i]]] > mValueSet[i])
-            mValues[mDstSet[i] * numOfInitV + initVIndexSet[mInitVSet[i]]] = mValueSet[i];
-    }
-}
-*/
-
-void BellmanFord::MSGGenMerge_array(int vCount, int eCount, int numOfInitV, int *initVSet, double *vValues, Edge *eSet, double *mValues, bool *AVCheckSet)
+void BellmanFord::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const double *vValues, double *mValues)
 {
     for(int i = 0; i < vCount * numOfInitV; i++) mValues[i] = INVALID_MASSAGE;
 
     for(int i = 0; i < eCount; i++)
     {
-        if(AVCheckSet[eSet[i].src])
+        if(vSet[eSet[i].src].isActive)
         {
             for(int j = 0; j < numOfInitV; j++)
             {
@@ -217,7 +142,7 @@ void BellmanFord::MergeGraph(Graph &g, const std::vector<Graph> &subGSet,
         for(const auto &subG : subGSet)
         {
             //Merge vertices info
-            for(auto v : subG.vList) resG.vList.at(v.vertexID).isActive |= v.isActive;
+            for(const auto &v : subG.vList) resG.vList.at(v.vertexID).isActive |= v.isActive;
 
             //Merge vValues
             for(int i = 0; i < subG.verticeValue.size(); i++)
@@ -276,32 +201,11 @@ void BellmanFord::ApplyStep(Graph &g, const std::vector<int> &initVSet, std::set
     std::cout << "MGenMerge:" << clock() << std::endl;
     //Test end
 
-    //Test
-    /*
-    for(int j = 0; j < mMergedSet.mSet.size(); j++)
-        mMergedSet.mSet.at(j).print();
-    std::cout << std::endl;
-    std::cout << "######################################" << std::endl;
-    */
-    //Test end
-
     activeVertice.clear();
     MSGApply(g, initVSet, activeVertice, mMergedSet);
 
     //Test
     std::cout << "Apply:" << clock() << std::endl;
-    //Test end
-
-    //Test
-    /*
-    for(int j = 0; j < g.vCount; j++)
-    {
-        for(auto iter = g.vList.at(j).value.begin(); iter != g.vList.at(j).value.end(); iter++)
-            std::cout << iter->second << " ";
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
-    */
     //Test end
 }
 
@@ -342,13 +246,6 @@ void BellmanFord::ApplyD(Graph &g, const std::vector<int> &initVList, int partit
 
     while(activeVertice.size() > 0)
     {
-        /*
-        //Test
-        for(auto i : activeVertice) std::cout << i << " ";
-        std::cout << std::endl;
-        //Test end
-        */
-
         //Test
         std::cout << ++iterCount << ":" << clock() << std::endl;
         //Test end
@@ -365,82 +262,13 @@ void BellmanFord::ApplyD(Graph &g, const std::vector<int> &initVList, int partit
         std::cout << "GDivide:" << clock() << std::endl;
         //Test end
 
-        //Test
-        /*
-        for(int i = 0; i < partitionCount; i++)
-        {
-            for(int j = 0; j < subGraphSet.at(i).vCount; j++)
-            {
-                for(auto iter = subGraphSet.at(i).vList.at(j).value.begin(); iter != subGraphSet.at(i).vList.at(j).value.end(); iter++)
-                    std::cout << iter->second << " ";
-                std::cout << std::endl;
-            }
-            std::cout << std::endl;
-        }
-        std::cout << "######################################" << std::endl;
-        */
-        //Test end
-
         for(int i = 0; i < partitionCount; i++)
             ApplyStep(subGraphSet.at(i), initVList, AVSet.at(i));
-
-
-        /*
-        for(int i = 0; i < partitionCount; i++)
-        {
-            mGenSetSet.at(i).mSet.clear();
-            MSGGen(subGraphSet.at(i), activeVertice, mGenSetSet.at(i));
-        }
-
-
-
-        for(int i = 0; i < partitionCount; i++)
-        {
-            mMergedSetSet.at(i).mSet.clear();
-            MSGMerge(g, mMergedSetSet.at(i), mGenSetSet.at(i));
-        }
-
-        */
-
-        /*
-        auto mMergedSet = MessageSet();
-        MergeMergedMSG(mMergedSet, mMergedSetSet);
-        for(int i = 0; i < partitionCount; i++) mMergedSetSet.at(i).mSet.clear();
-        for(int i = 0; i < partitionCount; i++)
-        {
-            for(int k = i * mMergedSet.mSet.size() / partitionCount; k < (i + 1) * mMergedSet.mSet.size() / partitionCount; k++)
-                mMergedSetSet.at(i).insertMsg(mMergedSet.mSet.at(k));
-        }
-        */
-
-        /*
-        for(int i = 0; i < partitionCount; i++)
-        {
-            AVSet.at(i).clear();
-            MSGApply(subGraphSet.at(i), AVSet.at(i), mMergedSetSet.at(i));
-        }
-
-
-        */
 
         activeVertice.clear();
         MergeGraph(g, subGraphSet, activeVertice, AVSet, initVList);
         //Test
         std::cout << "GMerge:" << clock() << std::endl;
-        //Test end
-
-        //Test
-        /*
-        for(int j = 0; j < g.vCount; j++)
-        {
-            for(auto iter = g.vList.at(j).value.begin(); iter != g.vList.at(j).value.end(); iter++)
-                std::cout << iter->second << " ";
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
-
-        std::cout << "######################################" << std::endl;
-        */
         //Test end
     }
 
