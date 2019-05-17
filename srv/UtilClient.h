@@ -19,9 +19,11 @@ public:
     ~UtilClient() = default;
 
     int connect();
-    int transfer(double *vValues, Vertex *vSet, Edge *eSet, int *initVSet);
+    int getIfFiltered();
+    int transfer(double *vValues, Vertex *vSet, Edge *eSet, int *initVSet, int *filteredV);
     int update(double *vValues, Vertex *vSet);
     void request();
+    void setIfFiltered(bool status);
     void disconnect();
     void shutdown();
 
@@ -32,12 +34,16 @@ public:
     int numOfInitV;
 
     int *initVSet;
+    int *filteredV;
+    int isFilteredV;
     double *vValues;
     Vertex *vSet;
     Edge *eSet;
 
 private:
     UNIX_shm initVSet_shm;
+    UNIX_shm filteredV_shm;
+    UNIX_shm isFilteredV_shm;
     UNIX_shm vValues_shm;
     UNIX_shm vSet_shm;
     UNIX_shm eSet_shm;
