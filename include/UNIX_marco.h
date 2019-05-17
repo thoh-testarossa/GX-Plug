@@ -12,6 +12,8 @@
 
 #define VVALUES_SHM 1
 #define INITVSET_SHM 3
+#define FILTEREDV_SHM 6
+#define ISFILTEREDV_SHM 7
 #define VSET_SHM 9
 #define ESET_SHM 10
 
