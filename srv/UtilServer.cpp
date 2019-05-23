@@ -30,6 +30,8 @@ UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
     this->vSet = nullptr;
     this->eSet = nullptr;
     this->initVSet = nullptr;
+    this->filteredV = nullptr;
+    this->filteredVCount = nullptr;
 
     if(this->isLegal)
     {
@@ -42,6 +44,8 @@ UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
         this->vSet_shm = UNIX_shm();
         this->eSet_shm = UNIX_shm();
         this->initVSet_shm = UNIX_shm();
+        this->filteredV_shm = UNIX_shm();
+        this->filteredVCount_shm = UNIX_shm();
 
         this->server_msq = UNIX_msg();
         this->client_msq = UNIX_msg();
@@ -62,6 +66,14 @@ UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
             chk = this->initVSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (INITVSET_SHM << SHM_OFFSET)),
                 this->numOfInitV * sizeof(int),
                 0666);
+        if(chk != -1)
+            chk = this->filteredV_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (FILTEREDV_SHM << SHM_OFFSET)),
+                this->vCount * sizeof(long),
+                0666);
+        if(chk != -1)
+            chk = this->filteredVCount_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (FILTEREDVCOUNT_SHM << SHM_OFFSET)),
+                sizeof(int),
+                0666);
 
         if(chk != -1)
             chk = this->server_msq.create(((this->nodeNo << NODE_NUM_OFFSET) | (SRV_MSG_TYPE << MSG_TYPE_OFFSET)),
@@ -76,11 +88,15 @@ UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
             this->vSet_shm.attach(0666);
             this->eSet_shm.attach(0666);
             this->initVSet_shm.attach(0666);
+            this->filteredV_shm.attach(0666);
+            this->filteredVCount_shm.attach(0666);
 
             this->vValues = (double *) this->vValues_shm.shmaddr;
             this->vSet = (Vertex *) this->vSet_shm.shmaddr;
             this->eSet = (Edge *) this->eSet_shm.shmaddr;
             this->initVSet = (int *) this->initVSet_shm.shmaddr;
+            this->filteredV = (long *) this->filteredV_shm.shmaddr;
+            this->filteredVCount = (int *) this->filteredVCount_shm.shmaddr;
 
             //Test
             std::cout << "Init succeeded." << std::endl;
@@ -106,11 +122,15 @@ UtilServer<T>::~UtilServer()
     this->vSet = nullptr;
     this->eSet = nullptr;
     this->initVSet = nullptr;
+    this->filteredV = nullptr;
+    this->filteredVCount = nullptr;
 
     this->vValues_shm.control(IPC_RMID);
     this->vSet_shm.control(IPC_RMID);
     this->eSet_shm.control(IPC_RMID);
     this->initVSet_shm.control(IPC_RMID);
+    this->filteredV_shm.control(IPC_RMID);
+    this->filteredVCount_shm.control(IPC_RMID);
 
     this->server_msq.control(IPC_RMID);
     this->client_msq.control(IPC_RMID);
