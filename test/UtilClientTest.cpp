@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     //Init the Graph
     int *initVSet = new int [numOfInitV];
     double *vValues = new double [vCount * numOfInitV];
-    int *filteredV = new int [vCount];
+    long *filteredV = new long [vCount];
 
     std::vector<Vertex> vSet = std::vector<Vertex>();
     std::vector<Edge> eSet = std::vector<Edge>();
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
             return 2;
         }
 
-        chk = clientVec.at(i).transfer(vValues, &vSet[0], &eSet[(i * eCount) / nodeCount], initVSet, filteredV);
+        chk = clientVec.at(i).transfer(vValues, &vSet[0], &eSet[(i * eCount) / nodeCount], initVSet, filteredV, vCount);
 
         if(chk == -1)
         {
