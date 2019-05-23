@@ -30,8 +30,8 @@ public:
     int numOfInitV;
 
     int *initVSet;
-    int *filteredV;
-    int isFilteredV;
+    long *filteredV;
+    int *filteredVCount;
     double *vValues;
     Vertex *vSet;
     Edge *eSet;
@@ -39,7 +39,7 @@ public:
 private:
     UNIX_shm initVSet_shm;
     UNIX_shm filteredV_shm;
-    UNIX_shm isFilteredV_shm;
+    UNIX_shm filteredVCount_shm;
     UNIX_shm vValues_shm;
     UNIX_shm vSet_shm;
     UNIX_shm eSet_shm;
