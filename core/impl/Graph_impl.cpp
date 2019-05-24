@@ -6,3 +6,4 @@
 
 template class Graph<double>;
 template class Graph<int>;
+template class Graph<std::pair<int, int>>;

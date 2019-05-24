@@ -7,6 +7,14 @@
 #include <iostream>
 
 template <typename VertexValueType>
+Message<VertexValueType>::Message(const VertexValueType value)
+{
+   this->src = 0;
+   this->dst = 0;
+   this->value = value;
+}
+
+template <typename VertexValueType>
 Message<VertexValueType>::Message(int src, int dst, const VertexValueType& value)
 {
     this->src = src;
@@ -22,6 +30,12 @@ MessageSet<VertexValueType>::MessageSet()
 
 template <typename VertexValueType>
 void MessageSet<VertexValueType>::insertMsg(const Message<VertexValueType>& m)
+{
+    this->mSet.push_back(m);
+}
+
+template <typename VertexValueType>
+void MessageSet<VertexValueType>::insertMsgCopy(const Message<VertexValueType> m)
 {
     this->mSet.push_back(m);
 }

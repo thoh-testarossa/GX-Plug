@@ -141,7 +141,8 @@ void UtilServer<GraphUtilType, VertexValueType>::run()
 {
     if(!this->isLegal) return;
 
-    VertexValueType *mValues = new VertexValueType [this->vCount * this->numOfInitV];
+    VertexValueType *mValues = nullptr;
+    
     char msgp[256];
     std::string cmd = std::string("");
 
@@ -156,15 +157,14 @@ void UtilServer<GraphUtilType, VertexValueType>::run()
         cmd = msgp;
         if(std::string("execute") == cmd)
         {
-            for (int i = 0; i < this->vCount * this->numOfInitV; i++) mValues[i] = INVALID_MASSAGE;
+            this->executor.MSGInit_array(mValues, this->eCount, this->vCount, this->numOfInitV);
 
             this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, mValues);
 
-            this->executor.MSGApply_array(this->vCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, mValues);
+            this->executor.MSGApply_array(this->vCount, this->eCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, mValues);
 
             this->server_msq.send("finished", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
         }
-
         else if(std::string("exit") == cmd)
             break;
         else break;
