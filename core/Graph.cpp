@@ -23,6 +23,7 @@ Graph::Graph(int vCount)
     this->vList = std::vector<Vertex>();
     this->eList = std::vector<Edge>();
     this->verticeValue = std::vector<double>();
+    this->verticeLabelCnt = std::vector<int>();
 
     this->vCount = vCount;
     for(int i = 0; i < vCount; i++) this->vList.emplace_back(Vertex(i, false, INVALID_INITV_INDEX));
@@ -38,6 +39,7 @@ Graph::Graph(const std::vector<Vertex> &vSet, const std::vector<Edge> &eSet, con
     this->vList = vSet;
     this->eList = eSet;
     this->verticeValue = verticeValue;
+    this->verticeLabelCnt = std::vector<int>();
     this->verticeValue_IPCArray_ptr = nullptr;
 }
 
@@ -49,6 +51,7 @@ Graph::Graph(int vCount, int eCount, int numOfInitV, double *vValues, int *initV
     this->vList = std::vector<Vertex>();
     this->eList = std::vector<Edge>();
     this->verticeValue = std::vector<double>();
+    this->verticeLabelCnt = std::vector<int>();
 
     //v assemble
     //initVIndex will be initialized after other initializations finished

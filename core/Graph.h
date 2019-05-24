@@ -47,6 +47,7 @@ public:
     std::vector<Edge> eList;
 
     std::vector<double> verticeValue;
+    std::vector<int> verticeLabelCnt;
     double *verticeValue_IPCArray_ptr;
 };
 
