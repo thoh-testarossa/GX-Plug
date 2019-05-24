@@ -5,7 +5,7 @@
 #include "../algo/LabelPropagation/LabelPropagation.h"
 
 #include <iostream>
-#include <ctime>
+#include <chrono>
 
 template <typename VertexValueType>
 LabelPropagation<VertexValueType>::LabelPropagation()
@@ -26,7 +26,7 @@ void LabelPropagation<VertexValueType>::MSGApply(Graph<VertexValueType> &g, cons
     maxCntLabel.reserve(g.vCount);
     maxCntLabel.assign(g.vCount, std::pair<int, int>(0, 0));
 
-    for(auto m : mSet.mSet)
+    for(const auto &m : mSet.mSet)
     {
         auto &labelCntMap = labelsVector.at(m.dst);
         auto &maxLabel = maxCntLabel.at(m.dst);
@@ -209,9 +209,16 @@ void LabelPropagation<VertexValueType>::ApplyStep(Graph<VertexValueType> &g, con
     MessageSet<VertexValueType> mMergedSet = MessageSet<VertexValueType>();
 
     mMergedSet.mSet.clear();
+
+    auto start = std::chrono::system_clock::now();
     MSGGenMerge(g, initVSet, activeVertices, mMergedSet);
+    auto mergeEnd = std::chrono::system_clock::now();
 
     MSGApply(g, initVSet, activeVertices, mMergedSet);
+    auto applyEnd = std::chrono::system_clock::now();
+
+    //std::cout << "msg merge time: " << (std::chrono::duration_cast<std::chrono::milliseconds>(mergeEnd - start)).count() << "ms" << std::endl; 
+    //std::cout << "msg apply time: " << (std::chrono::duration_cast<std::chrono::milliseconds>(applyEnd - mergeEnd)).count() << "ms" << std::endl;   
 }
 
 template <typename VertexValueType>
@@ -252,18 +259,24 @@ void LabelPropagation<VertexValueType>::ApplyD(Graph<VertexValueType> &g, const 
 
     while(iterCount < 100)
     {
+        //std::cout << "iterCount: " << iterCount << std::endl;
+        auto start = std::chrono::system_clock::now();
         auto subGraphSet = this->DivideGraphByEdge(g, partitionCount);
-
+        auto divideGraphFinish = std::chrono::system_clock::now();
 
         for(int i = 0; i < partitionCount; i++)
             ApplyStep(subGraphSet.at(i), initVList, AVSet.at(i));
 
         activeVertice.clear();
-        MergeGraph(g, subGraphSet, activeVertice, AVSet, initVList);
 
+        auto mergeGraphStart = std::chrono::system_clock::now();
+        MergeGraph(g, subGraphSet, activeVertice, AVSet, initVList);
         iterCount++;
-        std::cout << "iterCount: " << iterCount << std::endl;
-    }
+        auto end = std::chrono::system_clock::now();
+        //std::cout << "divide graph time: " << (std::chrono::duration_cast<std::chrono::milliseconds>(divideGraphFinish - start)).count() << "ms" << std::endl;
+        //std::cout << "merge graph time: " << (std::chrono::duration_cast<std::chrono::milliseconds>(end - mergeGraphStart)).count() << "ms" << std::endl;
+        //std::cout << "apply step time: " << (std::chrono::duration_cast<std::chrono::milliseconds>(mergeGraphStart - divideGraphFinish)).count() << "ms" << std::endl;
+    } 
 
     for(int i = 0; i < g.vCount; i++)
     {
