@@ -30,7 +30,7 @@ public:
     int numOfInitV;
 
     int *initVSet;
-    long *filteredV;
+    bool *filteredV;
     int *filteredVCount;
     double *vValues;
     Vertex *vSet;

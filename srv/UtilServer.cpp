@@ -68,7 +68,7 @@ UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
                 0666);
         if(chk != -1)
             chk = this->filteredV_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (FILTEREDV_SHM << SHM_OFFSET)),
-                this->vCount * sizeof(long),
+                this->vCount * sizeof(bool),
                 0666);
         if(chk != -1)
             chk = this->filteredVCount_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (FILTEREDVCOUNT_SHM << SHM_OFFSET)),
@@ -95,7 +95,7 @@ UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
             this->vSet = (Vertex *) this->vSet_shm.shmaddr;
             this->eSet = (Edge *) this->eSet_shm.shmaddr;
             this->initVSet = (int *) this->initVSet_shm.shmaddr;
-            this->filteredV = (long *) this->filteredV_shm.shmaddr;
+            this->filteredV = (bool *) this->filteredV_shm.shmaddr;
             this->filteredVCount = (int *) this->filteredVCount_shm.shmaddr;
 
             //Test

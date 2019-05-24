@@ -19,7 +19,7 @@ public:
     ~UtilClient() = default;
 
     int connect();
-    int transfer(double *vValues, Vertex *vSet, Edge *eSet, int *initVSet, long *filteredV, int filteredVCount);
+    int transfer(double *vValues, Vertex *vSet, Edge *eSet, int *initVSet, bool *filteredV, int filteredVCount);
     int update(double *vValues, Vertex *vSet);
     void request();
     void disconnect();
@@ -32,7 +32,7 @@ public:
     int numOfInitV;
 
     int *initVSet;
-    long *filteredV;
+    bool *filteredV;
     int *filteredVCount;
     double *vValues;
     Vertex *vSet;

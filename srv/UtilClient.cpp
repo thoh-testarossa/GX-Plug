@@ -58,14 +58,14 @@ int UtilClient::connect()
         this->vSet = (Vertex *)this->vSet_shm.shmaddr;
         this->eSet = (Edge *)this->eSet_shm.shmaddr;
         this->initVSet = (int *)this->initVSet_shm.shmaddr;
-        this->filteredV = (long *)this->filteredV_shm.shmaddr;
+        this->filteredV = (bool *)this->filteredV_shm.shmaddr;
         this->filteredVCount = (int *)this->filteredVCount_shm.shmaddr;
     }
 
     return ret;
 }
 
-int UtilClient::transfer(double *vValues, Vertex *vSet, Edge *eSet, int *initVSet, long *filteredV, int filteredVCount)
+int UtilClient::transfer(double *vValues, Vertex *vSet, Edge *eSet, int *initVSet, bool *filteredV, int filteredVCount)
 {
     if(this->vCount > 0 && this->eCount > 0 && this->numOfInitV > 0)
     {
@@ -80,7 +80,7 @@ int UtilClient::transfer(double *vValues, Vertex *vSet, Edge *eSet, int *initVSe
         memcpy(this->vSet, vSet, this->vCount * sizeof(Vertex));
         memcpy(this->eSet, eSet, this->eCount * sizeof(Edge));
         memcpy(this->initVSet, initVSet, this->numOfInitV * sizeof(int));
-        memcpy(this->filteredV, filteredV, filteredVCount * sizeof(long));
+        memcpy(this->filteredV, filteredV, this->vCount * sizeof(bool));
         memcpy(this->filteredVCount, &filteredVCount, sizeof(int));
         return 0;
     }
