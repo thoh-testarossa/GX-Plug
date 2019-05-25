@@ -33,51 +33,51 @@ if(CUDA_FOUND)
             core_GraphUtil)
 endif(CUDA_FOUND)
 
-if(UNIX)
-    add_executable(srv_Test_srv
-            SRVTest_srv.cpp)
+#if(UNIX)
+#    add_executable(srv_Test_srv
+#            SRVTest_srv.cpp)
 
-    target_link_libraries(srv_Test_srv
-            srv_UNIX_shm
-            srv_UNIX_msg
-            srv_UtilServer
-            srv_UtilClient)
+#    target_link_libraries(srv_Test_srv
+#            srv_UNIX_shm
+#            srv_UNIX_msg
+#            srv_UtilServer
+#            srv_UtilClient)
 
-    add_executable(srv_Test_cli
-            SRVTest_cli.cpp)
+#    add_executable(srv_Test_cli
+#            SRVTest_cli.cpp)
 
-    target_link_libraries(srv_Test_cli
-            srv_UNIX_shm
-            srv_UNIX_msg
-            srv_UtilServer
-            srv_UtilClient)
+#    target_link_libraries(srv_Test_cli
+#            srv_UNIX_shm
+#            srv_UNIX_msg
+#            srv_UtilServer
+#            srv_UtilClient)
 
-    IF(CUDA_FOUND)
-        add_executable(srv_UtilServerTest_BellmanFordGPU
-                UtilServerTest_BellmanFordGPU.cpp)
+#    IF(CUDA_FOUND)
+#        add_executable(srv_UtilServerTest_BellmanFordGPU
+#                UtilServerTest_BellmanFordGPU.cpp)
 
-        target_link_libraries(srv_UtilServerTest_BellmanFordGPU
-                srv_UNIX_shm
-                srv_UNIX_msg
-                srv_UtilServer
-                algo_BellmanFordGPU)
-    ENDIF(CUDA_FOUND)
+#        target_link_libraries(srv_UtilServerTest_BellmanFordGPU
+#                srv_UNIX_shm
+#                srv_UNIX_msg
+#                srv_UtilServer
+#                algo_BellmanFordGPU)
+#    ENDIF(CUDA_FOUND)
 
-    add_executable(srv_UtilServerTest_BellmanFord
-            UtilServerTest_BellmanFord.cpp)
+#    add_executable(srv_UtilServerTest_BellmanFord
+#            UtilServerTest_BellmanFord.cpp)
 
-    target_link_libraries(srv_UtilServerTest_BellmanFord
-            srv_UNIX_shm
-            srv_UNIX_msg
-            srv_UtilServer
-            algo_BellmanFord)
+#    target_link_libraries(srv_UtilServerTest_BellmanFord
+#            srv_UNIX_shm
+#            srv_UNIX_msg
+#            srv_UtilServer
+#            algo_BellmanFord)
 
-    add_executable(srv_UtilClientTest
-            UtilClientTest.cpp)
+#    add_executable(srv_UtilClientTest
+#            UtilClientTest.cpp)
 
-    target_link_libraries(srv_UtilClientTest
-            pthread
-            srv_UNIX_shm
-            srv_UNIX_msg
-            srv_UtilClient)
-ENDIF(UNIX)
+#    target_link_libraries(srv_UtilClientTest
+#            pthread
+#            srv_UNIX_shm
+#            srv_UNIX_msg
+#            srv_UtilClient)
+#ENDIF(UNIX)

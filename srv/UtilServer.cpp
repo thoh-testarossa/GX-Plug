@@ -7,7 +7,7 @@
 #include <string>
 #include <iostream>
 
-template<typename T>
+template <typename T>
 UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
 {
     //Test
@@ -97,7 +97,7 @@ UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
     }
 }
 
-template<typename T>
+template <typename T>
 UtilServer<T>::~UtilServer()
 {
     this->executor.Free();
@@ -116,7 +116,7 @@ UtilServer<T>::~UtilServer()
     this->client_msq.control(IPC_RMID);
 }
 
-template<typename T>
+template <typename T>
 void UtilServer<T>::run()
 {
     if(!this->isLegal) return;

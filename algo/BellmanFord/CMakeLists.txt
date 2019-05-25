@@ -7,7 +7,8 @@ find_package(CUDA)
 
 add_library(algo_BellmanFord
         BellmanFord.h
-        BellmanFord.cpp)
+        BellmanFord.cpp
+        BellmanFord_impl.cpp)
 
 target_link_libraries(algo_BellmanFord
         core_Graph
@@ -24,7 +25,8 @@ if(CUDA_FOUND)
 
     add_library(algo_BellmanFordGPU
             BellmanFordGPU.h
-            BellmanFordGPU.cpp)
+            BellmanFordGPU.cpp
+            BellmanFordGPU_impl.cpp)
 
     target_link_libraries(algo_BellmanFordGPU
             algo_BellmanFord

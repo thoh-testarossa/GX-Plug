@@ -9,20 +9,21 @@
 
 #include "BellmanFord.h"
 
-class BellmanFordGPU : public BellmanFord
+template <typename T>
+class BellmanFordGPU : public BellmanFord<T>
 {
 public:
     BellmanFordGPU();
 
-    void Init(Graph &g, std::set<int> &activeVertice, const std::vector<int> &initVList) override;
+    void Init(Graph<T> &g, std::set<int> &activeVertice, const std::vector<int> &initVList) override;
     void Deploy(int vCount, int numOfInitV) override;
     void Free() override;
 
-    void MSGApply(Graph &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet &mSet) override;
-    void MSGGenMerge(const Graph &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet &mSet) override;
+    void MSGApply(Graph<T> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet<T> &mSet) override;
+    void MSGGenMerge(const Graph<T> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<T> &mSet) override;
 
-    void MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, const int *initVSet, double *vValues, double *mValues) override;
-    void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const double *vValues, double *mValues) override;
+    void MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, const int *initVSet, T *vValues, T *mValues) override;
+    void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const T *vValues, T *mValues) override;
 
 
 protected:
@@ -36,7 +37,7 @@ protected:
     double *vValueSet;
     double *d_vValueSet;
 
-    double *mValueTable;
+    T *mValueTable;
 
     int *mInitVSet;
     int *d_mInitVSet;
@@ -61,7 +62,7 @@ protected:
     int *activeVerticeSet;
     int *d_activeVerticeSet;
 
-    double *mMergedMSGValueSet;
+    T *mMergedMSGValueSet;
     unsigned long long int *mTransformedMergedMSGValueSet;
     unsigned long long int *d_mTransformedMergedMSGValueSet;
 

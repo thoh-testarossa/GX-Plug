@@ -12,7 +12,7 @@
 #include "../srv/UNIX_msg.h"
 #include "../include/UNIX_marco.h"
 
-template<typename T>
+template <typename T>
 class UtilServer
 {
 public:
