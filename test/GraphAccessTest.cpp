@@ -15,7 +15,7 @@ int main()
     int vCount, eCount;
     Gin >> vCount >> eCount;
 
-    Graph test = Graph(vCount);
+    Graph<double> test = Graph<double>(vCount);
     for(int i = 0; i < eCount; i++)
     {
         int src, dst;

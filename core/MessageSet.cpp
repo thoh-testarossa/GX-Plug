@@ -6,24 +6,22 @@
 
 #include <iostream>
 
-Message::Message(int src, int dst, double value)
+template <typename T>
+Message<T>::Message(int src, int dst, const T& value)
 {
     this->src = src;
     this->dst = dst;
     this->value = value;
 }
 
-void Message::print()
+template <typename T>
+MessageSet<T>::MessageSet()
 {
-    std::cout << src << " -> " << dst << ": " << value << std::endl;
+    this->mSet = std::vector<Message<T>>();
 }
 
-MessageSet::MessageSet()
-{
-    this->mSet = std::vector<Message>();
-}
-
-void MessageSet::insertMsg(Message m)
+template <typename T>
+void MessageSet<T>::insertMsg(const Message<T>& m)
 {
     this->mSet.push_back(m);
 }

@@ -7,11 +7,13 @@
 #include <iostream>
 #include <ctime>
 
-BellmanFord::BellmanFord()
+template <typename T>
+BellmanFord<T>::BellmanFord()
 {
 }
 
-void BellmanFord::MSGApply(Graph &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet &mSet)
+template <typename T>
+void BellmanFord<T>::MSGApply(Graph<T> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet<T> &mSet)
 {
     //Reset active vertices info
     for(auto &v : g.vList)
@@ -28,13 +30,14 @@ void BellmanFord::MSGApply(Graph &g, const std::vector<int> &initVSet, std::set<
     }
 }
 
-void BellmanFord::MSGGenMerge(const Graph &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet &mSet)
+template <typename T>
+void BellmanFord<T>::MSGGenMerge(const Graph<T> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<T> &mSet)
 {
     //Generate merged msgs directly
     mSet.mSet.clear();
     mSet.mSet.reserve(g.vCount * this->numOfInitV);
     for(int i = 0; i < g.vCount * this->numOfInitV; i++)
-        mSet.insertMsg(Message(initVSet.at(i % this->numOfInitV), i / this->numOfInitV, INVALID_MASSAGE));
+        mSet.insertMsg(Message<T>(initVSet.at(i % this->numOfInitV), i / this->numOfInitV, INVALID_MASSAGE));
 
     for(auto e : g.eList)
     {
@@ -55,7 +58,8 @@ void BellmanFord::MSGGenMerge(const Graph &g, const std::vector<int> &initVSet, 
     }
 }
 
-void BellmanFord::MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, const int *initVSet, double *vValues, double *mValues)
+template <typename T>
+void BellmanFord<T>::MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, const int *initVSet, T *vValues, T *mValues)
 {
     for(int i = 0; i < vCount; i++) vSet[i].isActive = false;
 
@@ -69,7 +73,8 @@ void BellmanFord::MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, const
     }
 }
 
-void BellmanFord::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const double *vValues, double *mValues)
+template <typename T>
+void BellmanFord<T>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const T *vValues, T *mValues)
 {
     for(int i = 0; i < vCount * numOfInitV; i++) mValues[i] = INVALID_MASSAGE;
 
@@ -86,7 +91,8 @@ void BellmanFord::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, 
     }
 }
 
-void BellmanFord::Init(Graph &g, std::set<int> &activeVertice, const std::vector<int> &initVList)
+template <typename T>
+void BellmanFord<T>::Init(Graph<T> &g, std::set<int> &activeVertice, const std::vector<int> &initVList)
 {
     int numOfinitV_init = initVList.size();
 
@@ -110,22 +116,25 @@ void BellmanFord::Init(Graph &g, std::set<int> &activeVertice, const std::vector
         g.verticeValue.at(initID * numOfinitV_init + g.vList.at(initID).initVIndex) = 0;
 }
 
-void BellmanFord::Deploy(int vCount, int numOfInitV)
+template <typename T>
+void BellmanFord<T>::Deploy(int vCount, int numOfInitV)
 {
     this->numOfInitV = numOfInitV;
 }
 
-void BellmanFord::Free()
+template <typename T>
+void BellmanFord<T>::Free()
 {
 
 }
 
-void BellmanFord::MergeGraph(Graph &g, const std::vector<Graph> &subGSet,
+template <typename T>
+void BellmanFord<T>::MergeGraph(Graph<T> &g, const std::vector<Graph<T>> &subGSet,
                 std::set<int> &activeVertice, const std::vector<std::set<int>> &activeVerticeSet,
                 const std::vector<int> &initVList)
 {
     //Merge graphs
-    auto resG = Graph(0);
+    auto resG = Graph<T>(0);
 
     if(subGSet.size() <= 0);
     else
@@ -167,7 +176,8 @@ void BellmanFord::MergeGraph(Graph &g, const std::vector<Graph> &subGSet,
     }
 }
 
-void BellmanFord::MergeMergedMSG(MessageSet &mergedMSG, const std::vector<MessageSet> &mergedMSGSet)
+template <typename T>
+void BellmanFord<T>::MergeMergedMSG(MessageSet<T> &mergedMSG, const std::vector<MessageSet<T>> &mergedMSGSet)
 {
     auto mergeMap = std::map<std::pair<int, int>, double>();
     for(auto mMSet : mergedMSGSet)
@@ -186,13 +196,14 @@ void BellmanFord::MergeMergedMSG(MessageSet &mergedMSG, const std::vector<Messag
     }
 
     for(auto m : mergeMap)
-        mergedMSG.insertMsg(Message(m.first.first, m.first.second, m.second));
+        mergedMSG.insertMsg(Message<T>(m.first.first, m.first.second, m.second));
 }
 
-void BellmanFord::ApplyStep(Graph &g, const std::vector<int> &initVSet, std::set<int> &activeVertice)
+template <typename T>
+void BellmanFord<T>::ApplyStep(Graph<T> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice)
 {
-    MessageSet mGenSet = MessageSet();
-    MessageSet mMergedSet = MessageSet();
+    MessageSet<T> mGenSet = MessageSet<T>();
+    MessageSet<T> mMergedSet = MessageSet<T>();
 
     mMergedSet.mSet.clear();
     MSGGenMerge(g, initVSet, activeVertice, mMergedSet);
@@ -209,12 +220,13 @@ void BellmanFord::ApplyStep(Graph &g, const std::vector<int> &initVSet, std::set
     //Test end
 }
 
-void BellmanFord::Apply(Graph &g, const std::vector<int> &initVList)
+template <typename T>
+void BellmanFord<T>::Apply(Graph<T> &g, const std::vector<int> &initVList)
 {
     //Init the Graph
     std::set<int> activeVertice = std::set<int>();
-    MessageSet mGenSet = MessageSet();
-    MessageSet mMergedSet = MessageSet();
+    MessageSet<T> mGenSet = MessageSet<T>();
+    MessageSet<T> mMergedSet = MessageSet<T>();
 
     Init(g, activeVertice, initVList);
 
@@ -226,17 +238,18 @@ void BellmanFord::Apply(Graph &g, const std::vector<int> &initVList)
     Free();
 }
 
-void BellmanFord::ApplyD(Graph &g, const std::vector<int> &initVList, int partitionCount)
+template <typename T>
+void BellmanFord<T>::ApplyD(Graph<T> &g, const std::vector<int> &initVList, int partitionCount)
 {
     //Init the Graph
     std::set<int> activeVertice = std::set<int>();
 
     std::vector<std::set<int>> AVSet = std::vector<std::set<int>>();
     for(int i = 0; i < partitionCount; i++) AVSet.push_back(std::set<int>());
-    std::vector<MessageSet> mGenSetSet = std::vector<MessageSet>();
-    for(int i = 0; i < partitionCount; i++) mGenSetSet.push_back(MessageSet());
-    std::vector<MessageSet> mMergedSetSet = std::vector<MessageSet>();
-    for(int i = 0; i < partitionCount; i++) mMergedSetSet.push_back(MessageSet());
+    std::vector<MessageSet<T>> mGenSetSet = std::vector<MessageSet<T>>();
+    for(int i = 0; i < partitionCount; i++) mGenSetSet.push_back(MessageSet<T>());
+    std::vector<MessageSet<T>> mMergedSetSet = std::vector<MessageSet<T>>();
+    for(int i = 0; i < partitionCount; i++) mMergedSetSet.push_back(MessageSet<T>());
 
     Init(g, activeVertice, initVList);
 
@@ -250,7 +263,7 @@ void BellmanFord::ApplyD(Graph &g, const std::vector<int> &initVList, int partit
         std::cout << ++iterCount << ":" << clock() << std::endl;
         //Test end
 
-        auto subGraphSet = DivideGraphByEdge(g, partitionCount);
+        auto subGraphSet = this->DivideGraphByEdge(g, partitionCount);
 
         for(int i = 0; i < partitionCount; i++)
         {

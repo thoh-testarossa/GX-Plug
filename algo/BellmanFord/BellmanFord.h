@@ -9,31 +9,32 @@
 
 #include "../../core/GraphUtil.h"
 
-class BellmanFord : public GraphUtil
+template <typename T>
+class BellmanFord : public GraphUtil<T>
 {
 public:
     BellmanFord();
 
-    void MSGApply(Graph &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet &mSet) override;
-    void MSGGenMerge(const Graph &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet &mSet) override;
+    void MSGApply(Graph<T> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet<T> &mSet) override;
+    void MSGGenMerge(const Graph<T> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<T> &mSet) override;
 
     //Unified interface but actually algo_BellmanFord didn't use this form
-    void MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, const int *initVSet, double *vValues, double *mValues) override;
-    void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const double *vValues, double *mValues) override;
+    void MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, const int *initVSet, T *vValues, T *mValues) override;
+    void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const T *vValues, T *mValues) override;
 
-    void MergeGraph(Graph &g, const std::vector<Graph> &subGSet,
+    void MergeGraph(Graph<T> &g, const std::vector<Graph<T>> &subGSet,
                     std::set<int> &activeVertice, const std::vector<std::set<int>> &activeVerticeSet,
                     const std::vector<int> &initVList) override;
-    void MergeMergedMSG(MessageSet &mergedMSG, const std::vector<MessageSet> &mergedMSGSet) override;
+    void MergeMergedMSG(MessageSet<T> &mergedMSG, const std::vector<MessageSet<T>> &mergedMSGSet) override;
 
-    void Init(Graph &g, std::set<int> &activeVertice, const std::vector<int> &initVList) override;
+    void Init(Graph<T> &g, std::set<int> &activeVertice, const std::vector<int> &initVList) override;
     void Deploy(int vCount, int numOfInitV) override;
     void Free() override;
 
-    void ApplyStep(Graph &g, const std::vector<int> &initVSet, std::set<int> &activeVertice);
-    void Apply(Graph &g, const std::vector<int> &initVList);
+    void ApplyStep(Graph<T> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice);
+    void Apply(Graph<T> &g, const std::vector<int> &initVList);
 
-    void ApplyD(Graph &g, const std::vector<int> &initVList, int partitionCount);
+    void ApplyD(Graph<T> &g, const std::vector<int> &initVList, int partitionCount);
 
 protected:
     int numOfInitV;
