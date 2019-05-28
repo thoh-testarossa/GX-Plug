@@ -12,6 +12,7 @@
 #include "../srv/UNIX_msg.h"
 #include "../include/UNIX_marco.h"
 
+template <typename VertexValueType>
 class UtilClient
 {
 public:
@@ -19,8 +20,8 @@ public:
     ~UtilClient() = default;
 
     int connect();
-    int transfer(double *vValues, Vertex *vSet, Edge *eSet, int *initVSet, bool *filteredV, int filteredVCount);
-    int update(double *vValues, Vertex *vSet);
+    int transfer(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int *initVSet, bool *filteredV, int filteredVCount);
+    int update(VertexValueType *vValues, Vertex *vSet);
     void request();
     void disconnect();
     void shutdown();
@@ -34,7 +35,7 @@ public:
     int *initVSet;
     bool *filteredV;
     int *filteredVCount;
-    double *vValues;
+    VertexValueType *vValues;
     Vertex *vSet;
     Edge *eSet;
 

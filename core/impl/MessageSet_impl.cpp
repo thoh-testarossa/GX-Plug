@@ -2,7 +2,7 @@
 // Created by Thoh Testarossa on 2019-05-25.
 //
 
-#include "MessageSet.cpp"
+#include "../MessageSet.cpp"
 
 template class Message<double>;
 template class Message<int>;

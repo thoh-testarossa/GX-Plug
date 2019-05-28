@@ -31,12 +31,12 @@ public:
     double weight;
 };
 
-template <typename T>
+template <typename VertexValueType>
 class Graph
 {
 public:
     Graph(int vCount);
-    Graph(const std::vector<Vertex> &vSet, const std::vector<Edge> &eSet, const std::vector<T> &verticeValue);
+    Graph(const std::vector<Vertex> &vSet, const std::vector<Edge> &eSet, const std::vector<VertexValueType> &verticesValue);
     Graph(int vCount, int eCount, int numOfInitV, int *initVSet, int *eSrcSet, int *eDstSet, double *eWeightSet, bool *AVCheckSet);
 
     void insertEdge(int src, int dst, double weight);
@@ -47,7 +47,7 @@ public:
     std::vector<Vertex> vList;
     std::vector<Edge> eList;
 
-    std::vector<T> verticeValue;
+    std::vector<VertexValueType> verticesValue;
 };
 
 #endif //GRAPH_ALGO_GRAPH_H

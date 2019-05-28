@@ -12,7 +12,7 @@
 #include "../srv/UNIX_msg.h"
 #include "../include/UNIX_marco.h"
 
-template <typename T>
+template <typename GraphUtilType, typename VertexValueType>
 class UtilServer
 {
 public:
@@ -22,7 +22,7 @@ public:
     void run();
 
     int nodeNo;
-    T executor;
+    GraphUtilType executor;
     bool isLegal;
 
     int vCount;
@@ -32,7 +32,7 @@ public:
     int *initVSet;
     bool *filteredV;
     int *filteredVCount;
-    double *vValues;
+    VertexValueType *vValues;
     Vertex *vSet;
     Edge *eSet;
 

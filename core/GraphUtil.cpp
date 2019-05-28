@@ -4,15 +4,15 @@
 
 #include "GraphUtil.h"
 
-template <typename T>
-std::vector<Graph<T>> GraphUtil<T>::DivideGraphByEdge(const Graph<T> &g, int partitionCount)
+template <typename VertexValueType>
+std::vector<Graph<VertexValueType>> GraphUtil<VertexValueType>::DivideGraphByEdge(const Graph<VertexValueType> &g, int partitionCount)
 {
-    std::vector<Graph<T>> res = std::vector<Graph<T>>();
-    for(int i = 0; i < partitionCount; i++) res.push_back(Graph<T>(0));
+    std::vector<Graph<VertexValueType>> res = std::vector<Graph<VertexValueType>>();
+    for(int i = 0; i < partitionCount; i++) res.push_back(Graph<VertexValueType>(0));
     for(int i = 0; i < partitionCount; i++)
     {
         //Copy v & vValues info but do not copy e info
-        res.at(i) = Graph<T>(g.vList, std::vector<Edge>(), g.verticeValue);
+        res.at(i) = Graph<VertexValueType>(g.vList, std::vector<Edge>(), g.verticesValue);
 
         //Distribute e info
         for(int k = i * g.eCount / partitionCount; k < (i + 1) * g.eCount / partitionCount; k++)

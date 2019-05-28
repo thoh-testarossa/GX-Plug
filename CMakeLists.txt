@@ -11,8 +11,8 @@ INCLUDE_DIRECTORIES(include)
 
 add_subdirectory(algo)
 add_subdirectory(core)
-#add_subdirectory(tool)
-#add_subdirectory(srv)
-#add_subdirectory(util)
+add_subdirectory(tool)
+add_subdirectory(srv)
+add_subdirectory(util)
 
 add_subdirectory(test)
