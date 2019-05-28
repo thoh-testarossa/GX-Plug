@@ -6,24 +6,22 @@
 
 #include <iostream>
 
-Message::Message(int src, int dst, double value)
+template <typename VertexValueType>
+Message<VertexValueType>::Message(int src, int dst, const VertexValueType& value)
 {
     this->src = src;
     this->dst = dst;
     this->value = value;
 }
 
-void Message::print()
+template <typename VertexValueType>
+MessageSet<VertexValueType>::MessageSet()
 {
-    std::cout << src << " -> " << dst << ": " << value << std::endl;
+    this->mSet = std::vector<Message<VertexValueType>>();
 }
 
-MessageSet::MessageSet()
-{
-    this->mSet = std::vector<Message>();
-}
-
-void MessageSet::insertMsg(Message m)
+template <typename VertexValueType>
+void MessageSet<VertexValueType>::insertMsg(const Message<VertexValueType>& m)
 {
     this->mSet.push_back(m);
 }

@@ -18,13 +18,13 @@ if(UNIX)
         add_library(srv_UtilServer
                 UtilServer.h
                 UtilServer.cpp
-                UtilServer_impl.cpp
-                UtilServer_implGPU.cpp)
+                impl/UtilServer_impl.cpp
+                impl/UtilServer_implGPU.cpp)
     else()
         add_library(srv_UtilServer
                 UtilServer.h
                 UtilServer.cpp
-                UtilServer_impl.cpp)
+                impl/UtilServer_impl.cpp)
     endif(CUDA_FOUND)
 
     target_link_libraries(srv_UtilServer
@@ -35,7 +35,8 @@ if(UNIX)
 
     add_library(srv_UtilClient
             UtilClient.h
-            UtilClient.cpp)
+            UtilClient.cpp
+            impl/UtilClient_impl.cpp)
 
     target_link_libraries(srv_UtilClient
             srv_UNIX_msg

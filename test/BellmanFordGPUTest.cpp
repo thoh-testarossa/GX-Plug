@@ -40,7 +40,7 @@ int main()
     for(int i = 0; i < test.vCount * initVList.size(); i++)
     {
         if(i % initVList.size() == 0) std::cout << i / initVList.size() << ": ";
-        std::cout << "(" << initVList.at(i % initVList.size()) << " -> " << test.verticeValue.at(i) << ")";
+        std::cout << "(" << initVList.at(i % initVList.size()) << " -> " << test.verticesValue.at(i) << ")";
         if(i % initVList.size() == initVList.size() - 1) std::cout << std::endl;
     }
     return 0;

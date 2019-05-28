@@ -5,7 +5,8 @@
 #include <cstring>
 #include "UtilClient.h"
 
-UtilClient::UtilClient(int vCount, int eCount, int numOfInitV, int nodeNo)
+template <typename VertexValueType>
+UtilClient<VertexValueType>::UtilClient(int vCount, int eCount, int numOfInitV, int nodeNo)
 {
     this->nodeNo = nodeNo;
 
@@ -27,7 +28,8 @@ UtilClient::UtilClient(int vCount, int eCount, int numOfInitV, int nodeNo)
     this->initVSet = nullptr;
 }
 
-int UtilClient::connect()
+template <typename VertexValueType>
+int UtilClient<VertexValueType>::connect()
 {
     int ret = 0;
 
@@ -55,7 +57,8 @@ int UtilClient::connect()
     return ret;
 }
 
-int UtilClient::transfer(double *vValues, Vertex *vSet, Edge *eSet, int *initVSet)
+template <typename VertexValueType>
+int UtilClient<VertexValueType>::transfer(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int *initVSet, bool *filteredV, int filteredVCount)
 {
     if(this->vCount > 0 && this->eCount > 0 && this->numOfInitV > 0)
     {
@@ -64,7 +67,7 @@ int UtilClient::transfer(double *vValues, Vertex *vSet, Edge *eSet, int *initVSe
         if(this->eSet == nullptr) return -1;
         if(this->initVSet == nullptr) return -1;
 
-        memcpy(this->vValues, vValues, this->vCount * this->numOfInitV * sizeof(double));
+        memcpy(this->vValues, vValues, this->vCount * this->numOfInitV * sizeof(VertexValueType));
         memcpy(this->vSet, vSet, this->vCount * sizeof(Vertex));
         memcpy(this->eSet, eSet, this->eCount * sizeof(Edge));
         memcpy(this->initVSet, initVSet, this->numOfInitV * sizeof(int));
@@ -73,21 +76,23 @@ int UtilClient::transfer(double *vValues, Vertex *vSet, Edge *eSet, int *initVSe
     else return -1;
 }
 
-int UtilClient::update(double *vValues, Vertex *vSet)
+template <typename VertexValueType>
+int UtilClient<VertexValueType>::update(VertexValueType *vValues, Vertex *vSet)
 {
     if(this->vCount > 0 && this->eCount > 0 && this->numOfInitV > 0)
     {
         if(this->vValues == nullptr) return -1;
         if(this->vSet == nullptr) return -1;
 
-        memcpy(this->vValues, vValues, this->vCount * this->numOfInitV * sizeof(double));
+        memcpy(this->vValues, vValues, this->vCount * this->numOfInitV * sizeof(VertexValueType));
         memcpy(this->vSet, vSet, this->vCount * sizeof(Vertex));
         return 0;
     }
     else return -1;
 }
 
-void UtilClient::request()
+template <typename VertexValueType>
+void UtilClient<VertexValueType>::request()
 {
     char tmp[256];
 
@@ -95,7 +100,8 @@ void UtilClient::request()
     this->server_msq.recv(tmp, (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
 }
 
-void UtilClient::disconnect()
+template <typename VertexValueType>
+void UtilClient<VertexValueType>::disconnect()
 {
     this->vValues_shm.detach();
     this->vSet_shm.detach();
@@ -108,7 +114,8 @@ void UtilClient::disconnect()
     this->initVSet = nullptr;
 }
 
-void UtilClient::shutdown()
+template <typename VertexValueType>
+void UtilClient<VertexValueType>::shutdown()
 {
     this->client_msq.send("exit", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
     this->disconnect();

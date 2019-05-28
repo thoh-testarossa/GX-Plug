@@ -11,25 +11,25 @@
 
 #define INVALID_MASSAGE INT32_MAX
 
+template <typename VertexValueType>
 class Message
 {
 public:
-    Message(int src, int dst, double value);
-
-    void print();
+    Message(int src, int dst, const VertexValueType& value);
 
     int src;
     int dst;
-    double value;
+    VertexValueType value;
 };
 
+template <typename VertexValueType>
 class MessageSet
 {
 public:
     MessageSet();
-    void insertMsg(Message m);
+    void insertMsg(const Message<VertexValueType>& m);
 
-    std::vector<Message> mSet;
+    std::vector<Message<VertexValueType>> mSet;
 };
 
 #endif //GRAPH_ALGO_MESSAGESET_H

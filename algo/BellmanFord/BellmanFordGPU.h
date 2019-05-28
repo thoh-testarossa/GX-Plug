@@ -9,21 +9,21 @@
 
 #include "BellmanFord.h"
 
-class BellmanFordGPU : public BellmanFord
+template <typename VertexValueType>
+class BellmanFordGPU : public BellmanFord<VertexValueType>
 {
 public:
     BellmanFordGPU();
 
-    void Init(Graph &g, std::set<int> &activeVertice, const std::vector<int> &initVList) override;
+    void Init(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) override;
     void Deploy(int vCount, int numOfInitV) override;
     void Free() override;
 
-    void MSGApply(Graph &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet &mSet) override;
-    void MSGGenMerge(const Graph &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet &mSet) override;
+    void MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<VertexValueType> &mSet) override;
+    void MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertices, MessageSet<VertexValueType> &mSet) override;
 
-    void MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, const int *initVSet, double *vValues, double *mValues) override;
-    void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const double *vValues, double *mValues) override;
-
+    void MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues) override;
+    void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, VertexValueType *mValues) override;
 
 protected:
     int mPerMSGSet;
@@ -36,7 +36,7 @@ protected:
     double *vValueSet;
     double *d_vValueSet;
 
-    double *mValueTable;
+    VertexValueType *mValueTable;
 
     int *mInitVSet;
     int *d_mInitVSet;
@@ -58,10 +58,10 @@ protected:
     Vertex *d_vSet;
     Edge *d_eGSet;
 
-    int *activeVerticeSet;
-    int *d_activeVerticeSet;
+    int *activeVerticesSet;
+    int *d_activeVerticesSet;
 
-    double *mMergedMSGValueSet;
+    VertexValueType *mMergedMSGValueSet;
     unsigned long long int *mTransformedMergedMSGValueSet;
     unsigned long long int *d_mTransformedMergedMSGValueSet;
 

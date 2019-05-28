@@ -15,7 +15,8 @@
 #include <future>
 #include <cstring>
 
-void testFut(UtilClient *uc, double *vValues, Vertex *vSet)
+template <typename VertexValueType>
+void testFut(UtilClient<VertexValueType> *uc, double *vValues, Vertex *vSet)
 {
     uc->connect();
     uc->update(vValues, vSet);
@@ -94,9 +95,9 @@ int main(int argc, char *argv[])
     Gin.close();
 
     //Client Init Data Transfer
-    auto clientVec = std::vector<UtilClient>();
+    auto clientVec = std::vector<UtilClient<double>>();
     for(int i = 0; i < nodeCount; i++)
-        clientVec.push_back(UtilClient(vCount, ((i + 1) * eCount) / nodeCount - (i * eCount) / nodeCount, numOfInitV, i));
+        clientVec.push_back(UtilClient<double>(vCount, ((i + 1) * eCount) / nodeCount - (i * eCount) / nodeCount, numOfInitV, i));
     int chk = 0;
     for(int i = 0; i < nodeCount && chk != -1; i++)
     {
@@ -139,7 +140,7 @@ int main(int argc, char *argv[])
         auto futList = new std::future<void> [nodeCount];
         for(int i = 0; i < nodeCount; i++)
         {
-            std::future<void> tmpFut = std::async(testFut, &clientVec.at(i), vValues, &vSet[0]);
+            std::future<void> tmpFut = std::async(testFut<double>, &clientVec.at(i), vValues, &vSet[0]);
             futList[i] = std::move(tmpFut);
         }
 

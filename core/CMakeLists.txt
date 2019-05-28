@@ -5,12 +5,15 @@ set(CMAKE_CXX_STANDARD 14)
 
 add_library(core_Graph
         Graph.h
-        Graph.cpp)
+        Graph.cpp
+        impl/Graph_impl.cpp)
 
 add_library(core_GraphUtil
         GraphUtil.h
-        GraphUtil.cpp)
+        GraphUtil.cpp
+        impl/GraphUtil_impl.cpp)
 
 add_library(core_MessageSet
         MessageSet.h
-        MessageSet.cpp)
+        MessageSet.cpp
+        impl/MessageSet_impl.cpp)

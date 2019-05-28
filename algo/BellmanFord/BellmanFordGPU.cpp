@@ -26,18 +26,21 @@ double longLongIntAsDouble(unsigned long long int a)
 }
 //Transformation functions end
 
-BellmanFordGPU::BellmanFordGPU()
+template <typename VertexValueType>
+BellmanFordGPU<VertexValueType>::BellmanFordGPU()
 {
 }
 
-void BellmanFordGPU::Init(Graph &g, std::set<int> &activeVertice, const std::vector<int> &initVList)
+template <typename VertexValueType>
+void BellmanFordGPU<VertexValueType>::Init(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList)
 {
-    BellmanFord::Init(g, activeVertice, initVList);
+    BellmanFord<VertexValueType>::Init(g, activeVertices, initVList);
 }
 
-void BellmanFordGPU::Deploy(int vCount, int numOfInitV)
+template <typename VertexValueType>
+void BellmanFordGPU<VertexValueType>::Deploy(int vCount, int numOfInitV)
 {
-    BellmanFord::Deploy(vCount, numOfInitV);
+    BellmanFord<VertexValueType>::Deploy(vCount, numOfInitV);
 
     cudaError_t err = cudaSuccess;
 
@@ -51,7 +54,7 @@ void BellmanFordGPU::Deploy(int vCount, int numOfInitV)
     this->vValueSet = new double [vCount * this->numOfInitV];
     err = cudaMalloc((void **)&this->d_vValueSet, vCount * this->numOfInitV * sizeof(double));
 
-    this->mValueTable = new double [vCount * this->numOfInitV];
+    this->mValueTable = new VertexValueType [vCount * this->numOfInitV];
 
     this->AVCheckSet = new bool [vCount];
     err = cudaMalloc((void **)&this->d_AVCheckSet, vCount * sizeof(bool));
@@ -75,10 +78,10 @@ void BellmanFordGPU::Deploy(int vCount, int numOfInitV)
     this->mValueSet = new double [mSize];
     err = cudaMalloc((void **)&this->d_mValueSet, mSize * sizeof(double));
 
-    this->activeVerticeSet = new int [vCount];
-    err = cudaMalloc((void **)&this->d_activeVerticeSet, vCount * sizeof(int));
+    this->activeVerticesSet = new int [vCount];
+    err = cudaMalloc((void **)&this->d_activeVerticesSet, vCount * sizeof(int));
 
-    this->mMergedMSGValueSet = new double [vCount * numOfInitV];
+    this->mMergedMSGValueSet = new VertexValueType [vCount * numOfInitV];
     this->mTransformedMergedMSGValueSet = new unsigned long long int [vCount * numOfInitV];
     err = cudaMalloc((void **)&d_mTransformedMergedMSGValueSet, numOfInitV * vCount * sizeof(unsigned long long int));
 
@@ -86,9 +89,10 @@ void BellmanFordGPU::Deploy(int vCount, int numOfInitV)
     err = cudaMalloc((void **)&this->d_mValueTSet, mPerMSGSet * sizeof(unsigned long long int));
 }
 
-void BellmanFordGPU::Free()
+template <typename VertexValueType>
+void BellmanFordGPU<VertexValueType>::Free()
 {
-    BellmanFord::Free();
+    BellmanFord<VertexValueType>::Free();
 
     free(this->initVSet);
     cudaFree(this->d_initVSet);
@@ -119,8 +123,8 @@ void BellmanFordGPU::Free()
     free(this->mValueSet);
     cudaFree(this->d_mValueSet);
 
-    free(this->activeVerticeSet);
-    cudaFree(this->d_activeVerticeSet);
+    free(this->activeVerticesSet);
+    cudaFree(this->d_activeVerticesSet);
 
     free(this->mMergedMSGValueSet);
     free(this->mTransformedMergedMSGValueSet);
@@ -130,7 +134,8 @@ void BellmanFordGPU::Free()
     cudaFree(this->d_mValueTSet);
 }
 
-void BellmanFordGPU::MSGApply(Graph &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet &mSet)
+template <typename VertexValueType>
+void BellmanFordGPU<VertexValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<VertexValueType> &mSet)
 {
     //Availability check
     if(g.vCount == 0) return;
@@ -140,7 +145,7 @@ void BellmanFordGPU::MSGApply(Graph &g, const std::vector<int> &initVSet, std::s
 
     //MSG Init
     for(int i = 0; i < g.vCount * this->numOfInitV; i++)
-        this->mValueTable[i] = INVALID_MASSAGE;
+        this->mValueTable[i] = (VertexValueType)INVALID_MASSAGE;
     for(int i = 0; i < mSet.mSet.size(); i++)
     {
         auto &mv = this->mValueTable[mSet.mSet.at(i).dst * this->numOfInitV + g.vList.at(mSet.mSet.at(i).src).initVIndex];
@@ -149,18 +154,19 @@ void BellmanFordGPU::MSGApply(Graph &g, const std::vector<int> &initVSet, std::s
     }
 
     //array form computation
-    this->MSGApply_array(g.vCount, &g.vList[0], this->numOfInitV, &initVSet[0], &g.verticeValue[0], this->mValueTable);
+    this->MSGApply_array(g.vCount, &g.vList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], this->mValueTable);
 
-    //Active vertice set assembly
-    activeVertice.clear();
+    //Active vertices set assembly
+    activeVertices.clear();
     for(int i = 0; i < g.vCount; i++)
     {
         if(g.vList.at(i).isActive)
-            activeVertice.insert(i);
+            activeVertices.insert(i);
     }
 }
 
-void BellmanFordGPU::MSGGenMerge(const Graph &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet &mSet)
+template <typename VertexValueType>
+void BellmanFordGPU<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertices, MessageSet<VertexValueType> &mSet)
 {
     //Generate merged msgs directly
 
@@ -168,21 +174,22 @@ void BellmanFordGPU::MSGGenMerge(const Graph &g, const std::vector<int> &initVSe
     if(g.vCount == 0) return;
 
     //array form computation
-    this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], this->numOfInitV, &initVSet[0], &g.verticeValue[0], this->mMergedMSGValueSet);
+    this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], this->mMergedMSGValueSet);
 
     //Package mMergedMSGValueSet to result mSet
     for(int i = 0; i < g.vCount * numOfInitV; i++)
     {
         if(mMergedMSGValueSet[i] != INVALID_MASSAGE)
         {
-            int dst = i / numOfInitV;
-            int initV = initVSet[i % numOfInitV];
-            mSet.insertMsg(Message(initV, dst, mMergedMSGValueSet[i]));
+            int dst = i / this->numOfInitV;
+            int initV = initVSet[i % this->numOfInitV];
+            mSet.insertMsg(Message<VertexValueType>(initV, dst, this->mMergedMSGValueSet[i]));
         }
     }
 }
 
-void BellmanFordGPU::MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, const int *initVSet, double *vValues, double *mValues)
+template <typename VertexValueType>
+void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues)
 {
     //Availability check
     if(vCount == 0) return;
@@ -228,12 +235,13 @@ void BellmanFordGPU::MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, co
 
     //Re-package the data
 
-    //Memory copyback
+    //Memory copy back
     err = cudaMemcpy(vSet, this->d_vSet, vCount * sizeof(Vertex), cudaMemcpyDeviceToHost);
     err = cudaMemcpy(vValues, this->d_vValueSet, vCount * numOfInitV * sizeof(double), cudaMemcpyDeviceToHost);
 }
 
-void BellmanFordGPU::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const double *vValues, double *mValues)
+template <typename VertexValueType>
+void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, VertexValueType *mValues)
 {
     //Generate merged msgs directly
 
@@ -254,7 +262,7 @@ void BellmanFordGPU::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSe
 
     //mMergedMSGValueSet Init
     for(int i = 0; i < vCount * numOfInitV; i++)
-        mValues[i] = INVALID_MASSAGE;
+        mValues[i] = (VertexValueType)INVALID_MASSAGE;
 
     //Transform to the long long int form which CUDA can do atomic ops
     //unsigned long long int *mTransformedMergedMSGValueSet = new unsigned long long int [g.vCount * numOfInitV];
@@ -290,10 +298,10 @@ void BellmanFordGPU::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSe
     }
 
     //Re-package the data
-    //Memory copyback
+    //Memory copy back
     err = cudaMemcpy(this->mTransformedMergedMSGValueSet, this->d_mTransformedMergedMSGValueSet, vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
     
     //Transform back to original double form
     for(int i = 0; i < vCount * numOfInitV; i++)
-        mValues[i] = longLongIntAsDouble(mTransformedMergedMSGValueSet[i]);
+        mValues[i] = (VertexValueType)(longLongIntAsDouble(this->mTransformedMergedMSGValueSet[i]));
 }

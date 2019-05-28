@@ -7,8 +7,8 @@
 #include <string>
 #include <iostream>
 
-template<typename T>
-UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
+template <typename GraphUtilType, typename VertexValueType>
+UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
 {
     //Test
     std::cout << "Server init" << std::endl;
@@ -20,7 +20,7 @@ UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
     this->eCount = eCount;
     this->numOfInitV = numOfInitV;
 
-    this->isLegal = TIsExtended<T, GraphUtil>::Result &&
+    this->isLegal = TIsExtended<GraphUtilType, GraphUtil<VertexValueType>>::Result &&
                     vCount > 0 &&
                     eCount > 0 &&
                     numOfInitV > 0 &&
@@ -35,7 +35,7 @@ UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
     {
         int chk = 0;
 
-        this->executor = T();
+        this->executor = GraphUtilType();
         this->executor.Deploy(vCount, numOfInitV);
 
         this->vValues_shm = UNIX_shm();
@@ -48,7 +48,7 @@ UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
 
         if(chk != -1)
             chk = this->vValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (VVALUES_SHM << SHM_OFFSET)),
-                this->vCount * this->numOfInitV * sizeof(double),
+                this->vCount * this->numOfInitV * sizeof(VertexValueType),
                 0666);
         if(chk != -1)
             chk = this->vSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (VSET_SHM << SHM_OFFSET)),
@@ -77,7 +77,7 @@ UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
             this->eSet_shm.attach(0666);
             this->initVSet_shm.attach(0666);
 
-            this->vValues = (double *) this->vValues_shm.shmaddr;
+            this->vValues = (VertexValueType *) this->vValues_shm.shmaddr;
             this->vSet = (Vertex *) this->vSet_shm.shmaddr;
             this->eSet = (Edge *) this->eSet_shm.shmaddr;
             this->initVSet = (int *) this->initVSet_shm.shmaddr;
@@ -97,8 +97,8 @@ UtilServer<T>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
     }
 }
 
-template<typename T>
-UtilServer<T>::~UtilServer()
+template <typename GraphUtilType, typename VertexValueType>
+UtilServer<GraphUtilType, VertexValueType>::~UtilServer()
 {
     this->executor.Free();
 
@@ -116,12 +116,12 @@ UtilServer<T>::~UtilServer()
     this->client_msq.control(IPC_RMID);
 }
 
-template<typename T>
-void UtilServer<T>::run()
+template <typename GraphUtilType, typename VertexValueType>
+void UtilServer<GraphUtilType, VertexValueType>::run()
 {
     if(!this->isLegal) return;
 
-    double *mValues = new double [this->vCount * this->numOfInitV];
+    VertexValueType *mValues = new VertexValueType [this->vCount * this->numOfInitV];
     char msgp[256];
     std::string cmd = std::string("");
 
