@@ -56,7 +56,7 @@ int UtilClient<VertexValueType>::connect()
         this->filteredV_shm.attach(0666);
         this->filteredVCount_shm.attach(0666);
 
-        this->vValues = (double *)this->vValues_shm.shmaddr;
+        this->vValues = (VertexValueType *)this->vValues_shm.shmaddr;
         this->vSet = (Vertex *)this->vSet_shm.shmaddr;
         this->eSet = (Edge *)this->eSet_shm.shmaddr;
         this->initVSet = (int *)this->initVSet_shm.shmaddr;
