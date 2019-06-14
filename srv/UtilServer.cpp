@@ -39,7 +39,6 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
         int chk = 0;
 
         this->executor = GraphUtilType();
-        this->executor.Deploy(vCount, numOfInitV);
 
         this->vValues_shm = UNIX_shm();
         this->vSet_shm = UNIX_shm();
@@ -49,6 +48,7 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
         this->filteredVCount_shm = UNIX_shm();
 
         this->server_msq = UNIX_msg();
+        this->init_msq = UNIX_msg();
         this->client_msq = UNIX_msg();
 
         if(chk != -1)
@@ -84,6 +84,9 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
             chk = this->server_msq.create(((this->nodeNo << NODE_NUM_OFFSET) | (SRV_MSG_TYPE << MSG_TYPE_OFFSET)),
                 0666);
         if(chk != -1)
+            chk = this->init_msq.create(((this->nodeNo << NODE_NUM_OFFSET) | (INIT_MSG_TYPE << MSG_TYPE_OFFSET)),
+                0666);
+        if(chk != -1)
             chk = this->client_msq.create(((this->nodeNo << NODE_NUM_OFFSET) | (CLI_MSG_TYPE << MSG_TYPE_OFFSET)),
                 0666);
 
@@ -105,9 +108,13 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
             this->filteredV = (bool *) this->filteredV_shm.shmaddr;
             this->filteredVCount = (int *) this->filteredVCount_shm.shmaddr;
 
+            this->init_msq.send("initiated", (INIT_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+
             //Test
             std::cout << "Init succeeded." << std::endl;
             //Test end
+
+            this->executor.Deploy(vCount, numOfInitV);
         }
         else
         {
@@ -142,6 +149,7 @@ UtilServer<GraphUtilType, VertexValueType>::~UtilServer()
     this->filteredVCount_shm.control(IPC_RMID);
 
     this->server_msq.control(IPC_RMID);
+    this->init_msq.control(IPC_RMID);
     this->client_msq.control(IPC_RMID);
 }
 

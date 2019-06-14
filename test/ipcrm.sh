@@ -29,9 +29,13 @@ ipcrm -M 0x030a0000
 
 ipcrm -Q 0x00000100
 ipcrm -Q 0x00000200
+ipcrm -Q 0x00000300
 ipcrm -Q 0x01000100
 ipcrm -Q 0x01000200
+ipcrm -Q 0x01000300
 ipcrm -Q 0x02000100
 ipcrm -Q 0x02000200
+ipcrm -Q 0x02000300
 ipcrm -Q 0x03000100
 ipcrm -Q 0x03000200
+ipcrm -Q 0x03000300

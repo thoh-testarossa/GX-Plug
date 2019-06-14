@@ -20,5 +20,6 @@
 
 #define SRV_MSG_TYPE 1
 #define CLI_MSG_TYPE 2
+#define INIT_MSG_TYPE 3
 
 #endif //GRAPH_ALGO_UNIX_MARCO_H

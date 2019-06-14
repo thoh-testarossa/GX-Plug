@@ -47,6 +47,7 @@ private:
     UNIX_shm eSet_shm;
 
     UNIX_msg server_msq;
+    UNIX_msg init_msq;
     UNIX_msg client_msq;
 };
 
