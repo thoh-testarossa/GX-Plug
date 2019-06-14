@@ -27,6 +27,7 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
                     nodeNo >= 0;
 
     this->vValues = nullptr;
+    this->mValues = nullptr;
     this->vSet = nullptr;
     this->eSet = nullptr;
     this->initVSet = nullptr;
@@ -52,6 +53,10 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
 
         if(chk != -1)
             chk = this->vValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (VVALUES_SHM << SHM_OFFSET)),
+                this->vCount * this->numOfInitV * sizeof(VertexValueType),
+                0666);
+        if(chk != -1)
+            chk = this->mValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (MVALUES_SHM << SHM_OFFSET)),
                 this->vCount * this->numOfInitV * sizeof(VertexValueType),
                 0666);
         if(chk != -1)
@@ -85,6 +90,7 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
         if(chk != -1)
         {
             this->vValues_shm.attach(0666);
+            this->mValues_shm.attach(0666);
             this->vSet_shm.attach(0666);
             this->eSet_shm.attach(0666);
             this->initVSet_shm.attach(0666);
@@ -92,6 +98,7 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
             this->filteredVCount_shm.attach(0666);
 
             this->vValues = (VertexValueType *) this->vValues_shm.shmaddr;
+            this->mValues = (VertexValueType *) this->mValues_shm.shmaddr;
             this->vSet = (Vertex *) this->vSet_shm.shmaddr;
             this->eSet = (Edge *) this->eSet_shm.shmaddr;
             this->initVSet = (int *) this->initVSet_shm.shmaddr;
@@ -119,6 +126,7 @@ UtilServer<GraphUtilType, VertexValueType>::~UtilServer()
     this->executor.Free();
 
     this->vValues = nullptr;
+    this->mValues = nullptr;
     this->vSet = nullptr;
     this->eSet = nullptr;
     this->initVSet = nullptr;
@@ -126,6 +134,7 @@ UtilServer<GraphUtilType, VertexValueType>::~UtilServer()
     this->filteredVCount = nullptr;
 
     this->vValues_shm.control(IPC_RMID);
+    this->mValues_shm.control(IPC_RMID);
     this->vSet_shm.control(IPC_RMID);
     this->eSet_shm.control(IPC_RMID);
     this->initVSet_shm.control(IPC_RMID);
@@ -141,7 +150,7 @@ void UtilServer<GraphUtilType, VertexValueType>::run()
 {
     if(!this->isLegal) return;
 
-    VertexValueType *mValues = new VertexValueType [this->vCount * this->numOfInitV];
+    //VertexValueType *mValues = new VertexValueType [this->vCount * this->numOfInitV];
     char msgp[256];
     std::string cmd = std::string("");
 
@@ -156,11 +165,11 @@ void UtilServer<GraphUtilType, VertexValueType>::run()
         cmd = msgp;
         if(std::string("execute") == cmd)
         {
-            for (int i = 0; i < this->vCount * this->numOfInitV; i++) mValues[i] = INVALID_MASSAGE;
+            for (int i = 0; i < this->vCount * this->numOfInitV; i++) this->mValues[i] = INVALID_MASSAGE;
 
-            this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, mValues);
+            this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
 
-            this->executor.MSGApply_array(this->vCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, mValues);
+            //this->executor.MSGApply_array(this->vCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
 
             this->server_msq.send("finished", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
         }

@@ -11,6 +11,7 @@
 #define MSG_OFFSET 0
 
 #define VVALUES_SHM 1
+#define MVALUES_SHM 2
 #define INITVSET_SHM 3
 #define FILTEREDV_SHM 6
 #define FILTEREDVCOUNT_SHM 7

@@ -279,10 +279,17 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, 
 
     for(int i = 0; i < eCount; i++)
     {
-        if(vSet[eSet[i].src].isActive) //Add es to batchs
+        if(vSet[eSet[i].src].isActive) //Add es to batches
         {
-            eGSet.emplace_back(eSet[i]);
-            eGCount++;
+            for(int j = 0; j < numOfInitV; j++)
+            {
+                if(vValues[eSet[i].src * numOfInitV + j] + eSet[i].weight < vValues[eSet[i].dst * numOfInitV + j])
+                {
+                    eGSet.emplace_back(eSet[i]);
+                    eGCount++;
+                    break;
+                }
+            }
         }
         if(eGCount == this->ePerEdgeSet || i == eCount - 1) //A batch of es will be transferred into GPU. Don't forget last batch!
         {

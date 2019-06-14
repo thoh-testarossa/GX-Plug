@@ -15,6 +15,7 @@ UtilClient<VertexValueType>::UtilClient(int vCount, int eCount, int numOfInitV, 
     this->eCount = eCount;
 
     this->vValues_shm = UNIX_shm();
+    this->mValues_shm = UNIX_shm();
     this->vSet_shm = UNIX_shm();
     this->eSet_shm = UNIX_shm();
     this->initVSet_shm = UNIX_shm();
@@ -25,6 +26,7 @@ UtilClient<VertexValueType>::UtilClient(int vCount, int eCount, int numOfInitV, 
     this->client_msq = UNIX_msg();
 
     this->vValues = nullptr;
+    this->mValues = nullptr;
     this->vSet = nullptr;
     this->eSet = nullptr;
     this->initVSet = nullptr;
@@ -38,6 +40,7 @@ int UtilClient<VertexValueType>::connect()
     int ret = 0;
 
     if(ret != -1) ret = this->vValues_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (VVALUES_SHM << SHM_OFFSET)));
+    if(ret != -1) ret = this->mValues_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (MVALUES_SHM << SHM_OFFSET)));
     if(ret != -1) ret = this->vSet_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (VSET_SHM << SHM_OFFSET)));
     if(ret != -1) ret = this->eSet_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (ESET_SHM << SHM_OFFSET)));
     if(ret != -1) ret = this->initVSet_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (INITVSET_SHM << SHM_OFFSET)));
@@ -50,6 +53,7 @@ int UtilClient<VertexValueType>::connect()
     if(ret != -1)
     {
         this->vValues_shm.attach(0666);
+        this->mValues_shm.attach(0666);
         this->vSet_shm.attach(0666);
         this->eSet_shm.attach(0666);
         this->initVSet_shm.attach(0666);
@@ -57,6 +61,7 @@ int UtilClient<VertexValueType>::connect()
         this->filteredVCount_shm.attach(0666);
 
         this->vValues = (VertexValueType *)this->vValues_shm.shmaddr;
+        this->mValues = (VertexValueType *)this->mValues_shm.shmaddr;
         this->vSet = (Vertex *)this->vSet_shm.shmaddr;
         this->eSet = (Edge *)this->eSet_shm.shmaddr;
         this->initVSet = (int *)this->initVSet_shm.shmaddr;
@@ -118,6 +123,7 @@ template <typename VertexValueType>
 void UtilClient<VertexValueType>::disconnect()
 {
     this->vValues_shm.detach();
+    this->mValues_shm.detach();
     this->vSet_shm.detach();
     this->eSet_shm.detach();
     this->initVSet_shm.detach();
@@ -125,6 +131,7 @@ void UtilClient<VertexValueType>::disconnect()
     this->filteredVCount_shm.detach();
 
     this->vValues = nullptr;
+    this->mValues = nullptr;
     this->vSet = nullptr;
     this->eSet = nullptr;
     this->initVSet = nullptr;
