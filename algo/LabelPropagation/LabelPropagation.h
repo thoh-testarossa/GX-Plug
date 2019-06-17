@@ -1,19 +1,19 @@
 //
-// Created by Thoh Testarossa on 2019-03-08.
+// Created by cave-g-f on 2019-05-17.
 //
 
 #pragma once
 
-#ifndef GRAPH_ALGO_BELLMANFORD_H
-#define GRAPH_ALGO_BELLMANFORD_H
+#ifndef GRAPH_ALGO_LABELPROPAGATION_H
+#define GRAPH_ALGO_LABELPROPAGATION_H
 
 #include "../../core/GraphUtil.h"
 
 template <typename VertexValueType>
-class BellmanFord : public GraphUtil<VertexValueType>
+class LabelPropagation : public GraphUtil<VertexValueType>
 {
 public:
-    BellmanFord();
+    LabelPropagation();
 
     void MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet<VertexValueType> &mSet) override;
     void MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<VertexValueType> &mSet) override;
@@ -36,9 +36,6 @@ public:
     void Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList);
 
     void ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList, int partitionCount);
-
-protected:
-    int numOfInitV;
 };
 
-#endif //GRAPH_ALGO_BELLMANFORD_H
+#endif

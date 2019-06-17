@@ -5,3 +5,4 @@
 #include "../UtilClient.cpp"
 
 template class UtilClient<double>;
+template class UtilClient<std::pair<int, int>>;

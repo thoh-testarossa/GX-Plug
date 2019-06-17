@@ -13,6 +13,15 @@ target_link_libraries(algo_BellmanFordTest
         core_Graph
         core_MessageSet
         core_GraphUtil)
+		
+add_executable(algo_LabelPropagationTest
+		LabelPropagationTest.cpp)
+
+target_link_libraries(algo_LabelPropagationTest
+        algo_LabelPropagation
+        core_Graph
+        core_MessageSet
+        core_GraphUtil)
 
 add_executable(core_GraphAccessTest
         GraphAccessTest.cpp)
@@ -60,6 +69,8 @@ if(UNIX)
                 srv_UNIX_shm
                 srv_UNIX_msg
                 srv_UtilServer
+                algo_BellmanFord
+                algo_LabelPropagation
                 algo_BellmanFordGPU)
     ENDIF(CUDA_FOUND)
 
@@ -70,7 +81,18 @@ if(UNIX)
             srv_UNIX_shm
             srv_UNIX_msg
             srv_UtilServer
-            algo_BellmanFord)
+            algo_BellmanFord
+            algo_LabelPropagation)
+
+    add_executable(srv_UtilServerTest_LabelPropagation
+            UtilServerTest_LabelPropagation.cpp)
+
+    target_link_libraries(srv_UtilServerTest_LabelPropagation
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilServer
+            algo_BellmanFord
+            algo_LabelPropagation)
 
     add_executable(srv_UtilClientTest
             UtilClientTest.cpp)

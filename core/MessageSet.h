@@ -15,6 +15,7 @@ template <typename VertexValueType>
 class Message
 {
 public:
+    Message(const VertexValueType value);
     Message(int src, int dst, const VertexValueType& value);
 
     int src;
@@ -28,6 +29,7 @@ class MessageSet
 public:
     MessageSet();
     void insertMsg(const Message<VertexValueType>& m);
+    void insertMsgCopy(const Message<VertexValueType> m);
 
     std::vector<Message<VertexValueType>> mSet;
 };
