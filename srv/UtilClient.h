@@ -36,10 +36,7 @@ public:
     bool *filteredV;
     int *filteredVCount;
     VertexValueType *vValues;
-<<<<<<< HEAD
-=======
     VertexValueType *mValues;
->>>>>>> Kamosphere
     Vertex *vSet;
     Edge *eSet;
 

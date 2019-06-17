@@ -46,10 +46,6 @@ public:
 
     std::vector<Vertex> vList;
     std::vector<Edge> eList;
-<<<<<<< HEAD
-=======
-
->>>>>>> Kamosphere
     std::vector<VertexValueType> verticesValue;
 };
 
