@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
     //Init the Graph
     int *initVSet = new int [numOfInitV];
     double *vValues = new double [vCount * numOfInitV];
+    bool *filteredV = new bool [vCount];
 
     std::vector<Vertex> vSet = std::vector<Vertex>();
     std::vector<Edge> eSet = std::vector<Edge>();
@@ -76,6 +77,7 @@ int main(int argc, char *argv[])
     //Easy init
     for(int i = 0; i < numOfInitV; i++) initVSet[i] = 1 << i;
     for(int i = 0; i < numOfInitV; i++) vValues[(1 << i) * numOfInitV + i] = 0;
+    for(int i = 0; i < vCount; i++) filteredV[i] = false;
 
     for(int i = 0; i < vCount; i++) vSet.emplace_back(i, false, -1);
     for(int i = 0; i < numOfInitV; i++)
@@ -108,7 +110,7 @@ int main(int argc, char *argv[])
             return 2;
         }
 
-        chk = clientVec.at(i).transfer(vValues, &vSet[0], &eSet[(i * eCount) / nodeCount], initVSet);
+        chk = clientVec.at(i).transfer(vValues, &vSet[0], &eSet[(i * eCount) / nodeCount], initVSet, filteredV, vCount);
 
         if(chk == -1)
         {

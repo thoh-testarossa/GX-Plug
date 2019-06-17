@@ -28,8 +28,6 @@ Graph<VertexValueType>::Graph(int vCount)
     this->vCount = vCount;
     for(int i = 0; i < vCount; i++) this->vList.emplace_back(Vertex(i, false, INVALID_INITV_INDEX));
     this->eCount = 0;
-
-    this->verticeValue_IPCArray_ptr = nullptr;
 }
 
 template <typename VertexValueType>
@@ -61,10 +59,6 @@ Graph<VertexValueType>::Graph(int vCount, int eCount, int numOfInitV, int *initV
     }
     for(int i = 0; i < numOfInitV; i++)
         this->vList.at(initVSet[i]).initVIndex = i;
-
-    //vValues assemble
-    this->verticeValue.reserve(vCount * numOfInitV);
-    this->verticeValue.assign(&vValues[0], &vValues[vCount * numOfInitV]);
 
     //e assemble
     for(int i = 0; i < this->eCount; i++)

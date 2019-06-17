@@ -263,7 +263,7 @@ void BellmanFord<VertexValueType>::ApplyD(Graph<VertexValueType> &g, const std::
         std::cout << ++iterCount << ":" << clock() << std::endl;
         //Test end
 
-        auto subGraphSet = DivideGraphByEdge(g, partitionCount);
+        auto subGraphSet = this->DivideGraphByEdge(g, partitionCount);
 
         for(int i = 0; i < partitionCount; i++)
         {

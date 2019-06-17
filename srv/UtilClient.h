@@ -36,12 +36,19 @@ public:
     bool *filteredV;
     int *filteredVCount;
     VertexValueType *vValues;
+<<<<<<< HEAD
+=======
+    VertexValueType *mValues;
+>>>>>>> Kamosphere
     Vertex *vSet;
     Edge *eSet;
 
 private:
     UNIX_shm initVSet_shm;
+    UNIX_shm filteredV_shm;
+    UNIX_shm filteredVCount_shm;
     UNIX_shm vValues_shm;
+    UNIX_shm mValues_shm;
     UNIX_shm vSet_shm;
     UNIX_shm eSet_shm;
 

@@ -177,9 +177,9 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &
     this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], this->mMergedMSGValueSet);
 
     //Package mMergedMSGValueSet to result mSet
-    for(int i = 0; i < g.vCount * numOfInitV; i++)
+    for(int i = 0; i < g.vCount * this->numOfInitV; i++)
     {
-        if(mMergedMSGValueSet[i] != INVALID_MASSAGE)
+        if((double)this->mMergedMSGValueSet[i] != INVALID_MASSAGE)
         {
             int dst = i / this->numOfInitV;
             int initV = initVSet[i % this->numOfInitV];
@@ -201,7 +201,7 @@ void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, Vertex *vSet, i
     err = cudaMemcpy(this->d_initVSet, initVSet, numOfInitV * sizeof(int), cudaMemcpyHostToDevice);
 
     //vValueSet Init
-    err = cudaMemcpy(this->d_vValueSet, vValues, vCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+    err = cudaMemcpy(this->d_vValueSet, (double *)vValues, vCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
 
     //vSet Init
     //AVCheck
@@ -216,7 +216,7 @@ void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, Vertex *vSet, i
         {
             this->mInitVSet[mGCount] = initVSet[i % numOfInitV];
             this->mDstSet[mGCount] = i / numOfInitV;
-            this->mValueSet[mGCount] = mValues[i];
+            this->mValueSet[mGCount] = (double)mValues[i];
             mGCount++;
         }
         if(mGCount == this->mPerMSGSet || i == vCount * numOfInitV - 1) //A batch of msgs will be transferred into GPU. Don't forget last batch!
@@ -237,7 +237,7 @@ void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, Vertex *vSet, i
 
     //Memory copy back
     err = cudaMemcpy(vSet, this->d_vSet, vCount * sizeof(Vertex), cudaMemcpyDeviceToHost);
-    err = cudaMemcpy(vValues, this->d_vValueSet, vCount * numOfInitV * sizeof(double), cudaMemcpyDeviceToHost);
+    err = cudaMemcpy((double *)vValues, this->d_vValueSet, vCount * numOfInitV * sizeof(double), cudaMemcpyDeviceToHost);
 }
 
 template <typename VertexValueType>
@@ -258,7 +258,7 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, 
     err = cudaMemcpy(this->d_initVSet, initVSet, numOfInitV * sizeof(int), cudaMemcpyHostToDevice);
 
     //vValueSet Init
-    err = cudaMemcpy(this->d_vValueSet, vValues, vCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+    err = cudaMemcpy(this->d_vValueSet, (double *)vValues, vCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
 
     //mMergedMSGValueSet Init
     for(int i = 0; i < vCount * numOfInitV; i++)
@@ -267,7 +267,7 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, 
     //Transform to the long long int form which CUDA can do atomic ops
     //unsigned long long int *mTransformedMergedMSGValueSet = new unsigned long long int [g.vCount * numOfInitV];
     for(int i = 0; i < vCount * numOfInitV; i++)
-        this->mTransformedMergedMSGValueSet[i] = doubleAsLongLongInt(mValues[i]);
+        this->mTransformedMergedMSGValueSet[i] = doubleAsLongLongInt((double)mValues[i]);
     
     err = cudaMemcpy(this->d_mTransformedMergedMSGValueSet, this->mTransformedMergedMSGValueSet, vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyHostToDevice);
 
@@ -279,10 +279,17 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, 
 
     for(int i = 0; i < eCount; i++)
     {
-        if(vSet[eSet[i].src].isActive) //Add es to batchs
+        if(vSet[eSet[i].src].isActive) //Add es to batches
         {
-            eGSet.emplace_back(eSet[i]);
-            eGCount++;
+            for(int j = 0; j < numOfInitV; j++)
+            {
+                if(vValues[eSet[i].src * numOfInitV + j] + eSet[i].weight < vValues[eSet[i].dst * numOfInitV + j])
+                {
+                    eGSet.emplace_back(eSet[i]);
+                    eGCount++;
+                    break;
+                }
+            }
         }
         if(eGCount == this->ePerEdgeSet || i == eCount - 1) //A batch of es will be transferred into GPU. Don't forget last batch!
         {

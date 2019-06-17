@@ -16,7 +16,7 @@ int main()
     int vCount, eCount;
     Gin >> vCount >> eCount;
 
-    Graph test = Graph(vCount);
+    Graph<double> test = Graph<double>(vCount);
     for(int i = 0; i < eCount; i++)
     {
         int src, dst;
@@ -33,7 +33,7 @@ int main()
     initVList.push_back(2);
     initVList.push_back(4);
 
-    BellmanFord executor = BellmanFord();
+    BellmanFord<double> executor = BellmanFord<double>();
     //executor.Apply(test, initVList);
     executor.ApplyD(test, initVList, 4);
 
