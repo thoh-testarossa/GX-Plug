@@ -59,7 +59,7 @@ void BellmanFord<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &g, 
 }
 
 template <typename VertexValueType>
-void BellmanFord<VertexValueType>::MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues)
+void BellmanFord<VertexValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues)
 {
     for(int i = 0; i < vCount; i++) vSet[i].isActive = false;
 
@@ -290,4 +290,16 @@ void BellmanFord<VertexValueType>::ApplyD(Graph<VertexValueType> &g, const std::
     //Test
     std::cout << "end" << ":" << clock() << std::endl;
     //Test end
+}
+
+template <typename VertexValueType>
+void BellmanFord<VertexValueType>::MSGInit_array(VertexValueType *mValues, int vCount, int eCount, int numOfInitV)
+{
+    if(mValues == nullptr)
+        mValues = new VertexValueType[vCount * numOfInitV];
+
+    for(int i = 0; i < vCount * numOfInitV; i++)
+    {
+        mValues[i] = INVALID_MASSAGE;
+    }
 }

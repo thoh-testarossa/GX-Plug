@@ -20,7 +20,8 @@ public:
     //For transportation between jni part and processing part by using share memory
     //Also for less data transformation in order to achieve higher performance
     //Data struct Graph is not necessary!?
-    virtual void MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues) = 0;
+    virtual void MSGInit_array(VertexValueType *mValues, int vCount, int eCount, int numOfInitV) = 0;
+    virtual void MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues) = 0;
     virtual void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, VertexValueType *mValues) = 0;
 
     //Master function

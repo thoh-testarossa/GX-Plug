@@ -4,3 +4,4 @@ project(Graph_Algo)
 set(CMAKE_CXX_STANDARD 14)
 
 add_subdirectory(BellmanFord)
+add_subdirectory(LabelPropagation)

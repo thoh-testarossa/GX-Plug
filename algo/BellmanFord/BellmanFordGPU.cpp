@@ -154,7 +154,7 @@ void BellmanFordGPU<VertexValueType>::MSGApply(Graph<VertexValueType> &g, const 
     }
 
     //array form computation
-    this->MSGApply_array(g.vCount, &g.vList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], this->mValueTable);
+    this->MSGApply_array(g.vCount, g.eCount, &g.vList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], this->mValueTable);
 
     //Active vertices set assembly
     activeVertices.clear();
@@ -189,7 +189,7 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &
 }
 
 template <typename VertexValueType>
-void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues)
+void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues)
 {
     //Availability check
     if(vCount == 0) return;
@@ -212,7 +212,7 @@ void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, Vertex *vSet, i
     int mGCount = 0;
     for(int i = 0; i < vCount * numOfInitV; i++)
     {
-        if(mValues[i] != INVALID_MASSAGE) //Adding msgs to batchs
+        if(mValues[i] != INVALID_MASSAGE) //Adding msgs to batches
         {
             this->mInitVSet[mGCount] = initVSet[i % numOfInitV];
             this->mDstSet[mGCount] = i / numOfInitV;

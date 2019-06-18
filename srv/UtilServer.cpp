@@ -39,7 +39,6 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
         int chk = 0;
 
         this->executor = GraphUtilType();
-
         this->vValues_shm = UNIX_shm();
         this->vSet_shm = UNIX_shm();
         this->eSet_shm = UNIX_shm();
@@ -51,10 +50,12 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
         this->init_msq = UNIX_msg();
         this->client_msq = UNIX_msg();
 
+        // TODO: may be modified due to algorithms
         if(chk != -1)
             chk = this->vValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (VVALUES_SHM << SHM_OFFSET)),
                 this->vCount * this->numOfInitV * sizeof(VertexValueType),
                 0666);
+        // TODO: may be modified due to algorithms
         if(chk != -1)
             chk = this->mValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (MVALUES_SHM << SHM_OFFSET)),
                 this->vCount * this->numOfInitV * sizeof(VertexValueType),
@@ -173,15 +174,14 @@ void UtilServer<GraphUtilType, VertexValueType>::run()
         cmd = msgp;
         if(std::string("execute") == cmd)
         {
-            for (int i = 0; i < this->vCount * this->numOfInitV; i++) this->mValues[i] = INVALID_MASSAGE;
+            this->executor.MSGInit_array(this->mValues, this->vCount, this->eCount, this->numOfInitV);
 
             this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
 
-            this->executor.MSGApply_array(this->vCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+            this->executor.MSGApply_array(this->vCount, this->eCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
 
             this->server_msq.send("finished", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
         }
-
         else if(std::string("exit") == cmd)
             break;
         else break;
