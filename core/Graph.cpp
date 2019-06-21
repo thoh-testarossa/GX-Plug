@@ -26,7 +26,7 @@ Graph<VertexValueType>::Graph(int vCount)
     this->verticesValue = std::vector<VertexValueType>();
 
     this->vCount = vCount;
-    for(int i = 0; i < vCount; i++) this->vList.emplace_back(Vertex(i, false, INVALID_INITV_INDEX));
+    for(int i = 0; i < vCount; i++) this->vList.emplace_back(i, false, INVALID_INITV_INDEX);
     this->eCount = 0;
 }
 
@@ -68,6 +68,6 @@ Graph<VertexValueType>::Graph(int vCount, int eCount, int numOfInitV, int *initV
 template <typename VertexValueType>
 void Graph<VertexValueType>::insertEdge(int src, int dst, double weight)
 {
-    this->eList.emplace_back(Edge(src, dst, weight));
+    this->eList.emplace_back(src, dst, weight);
     this->eCount++;
 }

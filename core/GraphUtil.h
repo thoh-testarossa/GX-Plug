@@ -34,6 +34,8 @@ public:
     virtual void MergeMergedMSG(MessageSet<VertexValueType> &mergedMSG, const std::vector<MessageSet<VertexValueType>> &mergedMSGSet) = 0;
 
     std::vector<Graph<VertexValueType>> DivideGraphByEdge(const Graph<VertexValueType> &g, int partitionCount);
+
+    Graph<VertexValueType> reflect(const Graph<VertexValueType> &o_g, const std::vector<Edge> &eSet, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex);
 };
 
 #endif //GRAPH_ALGO_GRAPHUTIL_H
