@@ -13,10 +13,10 @@
 #define VVALUES_SHM 1
 #define MVALUES_SHM 2
 #define INITVSET_SHM 3
-#define FILTEREDV_SHM 6
-#define FILTEREDVCOUNT_SHM 7
-#define VSET_SHM 9
-#define ESET_SHM 10
+#define FILTEREDV_SHM 4
+#define FILTEREDVCOUNT_SHM 5
+#define VSET_SHM 6
+#define ESET_SHM 7
 
 #define SRV_MSG_TYPE 1
 #define CLI_MSG_TYPE 2
