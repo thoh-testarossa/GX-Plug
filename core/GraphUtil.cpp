@@ -4,8 +4,6 @@
 
 #include "GraphUtil.h"
 
-#define NO_REFLECTION -1
-
 template <typename VertexValueType>
 std::vector<Graph<VertexValueType>> GraphUtil<VertexValueType>::DivideGraphByEdge(const Graph<VertexValueType> &g, int partitionCount)
 {
@@ -25,8 +23,32 @@ std::vector<Graph<VertexValueType>> GraphUtil<VertexValueType>::DivideGraphByEdg
 }
 
 template<typename VertexValueType>
+int GraphUtil<VertexValueType>::reflect(const std::vector<int> &originalIntList, int originalIntRange, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex)
+{
+    //Init
+    //Guarantee: size of reflectIndex is not greater than originalIntList.size(), and size of reversedIndex is not greater than originalIntRange
+    reflectIndex.reserve(originalIntList.size());
+    reversedIndex.reserve(originalIntRange);
+    reversedIndex.assign(originalIntRange, NO_REFLECTION);
+
+    //Reflection
+    int reflectCount = 0;
+
+    for(auto o_i : originalIntList)
+    {
+        if(reversedIndex.at(o_i) == NO_REFLECTION)
+        {
+            reflectIndex.emplace_back(o_i);
+            reversedIndex.at(o_i) = reflectCount++;
+        }
+    }
+
+    return reflectCount;
+}
+
+template<typename VertexValueType>
 Graph<VertexValueType>
-GraphUtil<VertexValueType>::reflect(const Graph<VertexValueType> &o_g, const std::vector<Edge> &eSet, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex)
+GraphUtil<VertexValueType>::reflectG(const Graph<VertexValueType> &o_g, const std::vector<Edge> &eSet, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex)
 {
     //Init
     int vCount = o_g.vCount;
@@ -34,36 +56,27 @@ GraphUtil<VertexValueType>::reflect(const Graph<VertexValueType> &o_g, const std
 
     reflectIndex.clear();
     reversedIndex.clear();
-    reflectIndex.reserve(2 * eCount * sizeof(int));
-    reversedIndex.reserve(vCount * sizeof(int));
-
-    reversedIndex.assign(vCount, NO_REFLECTION);
+    reflectIndex.reserve(2 * eCount);
+    reversedIndex.reserve(vCount);
 
     //Calculate reflection using eSet and generate reflected eSet
     auto r_eSet = std::vector<Edge>();
-    r_eSet.reserve(2 * eCount * sizeof(Edge));
+    r_eSet.reserve(2 * eCount);
 
-    int reflectCount = 0;
+    auto originalIntList = std::vector<int>();
+    originalIntList.reserve(2 * eCount);
 
     for(const auto &e : eSet)
     {
-        if(reversedIndex.at(e.src) == NO_REFLECTION)
-        {
-            reflectIndex.emplace_back(e.src);
-            reversedIndex.at(e.src) = reflectCount;
-
-            reflectCount++;
-        }
-        if(reversedIndex.at(e.dst) == NO_REFLECTION)
-        {
-            reflectIndex.emplace_back(e.dst);
-            reversedIndex.at(e.dst) = reflectCount;
-
-            reflectCount++;
-        }
-
-        r_eSet.emplace_back(reversedIndex.at(e.src), reversedIndex.at(e.dst), e.weight);
+        originalIntList.emplace_back(e.src);
+        originalIntList.emplace_back(e.dst);
     }
+
+    int reflectCount = this->reflect(originalIntList, vCount, reflectIndex, reversedIndex);
+
+    //Generate reflected eSet
+    for(const auto &e : eSet)
+        r_eSet.emplace_back(reversedIndex.at(e.src), reversedIndex.at(e.dst), e.weight);
 
     //Generate reflected vSet & vValueSet
     auto r_vSet = std::vector<Vertex>();
@@ -84,4 +97,26 @@ GraphUtil<VertexValueType>::reflect(const Graph<VertexValueType> &o_g, const std
 
     //Generate reflected graph and return
     return Graph<VertexValueType>(r_vSet, r_eSet, r_vValueSet);
+}
+
+template<typename VertexValueType>
+MessageSet<VertexValueType>
+GraphUtil<VertexValueType>::reflectM(const MessageSet<VertexValueType> &o_mSet, int vCount, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex)
+{
+    auto r_mSet = MessageSet<VertexValueType>();
+
+    reflectIndex.reserve(o_mSet.mSet.size());
+    reversedIndex.reserve(vCount);
+    reversedIndex.assign(vCount, NO_REFLECTION);
+
+    auto originalIntList = std::vector<int>();
+    originalIntList.reserve(o_mSet.mSet.size());
+
+    for(const auto &m : o_mSet.mSet) originalIntList.emplace_back(m.dst);
+
+    int reflectCount = this->reflect(originalIntList, vCount, reflectIndex, reversedIndex);
+
+    for(const auto &m : o_mSet.mSet) r_mSet.insertMsg(Message<VertexValueType>(m.src, reversedIndex.at(m.dst), m.value));
+
+    return r_mSet;
 }

@@ -1,36 +1,34 @@
 #include "BellmanFordGPU_kernel.h"
 
 __global__ void MSGApply_kernel(Vertex *vSet, int numOfInitV, int *initVSet, double *vValues,
-	int numOfMsg, int *mDstSet, int *mInitVSet, double *mValueSet)
+	int numOfMsg, int *mDstSet, int *mInitVIndexSet, double *mValueSet)
 {
 	int tid = threadIdx.x;
 
 	if(tid < numOfMsg)
 	{
 		int vID = mDstSet[tid];
-
-		//int vInitVIndex = initVIndexSet[mInitVSet[tid]]; 
-		int vInitVIndex = vSet[mInitVSet[tid]].initVIndex;
+		int vInitVIndex = mInitVIndexSet[tid];
 
 		if(vInitVIndex != -1)
 		{
 			if(vValues[vID * numOfInitV + vInitVIndex] > mValueSet[tid])
 			{
 				vValues[vID * numOfInitV + vInitVIndex] = mValueSet[tid];
-				//AVCheckSet[vID] = true;
 				vSet[vID].isActive = true;
 			}
 		}
+
 		else;
 	}
 }
 
 cudaError_t MSGApply_kernel_exec(Vertex *vSet, int numOfInitV, int *initVSet, double *vValues,
-	int numOfMsg, int *mDstSet, int *mInitVSet, double *mValueSet)
+	int numOfMsg, int *mDstSet, int *mInitVIndexSet, double *mValueSet)
 {
 	cudaError_t err = cudaSuccess;
 	
-	MSGApply_kernel<<<1, NUMOFGPUCORE>>>(vSet, numOfInitV, initVSet, vValues, numOfMsg, mDstSet, mInitVSet, mValueSet);
+	MSGApply_kernel<<<1, NUMOFGPUCORE>>>(vSet, numOfInitV, initVSet, vValues, numOfMsg, mDstSet, mInitVIndexSet, mValueSet);
     err = cudaGetLastError();
 
 	cudaDeviceSynchronize();

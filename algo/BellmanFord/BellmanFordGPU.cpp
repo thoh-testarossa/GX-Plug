@@ -26,6 +26,50 @@ double longLongIntAsDouble(unsigned long long int a)
 }
 //Transformation functions end
 
+//Internal method for different GPU copy situations in BF algo
+template <typename VertexValueType>
+auto BellmanFordGPU<VertexValueType>::MSGGenMerge_GPU_MVCopy(Vertex *d_vSet, const Vertex *vSet,
+                                   double *d_vValues, const double *vValues,
+                                   unsigned long long int *d_mTransformedMergedMSGValueSet,
+                                   unsigned long long int *mTransformedMergedMSGValueSet,
+                                   int vGCount, int numOfInitV)
+{
+    auto err = cudaSuccess;
+
+    //vSet copy
+    err = cudaMemcpy(d_vSet, vSet, vGCount * sizeof(Vertex), cudaMemcpyHostToDevice);
+
+    //vValueSet copy
+    err = cudaMemcpy(d_vValues, vValues, vGCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+
+    //Transform to the long long int form which CUDA can do atomic ops
+    //unsigned long long int *mTransformedMergedMSGValueSet = new unsigned long long int [g.vCount * numOfInitV];
+    for (int i = 0; i < vGCount * numOfInitV; i++)
+        mTransformedMergedMSGValueSet[i] = doubleAsLongLongInt((double) INVALID_MASSAGE);
+
+    //mTransformedMergedMSGValueSet copy
+    err = cudaMemcpy(d_mTransformedMergedMSGValueSet, mTransformedMergedMSGValueSet,
+                     vGCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyHostToDevice);
+
+    return err;
+}
+
+template <typename VertexValueType>
+auto BellmanFordGPU<VertexValueType>::MSGApply_GPU_VVCopy(Vertex *d_vSet, const Vertex *vSet,
+                                double *d_vValues, const double *vValues,
+                                int vGCount, int numOfInitV)
+{
+    auto err = cudaSuccess;
+
+    //vSet copy
+    err = cudaMemcpy(d_vSet, vSet, vGCount * sizeof(Vertex), cudaMemcpyHostToDevice);
+
+    //vValueSet copy
+    err = cudaMemcpy(d_vValues, vValues, vGCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+
+    return err;
+}
+
 template <typename VertexValueType>
 BellmanFordGPU<VertexValueType>::BellmanFordGPU()
 {
@@ -44,8 +88,9 @@ void BellmanFordGPU<VertexValueType>::Deploy(int vCount, int numOfInitV)
 
     cudaError_t err = cudaSuccess;
 
-    this->mPerMSGSet = NUMOFGPUCORE;
-    this->ePerEdgeSet = NUMOFGPUCORE;
+    this->vertexLimit = VERTEXSCALEINGPU;
+    this->mPerMSGSet = MSGSCALEINGPU;
+    this->ePerEdgeSet = EDGESCALEINGPU;
 
     this->initVSet = new int [numOfInitV];
     err = cudaMalloc((void **)&this->d_initVSet, this->numOfInitV * sizeof(int));
@@ -66,13 +111,13 @@ void BellmanFordGPU<VertexValueType>::Deploy(int vCount, int numOfInitV)
     this->eWeightSet = new double [ePerEdgeSet];
     err = cudaMalloc((void **)&this->d_eWeightSet, ePerEdgeSet * sizeof(double));
 
-    err = cudaMalloc((void **)&this->d_vSet, vCount * sizeof(Vertex));
+    err = cudaMalloc((void **)&this->d_vSet, vertexLimit * sizeof(Vertex));
     err = cudaMalloc((void **)&this->d_eGSet, ePerEdgeSet * sizeof(Edge));
 
     int mSize = std::max(this->numOfInitV * ePerEdgeSet, mPerMSGSet);
 
-    this->mInitVSet = new int [mSize];
-    err = cudaMalloc((void **)&this->d_mInitVSet, mSize * sizeof(int));
+    this->mInitVIndexSet = new int [mSize];
+    err = cudaMalloc((void **)&this->d_mInitVIndexSet, mSize * sizeof(int));
     this->mDstSet = new int [mSize];
     err = cudaMalloc((void **)&this->d_mDstSet, mSize * sizeof(int));
     this->mValueSet = new double [mSize];
@@ -116,8 +161,8 @@ void BellmanFordGPU<VertexValueType>::Free()
     cudaFree(this->d_vSet);
     cudaFree(this->d_eGSet);
 
-    free(this->mInitVSet);
-    cudaFree(this->d_mInitVSet);
+    free(this->mInitVIndexSet);
+    cudaFree(this->d_mInitVIndexSet);
     free(this->mDstSet);
     cudaFree(this->d_mDstSet);
     free(this->mValueSet);
@@ -154,7 +199,7 @@ void BellmanFordGPU<VertexValueType>::MSGApply(Graph<VertexValueType> &g, const 
     }
 
     //array form computation
-    this->MSGApply_array(g.vCount, &g.vList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], this->mValueTable);
+    this->MSGApply_array(g.vCount, g.eCount, &g.vList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], this->mValueTable);
 
     //Active vertices set assembly
     activeVertices.clear();
@@ -189,7 +234,7 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &
 }
 
 template <typename VertexValueType>
-void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues)
+void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues)
 {
     //Availability check
     if(vCount == 0) return;
@@ -200,35 +245,113 @@ void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, Vertex *vSet, i
     //initVSet Init
     err = cudaMemcpy(this->d_initVSet, initVSet, numOfInitV * sizeof(int), cudaMemcpyHostToDevice);
 
-    //vValueSet Init
-    err = cudaMemcpy(this->d_vValueSet, (double *)vValues, vCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+    bool needReflect = vCount > VERTEXSCALEINGPU;
 
-    //vSet Init
     //AVCheck
-    for(int i = 0; i < vCount; i++) vSet[i].isActive = false;
-    err = cudaMemcpy(this->d_vSet, vSet, vCount * sizeof(Vertex), cudaMemcpyHostToDevice);
+    for (int i = 0; i < vCount; i++) vSet[i].isActive = false;
+
+    if(!needReflect)
+    {
+        err = MSGApply_GPU_VVCopy(this->d_vSet, vSet,
+                            this->d_vValueSet, (double *)vValues,
+                            vCount, numOfInitV);
+
+    }
 
     //Apply msgs to v
     int mGCount = 0;
+    auto mGSet = MessageSet<VertexValueType>();
+
+    auto r_mGSet = MessageSet<VertexValueType>();
+    auto r_vSet = std::vector<Vertex>();
+    auto r_vValueSet = std::vector<VertexValueType>();
+
     for(int i = 0; i < vCount * numOfInitV; i++)
     {
         if(mValues[i] != INVALID_MASSAGE) //Adding msgs to batchs
         {
-            this->mInitVSet[mGCount] = initVSet[i % numOfInitV];
-            this->mDstSet[mGCount] = i / numOfInitV;
-            this->mValueSet[mGCount] = (double)mValues[i];
+            mGSet.insertMsg(Message<VertexValueType>(initVSet[i % numOfInitV], i / numOfInitV, mValues[i]));
             mGCount++;
         }
         if(mGCount == this->mPerMSGSet || i == vCount * numOfInitV - 1) //A batch of msgs will be transferred into GPU. Don't forget last batch!
         {
-            //Memory copy
-            err = cudaMemcpy(this->d_mInitVSet, this->mInitVSet, mGCount * sizeof(int), cudaMemcpyHostToDevice);
+            auto reflectIndex = std::vector<int>();
+            auto reversedIndex = std::vector<int>();
+
+            //Reflection for message & vertex & vValues
+            if(needReflect)
+            {
+                //MSG reflection
+                r_mGSet = this->reflectM(mGSet, vCount, reflectIndex, reversedIndex);
+
+                for(int i = 0; i < r_mGSet.mSet.size(); i++)
+                {
+                    this->mInitVIndexSet[i] = vSet[r_mGSet.mSet.at(i).src].initVIndex;
+                    this->mDstSet[i] = r_mGSet.mSet.at(i).dst;
+                    this->mValueSet[i] = (double)r_mGSet.mSet.at(i).value;
+                }
+
+                //v reflection
+                r_vSet.clear();
+                for(int i = 0; i < reflectIndex.size(); i++)
+                    r_vSet.emplace_back(i, false, vSet[reflectIndex.at(i)].initVIndex);
+
+                //vValue reflection
+                r_vValueSet.clear();
+                r_vValueSet.reserve(mPerMSGSet * numOfInitV);
+                r_vValueSet.assign(mPerMSGSet * numOfInitV, INT32_MAX >> 1);
+                for(int i = 0; i < reflectIndex.size(); i++)
+                {
+                    for(int j = 0; j < numOfInitV; j++)
+                        r_vValueSet.at(i * numOfInitV + j) = vValues[reflectIndex[i] * numOfInitV + j];
+                }
+
+                //vSet & vValueSet Init
+                err = MSGApply_GPU_VVCopy(d_vSet, &r_vSet[0],
+                                    d_vValueSet, (double *)&r_vValueSet[0],
+                                    reflectIndex.size(), numOfInitV);
+            }
+            else
+            {
+                //Use original msg
+                for(int i = 0; i < mGSet.mSet.size(); i++)
+                {
+                    this->mInitVIndexSet[i] = vSet[mGSet.mSet.at(i).src].initVIndex;
+                    this->mDstSet[i] = mGSet.mSet.at(i).dst;
+                    this->mValueSet[i] = (double)mGSet.mSet.at(i).value;
+                }
+            }
+
+            //MSG memory copy
+            err = cudaMemcpy(this->d_mInitVIndexSet, this->mInitVIndexSet, mGCount * sizeof(int), cudaMemcpyHostToDevice);
             err = cudaMemcpy(this->d_mDstSet, this->mDstSet, mGCount * sizeof(int), cudaMemcpyHostToDevice);
             err = cudaMemcpy(this->d_mValueSet, this->mValueSet, mGCount * sizeof(double), cudaMemcpyHostToDevice);
 
             //Kernel Execution
-            err = MSGApply_kernel_exec(this->d_vSet, numOfInitV, this->d_initVSet, this->d_vValueSet, mGCount, this->d_mDstSet, this->d_mInitVSet, this->d_mValueSet);
+            for(int i = 0; i < mGCount; i += NUMOFGPUCORE)
+            {
+                int msgNumUsedForExec = (mGCount - i > NUMOFGPUCORE) ? NUMOFGPUCORE : (mGCount - i);
 
+                err = MSGApply_kernel_exec(this->d_vSet, numOfInitV, this->d_initVSet, this->d_vValueSet, msgNumUsedForExec,
+                                           &this->d_mDstSet[i], &this->d_mInitVIndexSet[i], &this->d_mValueSet[i]);
+            }
+
+            //Deflection
+            if(needReflect)
+            {
+                err = cudaMemcpy(&r_vSet[0], this->d_vSet, reflectIndex.size() * sizeof(Vertex), cudaMemcpyDeviceToHost);
+                err = cudaMemcpy((double *)&r_vValueSet[0], this->d_vValueSet, reflectIndex.size() * numOfInitV * sizeof(double),
+                                 cudaMemcpyDeviceToHost);
+
+                for(int i = 0; i < reflectIndex.size(); i++)
+                {
+                    vSet[reflectIndex[i]] = r_vSet[i];
+                    for(int j = 0; j < numOfInitV; j++)
+                        vValues[reflectIndex[i] * numOfInitV + j] = r_vValueSet[i * numOfInitV + j];
+                }
+            }
+
+            mGSet.mSet.clear();
             mGCount = 0;
         }
     }
@@ -236,8 +359,12 @@ void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, Vertex *vSet, i
     //Re-package the data
 
     //Memory copy back
-    err = cudaMemcpy(vSet, this->d_vSet, vCount * sizeof(Vertex), cudaMemcpyDeviceToHost);
-    err = cudaMemcpy((double *)vValues, this->d_vValueSet, vCount * numOfInitV * sizeof(double), cudaMemcpyDeviceToHost);
+    if(!needReflect)
+    {
+        err = cudaMemcpy(vSet, this->d_vSet, vCount * sizeof(Vertex), cudaMemcpyDeviceToHost);
+        err = cudaMemcpy((double *)vValues, this->d_vValueSet, vCount * numOfInitV * sizeof(double),
+                         cudaMemcpyDeviceToHost);
+    }
 }
 
 template <typename VertexValueType>
@@ -251,25 +378,18 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, 
     //Memory allocation
     cudaError_t err = cudaSuccess;
 
-    //vSet Init
-    err = cudaMemcpy(this->d_vSet, vSet, vCount * sizeof(Vertex), cudaMemcpyHostToDevice);
-
     //initVSet Init
     err = cudaMemcpy(this->d_initVSet, initVSet, numOfInitV * sizeof(int), cudaMemcpyHostToDevice);
 
-    //vValueSet Init
-    err = cudaMemcpy(this->d_vValueSet, (double *)vValues, vCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+    //Graph scale check
+    bool needReflect = vCount > VERTEXSCALEINGPU;
 
-    //mMergedMSGValueSet Init
-    for(int i = 0; i < vCount * numOfInitV; i++)
-        mValues[i] = (VertexValueType)INVALID_MASSAGE;
-
-    //Transform to the long long int form which CUDA can do atomic ops
-    //unsigned long long int *mTransformedMergedMSGValueSet = new unsigned long long int [g.vCount * numOfInitV];
-    for(int i = 0; i < vCount * numOfInitV; i++)
-        this->mTransformedMergedMSGValueSet[i] = doubleAsLongLongInt((double)mValues[i]);
-    
-    err = cudaMemcpy(this->d_mTransformedMergedMSGValueSet, this->mTransformedMergedMSGValueSet, vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyHostToDevice);
+    if(!needReflect)
+        err = MSGGenMerge_GPU_MVCopy(this->d_vSet, vSet,
+                               this->d_vValueSet, (double *)vValues,
+                               this->d_mTransformedMergedMSGValueSet,
+                               this->mTransformedMergedMSGValueSet,
+                               vCount, numOfInitV);
 
     //e batch processing
     int eGCount = 0;
@@ -293,22 +413,70 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, 
         }
         if(eGCount == this->ePerEdgeSet || i == eCount - 1) //A batch of es will be transferred into GPU. Don't forget last batch!
         {
-            //Memory copy
-            err = cudaMemcpy(this->d_eGSet, &eGSet[0], eGCount * sizeof(Edge), cudaMemcpyHostToDevice);
+            auto reflectIndex = std::vector<int>();
+            auto reversedIndex = std::vector<int>();
 
-            //Kernel Execution
-            err = MSGGenMerge_kernel_exec(this->d_mTransformedMergedMSGValueSet, this->d_vSet, numOfInitV, this->d_initVSet, this->d_vValueSet, eGCount, this->d_eGSet);
+            auto r_g = Graph<VertexValueType>(0);
+
+            //Reflection
+            if(needReflect)
+            {
+                bool *tmp_AVCheckList = new bool [vCount];
+                for(int i = 0; i < vCount; i++) tmp_AVCheckList[i] = vSet[i].isActive;
+
+                auto tmp_o_g = Graph<VertexValueType>(vCount, 0, numOfInitV, initVSet, nullptr, nullptr, nullptr, AVCheckSet);
+
+                r_g = this->reflectG(tmp_o_g, eGSet, reflectIndex, reversedIndex);
+
+                err = MSGGenMerge_GPU_MVCopy(this->d_vSet, &r_g.vList[0],
+                                             this->d_vValueSet, (double *)&r_g.verticesValue[0],
+                                             this->d_mTransformedMergedMSGValueSet,
+                                             this->mTransformedMergedMSGValueSet,
+                                             r_g.vCount, numOfInitV);
+
+                err = cudaMemcpy(this->d_eGSet, &r_g.eList[0], eGCount * sizeof(Edge), cudaMemcpyHostToDevice);
+            }
+            else
+                err = cudaMemcpy(this->d_eGSet, &eGSet[0], eGCount * sizeof(Edge), cudaMemcpyHostToDevice);
+
+            //Kernel Execution (no matter whether g is reflected or not)
+            for(int i = 0; i < eGCount; i += NUMOFGPUCORE)
+            {
+                int edgeNumUsedForExec = (eGCount - i > NUMOFGPUCORE) ? NUMOFGPUCORE : (eGCount - i);
+
+                err = MSGGenMerge_kernel_exec(this->d_mTransformedMergedMSGValueSet, this->d_vSet, numOfInitV,
+                                              this->d_initVSet, this->d_vValueSet, edgeNumUsedForExec, &this->d_eGSet[i]);
+            }
+
+            //Deflection
+            if(needReflect)
+            {
+                //Re-package the data
+                //Memory copy back
+                err = cudaMemcpy(this->mTransformedMergedMSGValueSet, this->d_mTransformedMergedMSGValueSet,
+                                 r_g.vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
+
+                //Transform back to original double form (deflection)
+                for (int i = 0; i < r_g.vCount * numOfInitV; i++)
+                    mValues[reflectIndex[i / numOfInitV] * numOfInitV + i % numOfInitV] =
+                            (VertexValueType) (longLongIntAsDouble(this->mTransformedMergedMSGValueSet[i]));
+            }
+            else;
 
             eGCount = 0;
             eGSet.clear();
         }
     }
 
-    //Re-package the data
-    //Memory copy back
-    err = cudaMemcpy(this->mTransformedMergedMSGValueSet, this->d_mTransformedMergedMSGValueSet, vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
-    
-    //Transform back to original double form
-    for(int i = 0; i < vCount * numOfInitV; i++)
-        mValues[i] = (VertexValueType)(longLongIntAsDouble(this->mTransformedMergedMSGValueSet[i]));
+    if(!needReflect)
+    {
+        //Re-package the data
+        //Memory copy back
+        err = cudaMemcpy(this->mTransformedMergedMSGValueSet, this->d_mTransformedMergedMSGValueSet,
+                         vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
+
+        //Transform back to original double form
+        for (int i = 0; i < vCount * numOfInitV; i++)
+            mValues[i] = (VertexValueType) (longLongIntAsDouble(this->mTransformedMergedMSGValueSet[i]));
+    }
 }

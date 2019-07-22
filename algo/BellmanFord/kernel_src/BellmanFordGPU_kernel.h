@@ -13,10 +13,10 @@
 #include <cuda_runtime.h>
 
 __global__ void MSGApply_kernel(Vertex *vSet, int numOfInitV, int *initVSet, double *vValues,
-                                int numOfMsg, int *mDstSet, int *mInitVSet, double *mValueSet);
+                                int numOfMsg, int *mDstSet, int *mInitVIndexSet, double *mValueSet);
 
 cudaError_t MSGApply_kernel_exec(Vertex *vSet, int numOfInitV, int *initVSet, double *vValues,
-                                 int numOfMsg, int *mDstSet, int *mInitVSet, double *mValueSet);
+                                 int numOfMsg, int *mDstSet, int *mInitVIndexSet, double *mValueSet);
 
 __global__ void MSGGenMerge_kernel(unsigned long long int *mTransformdMergedMSGValueSet,
                                    Vertex *vSet, int numOfInitV, int *initVSet, double *vValues,

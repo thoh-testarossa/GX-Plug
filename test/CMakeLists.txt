@@ -5,6 +5,14 @@ set(CMAKE_CXX_STANDARD 14)
 
 find_package(CUDA)
 
+add_executable(core_GraphUtilTest
+        GraphUtilTest.cpp)
+
+target_link_libraries(core_GraphUtilTest
+        core_Graph
+        core_GraphUtil
+        algo_BellmanFord)
+
 add_executable(algo_BellmanFordTest
         BellmanFordTest.cpp)
 

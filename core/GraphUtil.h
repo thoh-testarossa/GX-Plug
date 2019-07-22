@@ -10,6 +10,8 @@
 #include "../core/Graph.h"
 #include "../core/MessageSet.h"
 
+#define NO_REFLECTION -1
+
 template <typename VertexValueType>
 class GraphUtil
 {
@@ -35,7 +37,11 @@ public:
 
     std::vector<Graph<VertexValueType>> DivideGraphByEdge(const Graph<VertexValueType> &g, int partitionCount);
 
-    Graph<VertexValueType> reflect(const Graph<VertexValueType> &o_g, const std::vector<Edge> &eSet, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex);
+    //Subgraph reflection-based compression
+    int reflect(const std::vector<int> &originalIntList, int originalIntRange, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex);
+
+    Graph<VertexValueType> reflectG(const Graph<VertexValueType> &o_g, const std::vector<Edge> &eSet, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex);
+    MessageSet<VertexValueType> reflectM(const MessageSet<VertexValueType> &o_mSet, int vCount, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex);
 };
 
 #endif //GRAPH_ALGO_GRAPHUTIL_H

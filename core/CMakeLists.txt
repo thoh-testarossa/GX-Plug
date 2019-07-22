@@ -3,10 +3,17 @@ project(Graph_Algo)
 
 set(CMAKE_CXX_STANDARD 14)
 
+add_library(core_AbstractGraph
+        AbstractGraph.h
+        AbstractGraph.cpp)
+
 add_library(core_Graph
         Graph.h
         Graph.cpp
         impl/Graph_impl.cpp)
+
+target_link_libraries(core_Graph
+        core_AbstractGraph)
 
 add_library(core_GraphUtil
         GraphUtil.h
