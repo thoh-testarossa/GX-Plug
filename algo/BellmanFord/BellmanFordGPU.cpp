@@ -231,6 +231,10 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &
             mSet.insertMsg(Message<VertexValueType>(initV, dst, this->mMergedMSGValueSet[i]));
         }
     }
+
+    //Test
+    //std::cout << mSet.mSet.size() << std::endl;
+    //for(const auto &m : mSet.mSet) std::cout << m.src << "->" << m.dst << ": " << m.value << std::endl;
 }
 
 template <typename VertexValueType>
@@ -375,6 +379,9 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, 
     //Availability check
     if(vCount == 0) return;
 
+    //Invalid message init
+    for(int i = 0; i < vCount * numOfInitV; i++) mValues[i] = (VertexValueType)INVALID_MASSAGE;
+
     //Memory allocation
     cudaError_t err = cudaSuccess;
 
@@ -390,6 +397,18 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, 
                                this->d_mTransformedMergedMSGValueSet,
                                this->mTransformedMergedMSGValueSet,
                                vCount, numOfInitV);
+
+    //Init for possible reflection
+    //Maybe can use lambda style?
+    bool *tmp_AVCheckList = new bool [vCount];
+    auto tmp_o_g = Graph<VertexValueType>(0);
+    if(needReflect)
+    {
+        for(int i = 0; i < vCount; i++) tmp_AVCheckList[i] = vSet[i].isActive;
+        tmp_o_g = Graph<VertexValueType>(vCount, 0, numOfInitV, initVSet, nullptr, nullptr, nullptr, tmp_AVCheckList);
+        tmp_o_g.verticesValue.reserve(vCount * numOfInitV);
+        tmp_o_g.verticesValue.insert(tmp_o_g.verticesValue.begin(), vValues, vValues + (numOfInitV * vCount));
+    }
 
     //e batch processing
     int eGCount = 0;
@@ -421,12 +440,27 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, 
             //Reflection
             if(needReflect)
             {
-                bool *tmp_AVCheckList = new bool [vCount];
-                for(int i = 0; i < vCount; i++) tmp_AVCheckList[i] = vSet[i].isActive;
+                //bool *tmp_AVCheckList = new bool [vCount];
+                //for(int i = 0; i < vCount; i++) tmp_AVCheckList[i] = vSet[i].isActive;
 
-                auto tmp_o_g = Graph<VertexValueType>(vCount, 0, numOfInitV, initVSet, nullptr, nullptr, nullptr, AVCheckSet);
+                //auto tmp_o_g = Graph<VertexValueType>(vCount, 0, numOfInitV, initVSet, nullptr, nullptr, nullptr, tmp_AVCheckList);
+                //tmp_o_g.verticesValue.reserve(vCount * numOfInitV);
+                //tmp_o_g.verticesValue.insert(tmp_o_g.verticesValue.begin(), vValues, vValues + (numOfInitV * vCount));
+
+                //Test
+                //std::cout << tmp_o_g.vCount << " " << tmp_o_g.vList.size() << " " << tmp_o_g.verticesValue.size() << std::endl;
+                //std::cout << eGSet.size() << " " << eGCount << std::endl;
 
                 r_g = this->reflectG(tmp_o_g, eGSet, reflectIndex, reversedIndex);
+
+                //Test
+                //std::cout << r_g.vCount << " " << r_g.vList.size() << " " << r_g.verticesValue.size() << std::endl;
+                //for(int i = 0; i < r_g.vCount * numOfInitV; i++)
+                //    std::cout << r_g.verticesValue.at(i) << " ";
+                //std::cout << std::endl << "**********************************************************" << std::endl;
+                //for(const auto &e : eGSet) std::cout << e.src << "->" << e.dst << ": " << e.weight << std::endl;
+                //for(const auto &ri : reflectIndex) std::cout << ri << " ";
+                //std::cout << std::endl;
 
                 err = MSGGenMerge_GPU_MVCopy(this->d_vSet, &r_g.vList[0],
                                              this->d_vValueSet, (double *)&r_g.verticesValue[0],
@@ -434,18 +468,22 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, 
                                              this->mTransformedMergedMSGValueSet,
                                              r_g.vCount, numOfInitV);
 
+                //Test
+                //for(int j = 0; j < r_g.vCount * numOfInitV; j++) std::cout << this->mTransformedMergedMSGValueSet[j] << " ";
+                //std::cout << std::endl;
+
                 err = cudaMemcpy(this->d_eGSet, &r_g.eList[0], eGCount * sizeof(Edge), cudaMemcpyHostToDevice);
             }
             else
                 err = cudaMemcpy(this->d_eGSet, &eGSet[0], eGCount * sizeof(Edge), cudaMemcpyHostToDevice);
 
             //Kernel Execution (no matter whether g is reflected or not)
-            for(int i = 0; i < eGCount; i += NUMOFGPUCORE)
+            for(int j = 0; j < eGCount; j += NUMOFGPUCORE)
             {
-                int edgeNumUsedForExec = (eGCount - i > NUMOFGPUCORE) ? NUMOFGPUCORE : (eGCount - i);
+                int edgeNumUsedForExec = (eGCount - j > NUMOFGPUCORE) ? NUMOFGPUCORE : (eGCount - j);
 
                 err = MSGGenMerge_kernel_exec(this->d_mTransformedMergedMSGValueSet, this->d_vSet, numOfInitV,
-                                              this->d_initVSet, this->d_vValueSet, edgeNumUsedForExec, &this->d_eGSet[i]);
+                                              this->d_initVSet, this->d_vValueSet, edgeNumUsedForExec, &this->d_eGSet[j]);
             }
 
             //Deflection
@@ -456,10 +494,22 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, 
                 err = cudaMemcpy(this->mTransformedMergedMSGValueSet, this->d_mTransformedMergedMSGValueSet,
                                  r_g.vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
 
-                //Transform back to original double form (deflection)
-                for (int i = 0; i < r_g.vCount * numOfInitV; i++)
-                    mValues[reflectIndex[i / numOfInitV] * numOfInitV + i % numOfInitV] =
-                            (VertexValueType) (longLongIntAsDouble(this->mTransformedMergedMSGValueSet[i]));
+                //Test
+                //for(int j = 0; j < r_g.vCount * numOfInitV; j++) std::cout << this->mTransformedMergedMSGValueSet[j] << " ";
+                //std::cout << std::endl;
+
+                //Valid message transformed back to original double form (deflection)
+                for (int j = 0; j < r_g.vCount * numOfInitV; j++)
+                    mValues[reflectIndex[j / numOfInitV] * numOfInitV + j % numOfInitV] =
+                            (VertexValueType) (longLongIntAsDouble(this->mTransformedMergedMSGValueSet[j]));
+
+                //Test
+                //for(int j = 0; j < reflectIndex.size(); j++)
+                //{
+                //    for(int k = 0; k < numOfInitV; k++)
+                //        std::cout << mValues[reflectIndex.at(j) * numOfInitV + k] << " ";
+                //    std::cout << std::endl;
+                //}
             }
             else;
 
