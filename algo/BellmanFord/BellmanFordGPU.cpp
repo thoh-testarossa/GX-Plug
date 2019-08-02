@@ -127,8 +127,8 @@ void BellmanFordGPU<VertexValueType>::Deploy(int vCount, int numOfInitV)
     err = cudaMalloc((void **)&this->d_activeVerticesSet, vCount * sizeof(int));
 
     this->mMergedMSGValueSet = new VertexValueType [vCount * numOfInitV];
-    this->mTransformedMergedMSGValueSet = new unsigned long long int [vCount * numOfInitV];
-    err = cudaMalloc((void **)&d_mTransformedMergedMSGValueSet, numOfInitV * vCount * sizeof(unsigned long long int));
+    this->mTransformedMergedMSGValueSet = new unsigned long long int [vertexLimit * numOfInitV];
+    err = cudaMalloc((void **)&d_mTransformedMergedMSGValueSet, numOfInitV * vertexLimit * sizeof(unsigned long long int));
 
     this->mValueTSet = new unsigned long long int [mPerMSGSet];
     err = cudaMalloc((void **)&this->d_mValueTSet, mPerMSGSet * sizeof(unsigned long long int));
@@ -206,7 +206,16 @@ void BellmanFordGPU<VertexValueType>::MSGApply(Graph<VertexValueType> &g, const 
     for(int i = 0; i < g.vCount; i++)
     {
         if(g.vList.at(i).isActive)
+        {
             activeVertices.insert(i);
+            //Test
+            /*
+            std::cout << i << ": ";
+            for(int j = 0; j < this->numOfInitV; j++)
+                std::cout << g.verticesValue.at(i * this->numOfInitV + j) << " ";
+            std::cout << std::endl;
+            */
+        }
     }
 }
 
@@ -229,6 +238,9 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &
             int dst = i / this->numOfInitV;
             int initV = initVSet[i % this->numOfInitV];
             mSet.insertMsg(Message<VertexValueType>(initV, dst, this->mMergedMSGValueSet[i]));
+            //Test
+            //if(dst == 7)
+            //    std::cout << this->mMergedMSGValueSet[i] << "///////" << std::endl;
         }
     }
 
@@ -288,26 +300,37 @@ void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, int eCount, Ver
                 //MSG reflection
                 r_mGSet = this->reflectM(mGSet, vCount, reflectIndex, reversedIndex);
 
-                for(int i = 0; i < r_mGSet.mSet.size(); i++)
+                //Test
+                /*
+                std::cout << mGSet.mSet.size() << " -> " << r_mGSet.mSet.size() << std::endl;
+                for(int j = 0; j < mGSet.mSet.size() && j < r_mGSet.mSet.size(); j++)
                 {
-                    this->mInitVIndexSet[i] = vSet[r_mGSet.mSet.at(i).src].initVIndex;
-                    this->mDstSet[i] = r_mGSet.mSet.at(i).dst;
-                    this->mValueSet[i] = (double)r_mGSet.mSet.at(i).value;
+                    std::cout << "(" << mGSet.mSet.at(j).src << " -> " << mGSet.mSet.at(j).dst << ": " << mGSet.mSet.at(j).value << ")";
+                    std::cout << " - (" << reflectIndex.at(reversedIndex.at(mGSet.mSet.at(j).dst)) << " -> " << reversedIndex.at(mGSet.mSet.at(j).dst) << ") - ";
+                    std::cout << "(" << r_mGSet.mSet.at(j).src << " -> " << r_mGSet.mSet.at(j).dst << ": " << mGSet.mSet.at(j).value << ")" << std::endl;
+                }
+                */
+
+                for(int j = 0; j < r_mGSet.mSet.size(); j++)
+                {
+                    this->mInitVIndexSet[j] = vSet[r_mGSet.mSet.at(j).src].initVIndex;
+                    this->mDstSet[j] = r_mGSet.mSet.at(j).dst;
+                    this->mValueSet[j] = (double)r_mGSet.mSet.at(j).value;
                 }
 
                 //v reflection
                 r_vSet.clear();
-                for(int i = 0; i < reflectIndex.size(); i++)
-                    r_vSet.emplace_back(i, false, vSet[reflectIndex.at(i)].initVIndex);
+                for(int j = 0; j < reflectIndex.size(); j++)
+                    r_vSet.emplace_back(j, false, vSet[reflectIndex.at(j)].initVIndex);
 
                 //vValue reflection
                 r_vValueSet.clear();
                 r_vValueSet.reserve(mPerMSGSet * numOfInitV);
                 r_vValueSet.assign(mPerMSGSet * numOfInitV, INT32_MAX >> 1);
-                for(int i = 0; i < reflectIndex.size(); i++)
+                for(int j = 0; j < reflectIndex.size(); j++)
                 {
-                    for(int j = 0; j < numOfInitV; j++)
-                        r_vValueSet.at(i * numOfInitV + j) = vValues[reflectIndex[i] * numOfInitV + j];
+                    for(int k = 0; k < numOfInitV; k++)
+                        r_vValueSet.at(j * numOfInitV + k) = vValues[reflectIndex[j] * numOfInitV + k];
                 }
 
                 //vSet & vValueSet Init
@@ -318,11 +341,11 @@ void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, int eCount, Ver
             else
             {
                 //Use original msg
-                for(int i = 0; i < mGSet.mSet.size(); i++)
+                for(int j = 0; j < mGSet.mSet.size(); j++)
                 {
-                    this->mInitVIndexSet[i] = vSet[mGSet.mSet.at(i).src].initVIndex;
-                    this->mDstSet[i] = mGSet.mSet.at(i).dst;
-                    this->mValueSet[i] = (double)mGSet.mSet.at(i).value;
+                    this->mInitVIndexSet[j] = vSet[mGSet.mSet.at(j).src].initVIndex;
+                    this->mDstSet[j] = mGSet.mSet.at(j).dst;
+                    this->mValueSet[j] = (double)mGSet.mSet.at(j).value;
                 }
             }
 
@@ -332,12 +355,12 @@ void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, int eCount, Ver
             err = cudaMemcpy(this->d_mValueSet, this->mValueSet, mGCount * sizeof(double), cudaMemcpyHostToDevice);
 
             //Kernel Execution
-            for(int i = 0; i < mGCount; i += NUMOFGPUCORE)
+            for(int j = 0; j < mGCount; j += NUMOFGPUCORE)
             {
-                int msgNumUsedForExec = (mGCount - i > NUMOFGPUCORE) ? NUMOFGPUCORE : (mGCount - i);
+                int msgNumUsedForExec = (mGCount - j > NUMOFGPUCORE) ? NUMOFGPUCORE : (mGCount - j);
 
                 err = MSGApply_kernel_exec(this->d_vSet, numOfInitV, this->d_initVSet, this->d_vValueSet, msgNumUsedForExec,
-                                           &this->d_mDstSet[i], &this->d_mInitVIndexSet[i], &this->d_mValueSet[i]);
+                                           &this->d_mDstSet[j], &this->d_mInitVIndexSet[j], &this->d_mValueSet[j]);
             }
 
             //Deflection
@@ -347,11 +370,13 @@ void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, int eCount, Ver
                 err = cudaMemcpy((double *)&r_vValueSet[0], this->d_vValueSet, reflectIndex.size() * numOfInitV * sizeof(double),
                                  cudaMemcpyDeviceToHost);
 
-                for(int i = 0; i < reflectIndex.size(); i++)
+                for(int j = 0; j < reflectIndex.size(); j++)
                 {
-                    vSet[reflectIndex[i]] = r_vSet[i];
-                    for(int j = 0; j < numOfInitV; j++)
-                        vValues[reflectIndex[i] * numOfInitV + j] = r_vValueSet[i * numOfInitV + j];
+                    vSet[reflectIndex[j]] = r_vSet[j];
+                    //Don't forget to deflect vertexID in Vertex obj!!
+                    vSet[reflectIndex[j]].vertexID = reflectIndex[j];
+                    for(int k = 0; k < numOfInitV; k++)
+                        vValues[reflectIndex[j] * numOfInitV + k] = r_vValueSet[j * numOfInitV + k];
                 }
             }
 
@@ -409,6 +434,9 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, 
         tmp_o_g.verticesValue.reserve(vCount * numOfInitV);
         tmp_o_g.verticesValue.insert(tmp_o_g.verticesValue.begin(), vValues, vValues + (numOfInitV * vCount));
     }
+    //This checkpoint is to used to prevent from mistaking mValues gathering in deflection
+    bool *isDst = new bool [vCount];
+    for(int i = 0; i < vCount; i++) isDst[i] = false;
 
     //e batch processing
     int eGCount = 0;
@@ -426,12 +454,34 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, 
                 {
                     eGSet.emplace_back(eSet[i]);
                     eGCount++;
+                    //Only dst receives message
+                    isDst[eSet[i].dst] = true;
+
+                    //Test
+                    /*
+                    if(eSet[i].dst == 7)
+                    {
+                        std::cout << "**" << std::endl;
+                        std::cout << i << " " << eGCount << ": " << eSet[i].src << " -> " << eSet[i].dst << ": "
+                                  << eSet[i].weight << std::endl;
+                        for(int k = 0; k < numOfInitV; k++)
+                            std::cout << vValues[eSet[i].src * numOfInitV + k] << " ";
+                        std::cout << std::endl;
+                        for(int k = 0; k < numOfInitV; k++)
+                            std::cout << vValues[eSet[i].dst * numOfInitV + k] << " ";
+                        std::cout << std::endl;
+                        std::cout << "**" << std::endl;
+                    }
+                    */
                     break;
                 }
             }
         }
         if(eGCount == this->ePerEdgeSet || i == eCount - 1) //A batch of es will be transferred into GPU. Don't forget last batch!
         {
+            //Test
+            //std::cout << "*" << eGCount << std::endl;
+
             auto reflectIndex = std::vector<int>();
             auto reversedIndex = std::vector<int>();
 
@@ -454,6 +504,7 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, 
                 r_g = this->reflectG(tmp_o_g, eGSet, reflectIndex, reversedIndex);
 
                 //Test
+                //std::cout << "***" << reversedIndex[7] << std::endl;
                 //std::cout << r_g.vCount << " " << r_g.vList.size() << " " << r_g.verticesValue.size() << std::endl;
                 //for(int i = 0; i < r_g.vCount * numOfInitV; i++)
                 //    std::cout << r_g.verticesValue.at(i) << " ";
@@ -500,8 +551,16 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, 
 
                 //Valid message transformed back to original double form (deflection)
                 for (int j = 0; j < r_g.vCount * numOfInitV; j++)
-                    mValues[reflectIndex[j / numOfInitV] * numOfInitV + j % numOfInitV] =
-                            (VertexValueType) (longLongIntAsDouble(this->mTransformedMergedMSGValueSet[j]));
+                {
+                    int o_dst = reflectIndex[j / numOfInitV];
+                    //If the v the current msg point to is not a dst, it should not be copied back because the current msg value is not correct)
+                    if(isDst[o_dst])
+                    {
+                        if(mValues[o_dst * numOfInitV + j % numOfInitV] > (VertexValueType) (longLongIntAsDouble(this->mTransformedMergedMSGValueSet[j])))
+                            mValues[o_dst * numOfInitV + j % numOfInitV] = (VertexValueType) (longLongIntAsDouble(
+                                this->mTransformedMergedMSGValueSet[j]));
+                    }
+                }
 
                 //Test
                 //for(int j = 0; j < reflectIndex.size(); j++)
@@ -510,11 +569,17 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, 
                 //        std::cout << mValues[reflectIndex.at(j) * numOfInitV + k] << " ";
                 //    std::cout << std::endl;
                 //}
+                //for(int j = 0; j < numOfInitV; j++)
+                //    std::cout << "**" << mValues[7 * numOfInitV + j] << " ";
+                //std::cout << std::endl;
+                //std::cout << isDst[7] << std::endl;
             }
             else;
 
+            //Checkpoint reset
             eGCount = 0;
             eGSet.clear();
+            for(int j = 0; j < vCount; j++) isDst[j] = false;
         }
     }
 
