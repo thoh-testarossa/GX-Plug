@@ -32,8 +32,7 @@ protected:
 
     int *initVSet;
     int *d_initVSet;
-    int *initVIndexSet;
-    int *d_initVIndexSet;
+
     double *vValueSet;
     double *d_vValueSet;
 
@@ -46,28 +45,12 @@ protected:
     double *mValueSet;
     double *d_mValueSet;
 
-    bool *AVCheckSet;
-    bool *d_AVCheckSet;
-
-    int *eSrcSet;
-    int *d_eSrcSet;
-    int *eDstSet;
-    int *d_eDstSet;
-    double *eWeightSet;
-    double *d_eWeightSet;
-
     Vertex *d_vSet;
     Edge *d_eGSet;
-
-    int *activeVerticesSet;
-    int *d_activeVerticesSet;
 
     VertexValueType *mMergedMSGValueSet;
     unsigned long long int *mTransformedMergedMSGValueSet;
     unsigned long long int *d_mTransformedMergedMSGValueSet;
-
-    unsigned long long int *mValueTSet;
-    unsigned long long int *d_mValueTSet;
 
 private:
     auto MSGGenMerge_GPU_MVCopy(Vertex *d_vSet, const Vertex *vSet,
