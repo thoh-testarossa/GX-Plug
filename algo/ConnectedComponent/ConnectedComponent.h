@@ -1,19 +1,19 @@
 //
-// Created by Thoh Testarossa on 2019-03-08.
+// Created by Thoh Testarossa on 2019-08-08.
 //
 
 #pragma once
 
-#ifndef GRAPH_ALGO_BELLMANFORD_H
-#define GRAPH_ALGO_BELLMANFORD_H
+#ifndef GRAPH_ALGO_CONNECTEDCOMPONENT_H
+#define GRAPH_ALGO_CONNECTEDCOMPONENT_H
 
 #include "../../core/GraphUtil.h"
 
 template <typename VertexValueType>
-class BellmanFord : public GraphUtil<VertexValueType>
+class ConnectedComponent : public GraphUtil<VertexValueType>
 {
 public:
-    BellmanFord();
+    ConnectedComponent();
 
     void MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet<VertexValueType> &mSet) override;
     void MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<VertexValueType> &mSet) override;
@@ -41,4 +41,4 @@ protected:
     int numOfInitV;
 };
 
-#endif //GRAPH_ALGO_BELLMANFORD_H
+#endif //GRAPH_ALGO_CONNECTEDCOMPONENT_H

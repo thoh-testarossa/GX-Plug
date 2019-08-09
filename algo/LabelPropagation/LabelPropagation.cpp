@@ -32,13 +32,9 @@ void LabelPropagation<VertexValueType>::MSGApply(Graph<VertexValueType> &g, cons
         auto &maxLabel = maxCntLabel.at(m.dst);
         
         if(labelCntMap.find(m.value.second) == labelCntMap.end())
-        {
             labelCntMap.insert(std::map<int, int>::value_type(m.value.second, 1));
-        }
         else
-        {
             labelCntMap.at(m.value.second)++;
-        }
         
         if(maxLabel.second < labelCntMap.at(m.value.second))
         {
@@ -133,16 +129,21 @@ void LabelPropagation<VertexValueType>::MSGGenMerge_array(int vCount, int eCount
 }
 
 template <typename VertexValueType>
-void LabelPropagation<VertexValueType>::Init(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList)
+void LabelPropagation<VertexValueType>::Init(int vCount, int eCount, int numOfInitV)
+{
+    this->totalVValuesCount = vCount;
+    this->totalMValuesCount = eCount;
+}
+
+template <typename VertexValueType>
+void LabelPropagation<VertexValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList)
 {
     //vValues init
     g.verticesValue.reserve(g.vCount);
     g.verticesValue.assign(g.vCount, std::pair<int, int>(0, 0));
 
     for(int i = 0; i < g.vList.size(); i++)
-    {
         g.verticesValue.at(i).first = g.vList.at(i).vertexID;
-    }
 }
 
 template <typename VertexValueType>
@@ -216,9 +217,6 @@ void LabelPropagation<VertexValueType>::ApplyStep(Graph<VertexValueType> &g, con
 
     MSGApply(g, initVSet, activeVertices, mMergedSet);
     auto applyEnd = std::chrono::system_clock::now();
-
-    //std::cout << "msg merge time: " << (std::chrono::duration_cast<std::chrono::milliseconds>(mergeEnd - start)).count() << "ms" << std::endl; 
-    //std::cout << "msg apply time: " << (std::chrono::duration_cast<std::chrono::milliseconds>(applyEnd - mergeEnd)).count() << "ms" << std::endl;   
 }
 
 template <typename VertexValueType>
@@ -229,7 +227,9 @@ void LabelPropagation<VertexValueType>::Apply(Graph<VertexValueType> &g, const s
     MessageSet<VertexValueType> mGenSet = MessageSet<VertexValueType>();
     MessageSet<VertexValueType> mMergedSet = MessageSet<VertexValueType>();
 
-    Init(g, activeVertice, initVList);
+    Init(g.vCount, g.eCount, initVList.size());
+
+    GraphInit(g, activeVertice, initVList);
 
     Deploy(g.vCount, initVList.size());
 
@@ -253,7 +253,9 @@ void LabelPropagation<VertexValueType>::ApplyD(Graph<VertexValueType> &g, const 
     std::vector<MessageSet<VertexValueType>> mMergedSetSet = std::vector<MessageSet<VertexValueType>>();
     for(int i = 0; i < partitionCount; i++) mMergedSetSet.push_back(MessageSet<VertexValueType>());
 
-    Init(g, activeVertice, initVList);
+    Init(g.vCount, g.eCount, initVList.size());
+
+    GraphInit(g, activeVertice, initVList);
 
     int iterCount = 0;
 
@@ -273,27 +275,10 @@ void LabelPropagation<VertexValueType>::ApplyD(Graph<VertexValueType> &g, const 
         MergeGraph(g, subGraphSet, activeVertice, AVSet, initVList);
         iterCount++;
         auto end = std::chrono::system_clock::now();
-        //std::cout << "divide graph time: " << (std::chrono::duration_cast<std::chrono::milliseconds>(divideGraphFinish - start)).count() << "ms" << std::endl;
-        //std::cout << "merge graph time: " << (std::chrono::duration_cast<std::chrono::milliseconds>(end - mergeGraphStart)).count() << "ms" << std::endl;
-        //std::cout << "apply step time: " << (std::chrono::duration_cast<std::chrono::milliseconds>(mergeGraphStart - divideGraphFinish)).count() << "ms" << std::endl;
     } 
 
     for(int i = 0; i < g.vCount; i++)
-    {
         std::cout << g.verticesValue.at(i).first << std::endl;
-    }
 
     Free();
-}
-
-template <typename VertexValueType>
-void LabelPropagation<VertexValueType>::MSGInit_array(VertexValueType *mValues, int eCount, int vCount, int numOfInitV)
-{
-    if(mValues != nullptr)
-        mValues = new VertexValueType[eCount];
-
-    for(int i = 0; i < eCount; i++)
-    {
-        mValues[i] = std::pair<int, int>();
-    }
 }

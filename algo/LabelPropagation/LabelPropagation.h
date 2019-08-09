@@ -19,7 +19,6 @@ public:
     void MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<VertexValueType> &mSet) override;
 
     //Unified interface but actually algo_BellmanFord didn't use this form
-    void MSGInit_array(VertexValueType *mValues, int eCount, int vCount, int numOfInitV) override;
     void MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues) override;
     void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, VertexValueType *mValues) override;
 
@@ -28,7 +27,8 @@ public:
                     const std::vector<int> &initVList) override;
     void MergeMergedMSG(MessageSet<VertexValueType> &mergedMSG, const std::vector<MessageSet<VertexValueType>> &mergedMSGSet) override;
 
-    void Init(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) override;
+    void Init(int vCount, int eCount, int numOfInitV) override;
+    void GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) override;
     void Deploy(int vCount, int numOfInitV) override;
     void Free() override;
 

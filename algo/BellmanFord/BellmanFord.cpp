@@ -92,7 +92,18 @@ void BellmanFord<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, con
 }
 
 template <typename VertexValueType>
-void BellmanFord<VertexValueType>::Init(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList)
+void BellmanFord<VertexValueType>::Init(int vCount, int eCount, int numOfInitV)
+{
+    this->numOfInitV = numOfInitV;
+
+    //Memory parameter init
+    this->totalVValuesCount = vCount * numOfInitV;
+    this->totalMValuesCount = vCount * numOfInitV;
+}
+
+template<typename VertexValueType>
+void BellmanFord<VertexValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices,
+                                             const std::vector<int> &initVList)
 {
     int numOfInitV_init = initVList.size();
 
@@ -119,7 +130,7 @@ void BellmanFord<VertexValueType>::Init(Graph<VertexValueType> &g, std::set<int>
 template <typename VertexValueType>
 void BellmanFord<VertexValueType>::Deploy(int vCount, int numOfInitV)
 {
-    this->numOfInitV = numOfInitV;
+
 }
 
 template <typename VertexValueType>
@@ -130,46 +141,30 @@ void BellmanFord<VertexValueType>::Free()
 
 template <typename VertexValueType>
 void BellmanFord<VertexValueType>::MergeGraph(Graph<VertexValueType> &g, const std::vector<Graph<VertexValueType>> &subGSet,
-                std::set<int> &activeVertices, const std::vector<std::set<int>> &activeVerticesSet,
+                std::set<int> &activeVertices, const std::vector<std::set<int>> &activeVerticeSet,
                 const std::vector<int> &initVList)
 {
+    //Init
+    activeVertices.clear();
+    for(auto &v : g.vList) v.isActive = false;
+
     //Merge graphs
-    auto resG = Graph<VertexValueType>(0);
-
-    if(subGSet.size() <= 0);
-    else
+    for(const auto &subG : subGSet)
     {
-        resG = subGSet.at(0);
+        //vSet merge
+        for(int i = 0; i < subG.vCount; i++)
+            g.vList.at(i).isActive |= subG.vList.at(i).isActive;
 
-        resG.eList.clear();
-        resG.eCount = 0;
-
-        for(const auto &subG : subGSet) resG.eCount += subG.eCount;
-        resG.eList.reserve(resG.eCount);
-
-        //Merge subGraphs
-        for(const auto &subG : subGSet)
+        //vValues merge
+        for(int i = 0; i < subG.verticesValue.size(); i++)
         {
-            //Merge vertices info
-            for(const auto &v : subG.vList) resG.vList.at(v.vertexID).isActive |= v.isActive;
-
-            //Merge vValues
-            for(int i = 0; i < subG.verticesValue.size(); i++)
-            {
-                if(resG.verticesValue.at(i) > subG.verticesValue.at(i))
-                    resG.verticesValue.at(i) = subG.verticesValue.at(i);
-            }
-
-            //Merge Edge
-            //There should be not any relevant edges since subgraphs are divided by dividing edge set
-            resG.eList.insert(resG.eList.end(), subG.eList.begin(), subG.eList.end());
+            if(g.verticesValue.at(i) > subG.verticesValue.at(i))
+                g.verticesValue.at(i) = subG.verticesValue.at(i);
         }
     }
 
-    g = resG;
-
     //Merge active vertices set
-    for(auto AVs : activeVerticesSet)
+    for(const auto &AVs : activeVerticeSet)
     {
         for(auto av : AVs)
             activeVertices.insert(av);
@@ -228,7 +223,9 @@ void BellmanFord<VertexValueType>::Apply(Graph<VertexValueType> &g, const std::v
     MessageSet<VertexValueType> mGenSet = MessageSet<VertexValueType>();
     MessageSet<VertexValueType> mMergedSet = MessageSet<VertexValueType>();
 
-    Init(g, activeVertices, initVList);
+    Init(g.vCount, g.eCount, initVList.size());
+
+    GraphInit(g, activeVertices, initVList);
 
     Deploy(g.vCount, initVList.size());
 
@@ -251,7 +248,9 @@ void BellmanFord<VertexValueType>::ApplyD(Graph<VertexValueType> &g, const std::
     std::vector<MessageSet<VertexValueType>> mMergedSetSet = std::vector<MessageSet<VertexValueType>>();
     for(int i = 0; i < partitionCount; i++) mMergedSetSet.push_back(MessageSet<VertexValueType>());
 
-    Init(g, activeVertices, initVList);
+    Init(g.vCount, g.eCount, initVList.size());
+
+    GraphInit(g, activeVertices, initVList);
 
     Deploy(g.vCount, initVList.size());
 
@@ -290,16 +289,4 @@ void BellmanFord<VertexValueType>::ApplyD(Graph<VertexValueType> &g, const std::
     //Test
     std::cout << "end" << ":" << clock() << std::endl;
     //Test end
-}
-
-template <typename VertexValueType>
-void BellmanFord<VertexValueType>::MSGInit_array(VertexValueType *mValues, int eCount, int vCount, int numOfInitV)
-{
-    if(mValues != nullptr)
-        mValues = new VertexValueType[vCount * numOfInitV];
-
-    for(int i = 0; i < vCount * numOfInitV; i++)
-    {
-        mValues[i] = INVALID_MASSAGE;
-    }
 }

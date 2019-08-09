@@ -73,12 +73,23 @@ auto BellmanFordGPU<VertexValueType>::MSGApply_GPU_VVCopy(Vertex *d_vSet, const 
 template <typename VertexValueType>
 BellmanFordGPU<VertexValueType>::BellmanFordGPU()
 {
+
 }
 
 template <typename VertexValueType>
-void BellmanFordGPU<VertexValueType>::Init(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList)
+void BellmanFordGPU<VertexValueType>::Init(int vCount, int eCount, int numOfInitV)
 {
-    BellmanFord<VertexValueType>::Init(g, activeVertices, initVList);
+    BellmanFord<VertexValueType>::Init(vCount, eCount, numOfInitV);
+
+    this->vertexLimit = VERTEXSCALEINGPU;
+    this->mPerMSGSet = MSGSCALEINGPU;
+    this->ePerEdgeSet = EDGESCALEINGPU;
+}
+
+template <typename VertexValueType>
+void BellmanFordGPU<VertexValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList)
+{
+    BellmanFord<VertexValueType>::GraphInit(g, activeVertices, initVList);
 }
 
 template <typename VertexValueType>
@@ -87,10 +98,6 @@ void BellmanFordGPU<VertexValueType>::Deploy(int vCount, int numOfInitV)
     BellmanFord<VertexValueType>::Deploy(vCount, numOfInitV);
 
     cudaError_t err = cudaSuccess;
-
-    this->vertexLimit = VERTEXSCALEINGPU;
-    this->mPerMSGSet = MSGSCALEINGPU;
-    this->ePerEdgeSet = EDGESCALEINGPU;
 
     this->initVSet = new int [numOfInitV];
     err = cudaMalloc((void **)&this->d_initVSet, this->numOfInitV * sizeof(int));
@@ -148,8 +155,11 @@ void BellmanFordGPU<VertexValueType>::Free()
 template <typename VertexValueType>
 void BellmanFordGPU<VertexValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<VertexValueType> &mSet)
 {
+    //Activity reset
+    activeVertices.clear();
+
     //Availability check
-    if(g.vCount == 0) return;
+    if(g.vCount <= 0) return;
 
     //MSG Init
     for(int i = 0; i < g.vCount * this->numOfInitV; i++)
@@ -165,7 +175,6 @@ void BellmanFordGPU<VertexValueType>::MSGApply(Graph<VertexValueType> &g, const 
     this->MSGApply_array(g.vCount, g.eCount, &g.vList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], this->mValueTable);
 
     //Active vertices set assembly
-    activeVertices.clear();
     for(int i = 0; i < g.vCount; i++)
     {
         if(g.vList.at(i).isActive)
@@ -179,7 +188,7 @@ void BellmanFordGPU<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &
     //Generate merged msgs directly
 
     //Availability check
-    if(g.vCount == 0) return;
+    if(g.vCount <= 0) return;
 
     //array form computation
     this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], this->mMergedMSGValueSet);

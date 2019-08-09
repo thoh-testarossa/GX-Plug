@@ -22,12 +22,12 @@ public:
     //For transportation between jni part and processing part by using share memory
     //Also for less data transformation in order to achieve higher performance
     //Data struct Graph is not necessary!?
-    virtual void MSGInit_array(VertexValueType *mValues, int eCount, int vCount, int numOfInitV) = 0;
     virtual void MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues) = 0;
     virtual void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, VertexValueType *mValues) = 0;
 
     //Master function
-    virtual void Init(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) = 0;
+    virtual void Init(int vCount, int eCount, int numOfInitV) = 0;
+    virtual void GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) = 0;
     virtual void Free() = 0;
     virtual void Deploy(int vCount, int numOfInitV) = 0;
     virtual void MergeGraph(Graph<VertexValueType> &g, const std::vector<Graph<VertexValueType>> &subGSet,
@@ -42,6 +42,10 @@ public:
 
     Graph<VertexValueType> reflectG(const Graph<VertexValueType> &o_g, const std::vector<Edge> &eSet, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex);
     MessageSet<VertexValueType> reflectM(const MessageSet<VertexValueType> &o_mSet, int vCount, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex);
+
+    //This two parameter is used to initialize memory blocks the program will use
+    int totalVValuesCount;
+    int totalMValuesCount;
 };
 
 #endif //GRAPH_ALGO_GRAPHUTIL_H

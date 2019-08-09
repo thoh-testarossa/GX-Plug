@@ -39,6 +39,7 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
         int chk = 0;
 
         this->executor = GraphUtilType();
+        this->executor.Init(vCount, eCount, numOfInitV);
         this->vValues_shm = UNIX_shm();
         this->vSet_shm = UNIX_shm();
         this->eSet_shm = UNIX_shm();
@@ -52,11 +53,11 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
 
         if(chk != -1)
             chk = this->vValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (VVALUES_SHM << SHM_OFFSET)),
-                this->vCount * this->numOfInitV * sizeof(VertexValueType),
+                this->executor.totalVValuesCount * sizeof(VertexValueType),
                 0666);
         if(chk != -1)
             chk = this->mValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (MVALUES_SHM << SHM_OFFSET)),
-                this->vCount * this->numOfInitV * sizeof(VertexValueType),
+                this->executor.totalVValuesCount * sizeof(VertexValueType),
                 0666);
         if(chk != -1)
             chk = this->vSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (VSET_SHM << SHM_OFFSET)),
@@ -172,8 +173,6 @@ void UtilServer<GraphUtilType, VertexValueType>::run()
         cmd = msgp;
         if(std::string("execute") == cmd)
         {
-            this->executor.MSGInit_array(this->mValues, this->eCount, this->vCount, this->numOfInitV);
-
             this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
 
             this->executor.MSGApply_array(this->vCount, this->eCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, mValues);

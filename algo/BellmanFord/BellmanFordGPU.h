@@ -15,7 +15,8 @@ class BellmanFordGPU : public BellmanFord<VertexValueType>
 public:
     BellmanFordGPU();
 
-    void Init(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) override;
+    void Init(int vCount, int eCount, int numOfInitV) override;
+    void GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) override;
     void Deploy(int vCount, int numOfInitV) override;
     void Free() override;
 
