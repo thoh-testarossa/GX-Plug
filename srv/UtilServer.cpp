@@ -57,7 +57,7 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
                 0666);
         if(chk != -1)
             chk = this->mValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (MVALUES_SHM << SHM_OFFSET)),
-                this->executor.totalVValuesCount * sizeof(VertexValueType),
+                this->executor.totalMValuesCount * sizeof(VertexValueType),
                 0666);
         if(chk != -1)
             chk = this->vSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (VSET_SHM << SHM_OFFSET)),
