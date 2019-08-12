@@ -114,7 +114,7 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
             std::cout << "Init succeeded." << std::endl;
             //Test end
 
-            this->executor.Deploy(vCount, numOfInitV);
+            this->executor.Deploy(vCount, eCount, numOfInitV);
         }
         else
         {

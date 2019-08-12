@@ -31,6 +31,15 @@ target_link_libraries(algo_LabelPropagationTest
         core_MessageSet
         core_GraphUtil)
 
+add_executable(algo_ConnectedComponentTest
+        ConnectedComponentTest.cpp)
+
+target_link_libraries(algo_ConnectedComponentTest
+        algo_ConnectedComponent
+        core_Graph
+        core_MessageSet
+        core_GraphUtil)
+
 add_executable(core_GraphAccessTest
         GraphAccessTest.cpp)
 

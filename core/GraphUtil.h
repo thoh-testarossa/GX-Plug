@@ -29,11 +29,11 @@ public:
     virtual void Init(int vCount, int eCount, int numOfInitV) = 0;
     virtual void GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) = 0;
     virtual void Free() = 0;
-    virtual void Deploy(int vCount, int numOfInitV) = 0;
+    virtual void Deploy(int vCount, int eCount, int numOfInitV) = 0;
     virtual void MergeGraph(Graph<VertexValueType> &g, const std::vector<Graph<VertexValueType>> &subGSet,
                             std::set<int> &activeVertices, const std::vector<std::set<int>> &activeVerticeSet,
                             const std::vector<int> &initVList) = 0;
-    virtual void MergeMergedMSG(MessageSet<VertexValueType> &mergedMSG, const std::vector<MessageSet<VertexValueType>> &mergedMSGSet) = 0;
+    //virtual void MergeMergedMSG(MessageSet<VertexValueType> &mergedMSG, const std::vector<MessageSet<VertexValueType>> &mergedMSGSet) = 0;
 
     std::vector<Graph<VertexValueType>> DivideGraphByEdge(const Graph<VertexValueType> &g, int partitionCount);
 

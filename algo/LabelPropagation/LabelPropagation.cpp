@@ -147,7 +147,7 @@ void LabelPropagation<VertexValueType>::GraphInit(Graph<VertexValueType> &g, std
 }
 
 template <typename VertexValueType>
-void LabelPropagation<VertexValueType>::Deploy(int vCount, int numOfInitV)
+void LabelPropagation<VertexValueType>::Deploy(int vCount, int eCount, int numOfInitV)
 {
 
 }
@@ -200,11 +200,6 @@ void LabelPropagation<VertexValueType>::MergeGraph(Graph<VertexValueType> &g, co
 }
 
 template <typename VertexValueType>
-void LabelPropagation<VertexValueType>::MergeMergedMSG(MessageSet<VertexValueType> &mergedMSG, const std::vector<MessageSet<VertexValueType>> &mergedMSGSet)
-{
-}
-
-template <typename VertexValueType>
 void LabelPropagation<VertexValueType>::ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices)
 {
     MessageSet<VertexValueType> mMergedSet = MessageSet<VertexValueType>();
@@ -231,7 +226,7 @@ void LabelPropagation<VertexValueType>::Apply(Graph<VertexValueType> &g, const s
 
     GraphInit(g, activeVertice, initVList);
 
-    Deploy(g.vCount, initVList.size());
+    Deploy(g.vCount, g.eCount, initVList.size());
 
     while(activeVertice.size() > 0)
         ApplyStep(g, initVList, activeVertice);
@@ -256,6 +251,8 @@ void LabelPropagation<VertexValueType>::ApplyD(Graph<VertexValueType> &g, const 
     Init(g.vCount, g.eCount, initVList.size());
 
     GraphInit(g, activeVertice, initVList);
+
+    Deploy(g.vCount, g.eCount, initVList.size());
 
     int iterCount = 0;
 

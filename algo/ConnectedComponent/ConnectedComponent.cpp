@@ -27,6 +27,7 @@ void ConnectedComponent<VertexValueType>::MSGApply(Graph<VertexValueType> &g, co
 
     this->MSGApply_array(g.vCount, g.eCount, &g.vList[0], 0, nullptr, &g.verticesValue[0], mValues);
 
+    activeVertice.clear();
     for(const auto &v : g.vList)
     {
         if(v.isActive)
@@ -85,7 +86,7 @@ ConnectedComponent<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, c
     {
         if(vSet[eSet[i].src].isActive)
         {
-            if(mValues[eSet[i].dst] < vValues[eSet[i].src])
+            if(mValues[eSet[i].dst] > vValues[eSet[i].src])
                 mValues[eSet[i].dst] = vValues[eSet[i].src];
         }
     }
@@ -124,13 +125,6 @@ void ConnectedComponent<VertexValueType>::MergeGraph(Graph<VertexValueType> &g,
 }
 
 template<typename VertexValueType>
-void ConnectedComponent<VertexValueType>::MergeMergedMSG(MessageSet<VertexValueType> &mergedMSG,
-                                                         const std::vector<MessageSet<VertexValueType>> &mergedMSGSet)
-{
-
-}
-
-template<typename VertexValueType>
 void ConnectedComponent<VertexValueType>::Init(int vCount, int eCount, int numOfInitV)
 {
     this->totalVValuesCount = vCount;
@@ -141,17 +135,22 @@ template<typename VertexValueType>
 void ConnectedComponent<VertexValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices,
                                                     const std::vector<int> &initVList)
 {
-    //v Init
-    for(auto &v : g.vList) v.isActive = true;
+    //v init
+    for(auto &v : g.vList)
+    {
+        v.isActive = true;
+        activeVertices.insert(v.vertexID);
+    }
 
     //vValues init
     g.verticesValue.reserve(g.vCount);
+    g.verticesValue.assign(g.vCount, -1);
     for(int i = 0; i < g.vCount; i++) g.verticesValue.at(i) = (VertexValueType)i;
 }
 
 
 template<typename VertexValueType>
-void ConnectedComponent<VertexValueType>::Deploy(int vCount, int numOfInitV)
+void ConnectedComponent<VertexValueType>::Deploy(int vCount, int eCount, int numOfInitV)
 {
 
 }
@@ -187,12 +186,79 @@ void ConnectedComponent<VertexValueType>::ApplyStep(Graph<VertexValueType> &g, c
 template<typename VertexValueType>
 void ConnectedComponent<VertexValueType>::Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList)
 {
+    //Init the Graph
+    std::set<int> activeVertices = std::set<int>();
+    MessageSet<VertexValueType> mGenSet = MessageSet<VertexValueType>();
+    MessageSet<VertexValueType> mMergedSet = MessageSet<VertexValueType>();
 
+    Init(g.vCount, g.eCount, initVList.size());
+
+    GraphInit(g, activeVertices, initVList);
+
+    Deploy(g.vCount, g.eCount, initVList.size());
+
+    while(activeVertices.size() > 0)
+        ApplyStep(g, initVList, activeVertices);
+
+    Free();
 }
 
 template<typename VertexValueType>
 void ConnectedComponent<VertexValueType>::ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList,
                                                  int partitionCount)
 {
+    //Init the Graph
+    std::set<int> activeVertices = std::set<int>();
 
+    std::vector<std::set<int>> AVSet = std::vector<std::set<int>>();
+    for(int i = 0; i < partitionCount; i++) AVSet.push_back(std::set<int>());
+    std::vector<MessageSet<VertexValueType>> mGenSetSet = std::vector<MessageSet<VertexValueType>>();
+    for(int i = 0; i < partitionCount; i++) mGenSetSet.push_back(MessageSet<VertexValueType>());
+    std::vector<MessageSet<VertexValueType>> mMergedSetSet = std::vector<MessageSet<VertexValueType>>();
+    for(int i = 0; i < partitionCount; i++) mMergedSetSet.push_back(MessageSet<VertexValueType>());
+
+    Init(g.vCount, g.eCount, initVList.size());
+
+    GraphInit(g, activeVertices, initVList);
+
+    //Test
+    //std::cout << 1 << std::endl;
+
+    Deploy(g.vCount, g.eCount, initVList.size());
+
+    int iterCount = 0;
+
+    while(activeVertices.size() > 0)
+    {
+        //Test
+        std::cout << ++iterCount << ":" << clock() << std::endl;
+        //Test end
+
+        auto subGraphSet = this->DivideGraphByEdge(g, partitionCount);
+
+        for(int i = 0; i < partitionCount; i++)
+        {
+            AVSet.at(i).clear();
+            AVSet.at(i) = activeVertices;
+        }
+
+        //Test
+        std::cout << "GDivide:" << clock() << std::endl;
+        //Test end
+
+        for(int i = 0; i < partitionCount; i++)
+            ApplyStep(subGraphSet.at(i), initVList, AVSet.at(i));
+
+        activeVertices.clear();
+        MergeGraph(g, subGraphSet, activeVertices, AVSet, initVList);
+        //Test
+        std::cout << "GMerge:" << clock() << std::endl;
+        //Test end
+    }
+
+    Free();
+
+    //Test
+    std::cout << "end" << ":" << clock() << std::endl;
+    //Test end
 }

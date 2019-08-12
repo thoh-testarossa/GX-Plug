@@ -128,7 +128,7 @@ void BellmanFord<VertexValueType>::GraphInit(Graph<VertexValueType> &g, std::set
 }
 
 template <typename VertexValueType>
-void BellmanFord<VertexValueType>::Deploy(int vCount, int numOfInitV)
+void BellmanFord<VertexValueType>::Deploy(int vCount, int eCount, int numOfInitV)
 {
 
 }
@@ -172,29 +172,6 @@ void BellmanFord<VertexValueType>::MergeGraph(Graph<VertexValueType> &g, const s
 }
 
 template <typename VertexValueType>
-void BellmanFord<VertexValueType>::MergeMergedMSG(MessageSet<VertexValueType> &mergedMSG, const std::vector<MessageSet<VertexValueType>> &mergedMSGSet)
-{
-    auto mergeMap = std::map<std::pair<int, int>, double>();
-    for(auto mMSet : mergedMSGSet)
-    {
-        for(auto mM : mMSet.mSet)
-        {
-            auto index = std::pair<int, int>(mM.src, mM.dst);
-            if (mergeMap.find(index) == mergeMap.end())
-                mergeMap.insert(std::pair<std::pair<int, int>, double>(index, mM.value));
-            else
-            {
-                if(mergeMap.find(index)->second > mM.value)
-                    mergeMap.find(index)->second = mM.value;
-            }
-        }
-    }
-
-    for(auto m : mergeMap)
-        mergedMSG.insertMsg(Message<VertexValueType>(m.first.first, m.first.second, m.second));
-}
-
-template <typename VertexValueType>
 void BellmanFord<VertexValueType>::ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices)
 {
     MessageSet<VertexValueType> mGenSet = MessageSet<VertexValueType>();
@@ -227,7 +204,7 @@ void BellmanFord<VertexValueType>::Apply(Graph<VertexValueType> &g, const std::v
 
     GraphInit(g, activeVertices, initVList);
 
-    Deploy(g.vCount, initVList.size());
+    Deploy(g.vCount, g.eCount, initVList.size());
 
     while(activeVertices.size() > 0)
         ApplyStep(g, initVList, activeVertices);
@@ -252,7 +229,7 @@ void BellmanFord<VertexValueType>::ApplyD(Graph<VertexValueType> &g, const std::
 
     GraphInit(g, activeVertices, initVList);
 
-    Deploy(g.vCount, initVList.size());
+    Deploy(g.vCount, g.eCount, initVList.size());
 
     int iterCount = 0;
 

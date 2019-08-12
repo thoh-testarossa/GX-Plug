@@ -1,20 +1,20 @@
 //
-// Created by Thoh Testarossa on 2019-03-12
+// Created by Thoh Testarossa on 2019-08-12.
 //
 
 #pragma once
 
-#ifndef GRAPH_ALGO_BELLMANFORDGPU_H
-#define GRAPH_ALGO_BELLMANFORDGPU_H
+#ifndef GRAPH_ALGO_CONNECTEDCOMPONENTGPU_H
+#define GRAPH_ALGO_CONNECTEDCOMPONENTGPU_H
 
-#include "BellmanFord.h"
+#include "ConnectedComponent.h"
 #include "../../include/GPUconfig.h"
 
 template <typename VertexValueType>
-class BellmanFordGPU : public BellmanFord<VertexValueType>
+class ConnectedComponentGPU : public ConnectedComponent<VertexValueType>
 {
 public:
-    BellmanFordGPU();
+    ConnectedComponentGPU();
 
     void Init(int vCount, int eCount, int numOfInitV) override;
     void GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) override;
@@ -32,13 +32,11 @@ protected:
     int mPerMSGSet;
     int ePerEdgeSet;
 
-    int *initVSet;
-    int *d_initVSet;
-
     VertexValueType *vValueSet;
     double *d_vValueSet;
 
     VertexValueType *mValueTable;
+    int *d_mValueTable;
 
     int *mInitVIndexSet;
     int *d_mInitVIndexSet;
@@ -49,21 +47,6 @@ protected:
 
     Vertex *d_vSet;
     Edge *d_eGSet;
-
-    VertexValueType *mMergedMSGValueSet;
-    unsigned long long int *mTransformedMergedMSGValueSet;
-    unsigned long long int *d_mTransformedMergedMSGValueSet;
-
-private:
-    auto MSGGenMerge_GPU_MVCopy(Vertex *d_vSet, const Vertex *vSet,
-                                double *d_vValues, const double *vValues,
-                                unsigned long long int *d_mTransformedMergedMSGValueSet,
-                                unsigned long long int *mTransformedMergedMSGValueSet,
-                                int vGCount, int numOfInitV);
-
-    auto MSGApply_GPU_VVCopy(Vertex *d_vSet, const Vertex *vSet,
-                             double *d_vValues, const double *vValues,
-                             int vGCount, int numOfInitV);
 };
 
-#endif //GRAPH_ALGO_BELLMANFORDGPU_H
+#endif //GRAPH_ALGO_CONNECTEDCOMPONENTGPU_H

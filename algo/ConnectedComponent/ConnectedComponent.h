@@ -25,11 +25,10 @@ public:
     void MergeGraph(Graph<VertexValueType> &g, const std::vector<Graph<VertexValueType>> &subGSet,
                     std::set<int> &activeVertices, const std::vector<std::set<int>> &activeVerticeSet,
                     const std::vector<int> &initVList) override;
-    void MergeMergedMSG(MessageSet<VertexValueType> &mergedMSG, const std::vector<MessageSet<VertexValueType>> &mergedMSGSet) override;
 
     void Init(int vCount, int eCount, int numOfInitV) override;
     void GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) override;
-    void Deploy(int vCount, int numOfInitV) override;
+    void Deploy(int vCount, int eCount, int numOfInitV) override;
     void Free() override;
 
     void ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices);

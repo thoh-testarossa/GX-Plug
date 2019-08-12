@@ -93,7 +93,7 @@ void BellmanFordGPU<VertexValueType>::GraphInit(Graph<VertexValueType> &g, std::
 }
 
 template <typename VertexValueType>
-void BellmanFordGPU<VertexValueType>::Deploy(int vCount, int numOfInitV)
+void BellmanFordGPU<VertexValueType>::Deploy(int vCount, int eCount, int numOfInitV)
 {
     BellmanFord<VertexValueType>::Deploy(vCount, numOfInitV);
 
@@ -102,7 +102,7 @@ void BellmanFordGPU<VertexValueType>::Deploy(int vCount, int numOfInitV)
     this->initVSet = new int [numOfInitV];
     err = cudaMalloc((void **)&this->d_initVSet, this->numOfInitV * sizeof(int));
 
-    this->vValueSet = new double [vCount * this->numOfInitV];
+    this->vValueSet = new VertexValueType [vCount * this->numOfInitV];
     err = cudaMalloc((void **)&this->d_vValueSet, vertexLimit * this->numOfInitV * sizeof(double));
 
     this->mValueTable = new VertexValueType [vCount * this->numOfInitV];
@@ -116,7 +116,7 @@ void BellmanFordGPU<VertexValueType>::Deploy(int vCount, int numOfInitV)
     err = cudaMalloc((void **)&this->d_mInitVIndexSet, mSize * sizeof(int));
     this->mDstSet = new int [mSize];
     err = cudaMalloc((void **)&this->d_mDstSet, mSize * sizeof(int));
-    this->mValueSet = new double [mSize];
+    this->mValueSet = new VertexValueType [mSize];
     err = cudaMalloc((void **)&this->d_mValueSet, mSize * sizeof(double));
 
     this->mMergedMSGValueSet = new VertexValueType [vCount * numOfInitV];

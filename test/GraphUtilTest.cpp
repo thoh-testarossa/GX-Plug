@@ -81,7 +81,7 @@ int main()
     auto AVSet = std::set<int>();
     executor3.Init(test2.vCount, test2.eCount, initVList.size());
     executor3.GraphInit(test2, AVSet, initVList);
-    executor3.Deploy(test2.vCount, initVList.size());
+    executor3.Deploy(test2.vCount, test2.eCount, initVList.size());
     for(int i = 0; i < r_test2.vCount * initVList.size(); i++)
         test2.verticesValue.at(reflectIndex[i / initVList.size()] * initVList.size() + i % initVList.size()) = r_test2.verticesValue.at(i);
     for(int i = 0; i < test2.vCount * initVList.size(); i++)
