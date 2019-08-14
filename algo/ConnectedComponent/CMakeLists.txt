@@ -23,14 +23,13 @@ target_link_libraries(algo_ConnectedComponent
 #            kernel_src/ConnectedComponentGPU_kernel.h
 #            kernel_src/ConnectedComponentGPU_kernel.cu)
 
-    add_library(algo_ConnectedComponentGPU
-            ConnectedComponentGPU.h
-            ConnectedComponentGPU.cpp
-            ConnectedComponentGPU_impl.cpp)
+#    add_library(algo_ConnectedComponentGPU
+#            ConnectedComponentGPU.h
+#            ConnectedComponentGPU.cpp
+#            ConnectedComponentGPU_impl.cpp)
 
-    target_link_libraries(algo_ConnectedComponentGPU
-            algo_ConnectedComponent
-#            algo_ConnectedComponentGPU_kernel
-            )
+#    target_link_libraries(algo_ConnectedComponentGPU
+#            algo_ConnectedComponent
+#            algo_ConnectedComponentGPU_kernel)
 
 #endif(CUDA_FOUND)

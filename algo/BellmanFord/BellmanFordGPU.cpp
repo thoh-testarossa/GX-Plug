@@ -95,7 +95,7 @@ void BellmanFordGPU<VertexValueType>::GraphInit(Graph<VertexValueType> &g, std::
 template <typename VertexValueType>
 void BellmanFordGPU<VertexValueType>::Deploy(int vCount, int eCount, int numOfInitV)
 {
-    BellmanFord<VertexValueType>::Deploy(vCount, numOfInitV);
+    BellmanFord<VertexValueType>::Deploy(vCount, eCount, numOfInitV);
 
     cudaError_t err = cudaSuccess;
 

@@ -74,9 +74,15 @@ int main(int argc, char *argv[])
     }
 
     for(int i = 0; i < vCount * numOfInitV; i++) vValues[i] = INT32_MAX  >> 1;
+
     //Easy init
-    for(int i = 0; i < numOfInitV; i++) initVSet[i] = 1 << i;
-    for(int i = 0; i < numOfInitV; i++) vValues[(1 << i) * numOfInitV + i] = 0;
+    initVSet[0] = 1;
+    initVSet[1] = 2;
+    initVSet[2] = 3;
+    initVSet[3] = 5;
+    initVSet[4] = 8;
+    for(int i = 0; i < numOfInitV; i++) vValues[initVSet[i] * numOfInitV + i] = 0;
+
     for(int i = 0; i < vCount; i++) filteredV[i] = false;
 
     for(int i = 0; i < vCount; i++) vSet.emplace_back(i, false, -1);
