@@ -153,59 +153,6 @@ void BellmanFordGPU<VertexValueType>::Free()
 }
 
 template <typename VertexValueType>
-void BellmanFordGPU<VertexValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<VertexValueType> &mSet)
-{
-    //Activity reset
-    activeVertices.clear();
-
-    //Availability check
-    if(g.vCount <= 0) return;
-
-    //MSG Init
-    for(int i = 0; i < g.vCount * this->numOfInitV; i++)
-        this->mValueTable[i] = (VertexValueType)INVALID_MASSAGE;
-    for(int i = 0; i < mSet.mSet.size(); i++)
-    {
-        auto &mv = this->mValueTable[mSet.mSet.at(i).dst * this->numOfInitV + g.vList.at(mSet.mSet.at(i).src).initVIndex];
-        if(mv > mSet.mSet.at(i).value)
-            mv = mSet.mSet.at(i).value;
-    }
-
-    //array form computation
-    this->MSGApply_array(g.vCount, g.eCount, &g.vList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], this->mValueTable);
-
-    //Active vertices set assembly
-    for(int i = 0; i < g.vCount; i++)
-    {
-        if(g.vList.at(i).isActive)
-            activeVertices.insert(i);
-    }
-}
-
-template <typename VertexValueType>
-void BellmanFordGPU<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertices, MessageSet<VertexValueType> &mSet)
-{
-    //Generate merged msgs directly
-
-    //Availability check
-    if(g.vCount <= 0) return;
-
-    //array form computation
-    this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], this->mMergedMSGValueSet);
-
-    //Package mMergedMSGValueSet to result mSet
-    for(int i = 0; i < g.vCount * this->numOfInitV; i++)
-    {
-        if((double)this->mMergedMSGValueSet[i] != INVALID_MASSAGE)
-        {
-            int dst = i / this->numOfInitV;
-            int initV = initVSet[i % this->numOfInitV];
-            mSet.insertMsg(Message<VertexValueType>(initV, dst, this->mMergedMSGValueSet[i]));
-        }
-    }
-}
-
-template <typename VertexValueType>
 void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues)
 {
     //Availability check
@@ -260,7 +207,7 @@ void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, int eCount, Ver
                 {
                     this->mInitVIndexSet[j] = vSet[r_mGSet.mSet.at(j).src].initVIndex;
                     this->mDstSet[j] = r_mGSet.mSet.at(j).dst;
-                    this->mValueSet[j] = (double)r_mGSet.mSet.at(j).value;
+                    this->mValueSet[j] = r_mGSet.mSet.at(j).value;
                 }
 
                 //v reflection
@@ -290,14 +237,14 @@ void BellmanFordGPU<VertexValueType>::MSGApply_array(int vCount, int eCount, Ver
                 {
                     this->mInitVIndexSet[j] = vSet[mGSet.mSet.at(j).src].initVIndex;
                     this->mDstSet[j] = mGSet.mSet.at(j).dst;
-                    this->mValueSet[j] = (double)mGSet.mSet.at(j).value;
+                    this->mValueSet[j] = mGSet.mSet.at(j).value;
                 }
             }
 
             //MSG memory copy
             err = cudaMemcpy(this->d_mInitVIndexSet, this->mInitVIndexSet, mGCount * sizeof(int), cudaMemcpyHostToDevice);
             err = cudaMemcpy(this->d_mDstSet, this->mDstSet, mGCount * sizeof(int), cudaMemcpyHostToDevice);
-            err = cudaMemcpy(this->d_mValueSet, this->mValueSet, mGCount * sizeof(double), cudaMemcpyHostToDevice);
+            err = cudaMemcpy(this->d_mValueSet, (double *)this->mValueSet, mGCount * sizeof(double), cudaMemcpyHostToDevice);
 
             //Kernel Execution
             for(int j = 0; j < mGCount; j += NUMOFGPUCORE)

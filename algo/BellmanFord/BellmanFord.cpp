@@ -15,47 +15,63 @@ BellmanFord<VertexValueType>::BellmanFord()
 template <typename VertexValueType>
 void BellmanFord<VertexValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<VertexValueType> &mSet)
 {
-    //Reset active vertices info
-    for(auto &v : g.vList)
-        v.isActive = false;
+    //Activity reset
+    activeVertices.clear();
 
-    for(auto m : mSet.mSet)
+    //Availability check
+    if(g.vCount <= 0) return;
+
+    //MSG Init
+    VertexValueType *mValues = new VertexValueType [g.vCount * this->numOfInitV];
+
+    for(int i = 0; i < g.vCount * this->numOfInitV; i++)
+        mValues[i] = (VertexValueType)INVALID_MASSAGE;
+    for(int i = 0; i < mSet.mSet.size(); i++)
     {
-        if(g.verticesValue.at(m.dst * this->numOfInitV + g.vList.at(m.src).initVIndex) > m.value)
-        {
-            g.verticesValue.at(m.dst * this->numOfInitV + g.vList.at(m.src).initVIndex) = m.value;
-            activeVertices.insert(m.dst);
-            g.vList.at(m.dst).isActive = true;
-        }
+        auto &mv = mValues[mSet.mSet.at(i).dst * this->numOfInitV + g.vList.at(mSet.mSet.at(i).src).initVIndex];
+        if(mv > mSet.mSet.at(i).value)
+            mv = mSet.mSet.at(i).value;
     }
+
+    //array form computation
+    this->MSGApply_array(g.vCount, g.eCount, &g.vList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], mValues);
+
+    //Active vertices set assembly
+    for(int i = 0; i < g.vCount; i++)
+    {
+        if(g.vList.at(i).isActive)
+            activeVertices.insert(i);
+    }
+
+    free(mValues);
 }
 
 template <typename VertexValueType>
 void BellmanFord<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertices, MessageSet<VertexValueType> &mSet)
 {
     //Generate merged msgs directly
-    mSet.mSet.clear();
-    mSet.mSet.reserve(g.vCount * this->numOfInitV);
-    for(int i = 0; i < g.vCount * this->numOfInitV; i++)
-        mSet.insertMsg(Message<VertexValueType>(initVSet.at(i % this->numOfInitV), i / this->numOfInitV, INVALID_MASSAGE));
 
-    for(auto e : g.eList)
+    //Availability check
+    if(g.vCount <= 0) return;
+
+    //mValues init
+    VertexValueType *mValues = new VertexValueType [g.vCount * this->numOfInitV];
+
+    //array form computation
+    this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], mValues);
+
+    //Package mMergedMSGValueSet to result mSet
+    for(int i = 0; i < g.vCount * this->numOfInitV; i++)
     {
-        if(g.vList.at(e.src).isActive)
+        if(mValues[i] != (VertexValueType)INVALID_MASSAGE)
         {
-            int vID = e.src;
-            if(g.vList.at(vID).vertexID == vID) // It should be of equal value
-            {
-                for(int i = 0; i < this->numOfInitV; i++)
-                {
-                    auto &m = mSet.mSet.at(e.dst * this->numOfInitV + i);
-                    if(m.value > g.verticesValue.at(e.src * this->numOfInitV + i) + e.weight)
-                        m.value = g.verticesValue.at(e.src * this->numOfInitV + i) + e.weight;
-                }
-            }
-            else;
+            int dst = i / this->numOfInitV;
+            int initV = initVSet[i % this->numOfInitV];
+            mSet.insertMsg(Message<VertexValueType>(initV, dst, mValues[i]));
         }
     }
+
+    free(mValues);
 }
 
 template <typename VertexValueType>
