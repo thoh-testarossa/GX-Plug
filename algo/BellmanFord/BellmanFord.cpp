@@ -13,10 +13,10 @@ BellmanFord<VertexValueType>::BellmanFord()
 }
 
 template <typename VertexValueType>
-void BellmanFord<VertexValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<VertexValueType> &mSet)
+void BellmanFord<VertexValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet<VertexValueType> &mSet)
 {
     //Activity reset
-    activeVertices.clear();
+    activeVertice.clear();
 
     //Availability check
     if(g.vCount <= 0) return;
@@ -40,14 +40,14 @@ void BellmanFord<VertexValueType>::MSGApply(Graph<VertexValueType> &g, const std
     for(int i = 0; i < g.vCount; i++)
     {
         if(g.vList.at(i).isActive)
-            activeVertices.insert(i);
+            activeVertice.insert(i);
     }
 
     free(mValues);
 }
 
 template <typename VertexValueType>
-void BellmanFord<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertices, MessageSet<VertexValueType> &mSet)
+void BellmanFord<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<VertexValueType> &mSet)
 {
     //Generate merged msgs directly
 
