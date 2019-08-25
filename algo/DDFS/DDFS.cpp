@@ -7,191 +7,202 @@
 #include <iostream>
 #include <ctime>
 
-template<typename VertexValueType>
-DDFS<VertexValueType>::DDFS()
+template <typename VertexValueType, typename MessageValueType>
+DDFS<VertexValueType, MessageValueType>::DDFS()
 {
 
 }
 
-template<typename VertexValueType>
-void DDFS<VertexValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet,
-                                     std::set<int> &activeVertice, const MessageSet<VertexValueType> &mSet)
+template <typename VertexValueType, typename MessageValueType>
+void DDFS<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet,
+                                     std::set<int> &activeVertice, const MessageSet<MessageValueType> &mSet)
 {
-    //Activity reset
-    activeVertice.clear();
 
-    //Availability check
-    if(g.vCount <= 0) return;
-
-    //array form computation
-    this->MSGApply_array(g.vCount, g.eCount, &g.vList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], &mSet.mSet[0]);
-
-    //Active vertices set assembly
-    for(int i = 0; i < g.vCount; i++)
-    {
-        if(g.vList.at(i).isActive)
-            activeVertice.insert(i);
-    }
 }
 
-template<typename VertexValueType>
-void DDFS<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet,
-                                        const std::set<int> &activeVertice, MessageSet<VertexValueType> &mSet)
+template <typename VertexValueType, typename MessageValueType>
+void DDFS<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet,
+                                        const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet)
 {
-    //Generate merged msgs directly
 
-    //Availability check
-    if(g.vCount <= 0) return;
-
-    //array form computation
-    this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], &mSet.mSet[0]);
 }
 
-template<typename VertexValueType>
-void DDFS<VertexValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet,
-                                           VertexValueType *vValues, VertexValueType *mValues)
+template <typename VertexValueType, typename MessageValueType>
+void DDFS<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet,
+                                           VertexValueType *vValues, MessageValueType *mValues)
 {
     //Reset vertex activity
     for(int i = 0; i < vCount; i++)
         vSet[i].isActive = false;
 
-    //Reset msgs mark
+    //Reset opbit & vNextMSGTo
     for(int i = 0; i < vCount; i++)
     {
-        for(auto &vState : vValues[i].vStateList)
-            vState.second &= MSG_SEND_RESET;
+        vValues[i].opbit = 0;
+        vValues[i].vNextMSGTo = -1;
     }
 
     //Check each msgs
-    for(int i = 0; i < vCount; i++)
+    //msgs are sent from edges
+    //eCount here is the account of edges which contains messages rather than the account of g's edges
+    for(int i = 0; i < eCount; i++)
     {
-        for(int j = 0; j < mValues[i].relatedVCount; j++)
+        //msg token check
+        if(mValues[i].msgbit & MSG_TOKEN)
         {
-            int srcVID = i, dstVID = mValues[i].vStateList[j].first;
-            //Processing token message
-            if(mValues[i].vStateList[j].second & MSG_SEND_TOKEN)
+            if(vValues[mValues[i].dst].state == STATE_IDLE)
             {
-                if(vValues[i].state == STATE_IDLE)
+                //Mark j as i's father
+                //There should be some approach more efficient
+                for(auto &vState : vValues[mValues[i].dst].vStateList)
                 {
-                    vValues[i].state == STATE_DISCOVERED;
-                    //mark j as i's father
-                    vValues[i].parentIndex = j;
-                    vValues[i].vStateList[j].second |= MARK_PARENT;
+                    if(vState.first == mValues[i].src)
+                    {
+                        vState.second = MARK_PARENT;
+                        break;
+                    }
+                }
 
-                    this->search(i, numOfInitV, initVSet, vSet, vValues);
-                    for(auto &vState : vValues[i].vStateList)
-                        vState.second |= MSG_SEND_VISITED;
-                    //Vertex which will send msg will be activated
-                    vSet[i].isActive = true;
-                }
-                else
-                {
-                    if(!(vValues[i].vStateList[j].second & MARK_VISITED))
-                        vValues[i].vStateList[j].second |= MARK_VISITED;
-                    if(vValues[i].vStateList[j].second & MARK_SON)
-                        this->search(i, numOfInitV, initVSet, vSet, vValues);
-                }
+                vValues[mValues[i].dst].state = STATE_DISCOVERED;
+                vValues[mValues[i].dst].vNextMSGTo = this->search(mValues[i].dst, numOfInitV, initVSet, vSet, vValues);
+
+                //prepare to broadcast msg "visited" to other vertices
+                vValues[mValues[i].dst].opbit |= OP_BROADCAST;
+
+                //Vertex which will send msg will be activated
+                vSet[mValues[i].dst].isActive = true;
             }
-            //Processing visited message
-            if(mValues[i].vStateList[j].second & MSG_SEND_VISITED)
+        }
+        //msg visited check
+        else if(mValues[i].msgbit & MSG_VISITED)
+        {
+            //There should be some approach more efficient
+            for(auto &vState : vValues[mValues[i].dst].vStateList)
             {
-                if(!(vValues[i].vStateList[j].second & MARK_VISITED))
-                    vValues[i].vStateList[j].second |= MARK_VISITED;
-                if(vValues[i].vStateList[j].second & MARK_SON)
+                if(vState.first == mValues[i].src)
                 {
-                    vValues[i].vStateList[j].second |= MARK_VISITED;
-                    this->search(i, numOfInitV, initVSet, vSet, vValues);
+                    if(vState.second == MARK_UNVISITED)
+                    {
+                        vState.second = MARK_VISITED;
+                        vValues[mValues[i].dst].vNextMSGTo = -1;
+                    }
+                    else if(vState.second == MARK_SON)
+                    {
+                        vState.second = MARK_VISITED;
+                        vValues[mValues[i].dst].vNextMSGTo = this->search(mValues[i].dst, numOfInitV, initVSet, vSet, vValues);
+                    }
                 }
             }
         }
+        else;
     }
 }
 
-template<typename VertexValueType>
+template <typename VertexValueType, typename MessageValueType>
 void
-DDFS<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV,
-                                         const int *initVSet, const VertexValueType *vValues, VertexValueType *mValues)
+DDFS<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV,
+                                         const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
 {
-    //Reset msgs mark
-    for(int i = 0; i < vCount; i++)
-    {
-        for(auto &m_v : mValues[i].vStateList)
-            m_v.second &= MSG_SEND_RESET;
-    }
+    int msgCount = 0;
 
-    //Generate msgs from vState generated by previous iteration
     for(int i = 0; i < vCount; i++)
     {
-        //Vertex which wants to send msgs must be active
-        if(vSet[i].isActive)
+        //Check if needed to generate broadcast msg
+        if(vValues[i].opbit & OP_BROADCAST)
         {
-            for(int j = 0; j < vValues[i].relatedVCount; j++)
+            for(const auto &vState : vValues[i].vStateList)
             {
-                if(vValues[i].vStateList[j].second & MSG_SEND_TOKEN)
-                    mValues[i].vStateList[j].second |= MSG_SEND_TOKEN;
-                if(vValues[i].vStateList[j].second & MSG_SEND_VISITED)
-                    mValues[i].vStateList[j].second |= MSG_SEND_VISITED;
+                if(vState.second == MARK_UNVISITED || vState.second == MARK_VISITED)
+                {
+                    mValues[msgCount].src = i;
+                    mValues[msgCount].dst = vState.first;
+                    mValues[msgCount].msgbit = MSG_VISITED;
+                    //Not implemented yet
+                    mValues[msgCount].timestamp = 0;
+
+                    msgCount++;
+                }
             }
+        }
+        //Check if needed to generate search msg
+        if(vValues[i].opbit & OP_MSG_FROM_SEARCH)
+        {
+            mValues[msgCount].src = i;
+            mValues[msgCount].dst = vValues[i].vNextMSGTo;
+            mValues[msgCount].msgbit = MSG_TOKEN;
+            //Not implemented yet
+            mValues[msgCount].timestamp = 0;
+
+            msgCount++;
         }
     }
 }
 
-template<typename VertexValueType>
-void DDFS<VertexValueType>::MergeGraph(Graph<VertexValueType> &g, const std::vector<Graph<VertexValueType>> &subGSet,
+template <typename VertexValueType, typename MessageValueType>
+void DDFS<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueType> &g, const std::vector<Graph<VertexValueType>> &subGSet,
                                        std::set<int> &activeVertices,
                                        const std::vector<std::set<int>> &activeVerticeSet,
                                        const std::vector<int> &initVList)
 {
+    //Reset global vValues
+    for(auto &vV : g.verticesValue)
+    {
 
+    }
+
+    //Merge subGs
+    for(const auto &subG : subGSet)
+    {
+        //state merge
+        //opbit merge
+        //vNextMSGTo merge
+        //startTime merge
+        //endTime merge
+        //relatedVCount merge
+        //vStateList merge
+    }
 }
 
-template<typename VertexValueType>
-void DDFS<VertexValueType>::Init(int vCount, int eCount, int numOfInitV)
+template <typename VertexValueType, typename MessageValueType>
+void DDFS<VertexValueType, MessageValueType>::Init(int vCount, int eCount, int numOfInitV)
 {
 
 }
 
-template<typename VertexValueType>
-void DDFS<VertexValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices,
+template <typename VertexValueType, typename MessageValueType>
+void DDFS<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices,
                                       const std::vector<int> &initVList)
 {
-    //Graph data framework init
-
-    //Starter init
-    int start = initVList[0];
-    g.verticesValue.at(start).state = true;
-    this->search(start, numOfInitV, &initVList[0], &g.vList[0], &g.verticesValue[0]);
-    for(auto &vState : g.verticesValue.at(start).vStateList)
-        vState.second |= MSG_SEND_VISITED;
-    g.vList.at(start).isActive = true;
 
 }
 
-template<typename VertexValueType>
-void DDFS<VertexValueType>::Deploy(int vCount, int eCount, int numOfInitV)
+template <typename VertexValueType, typename MessageValueType>
+void DDFS<VertexValueType, MessageValueType>::Deploy(int vCount, int eCount, int numOfInitV)
 {
 
 }
 
-template<typename VertexValueType>
-void DDFS<VertexValueType>::Free()
+template <typename VertexValueType, typename MessageValueType>
+void DDFS<VertexValueType, MessageValueType>::Free()
 {
 
 }
 
-template<typename VertexValueType>
-int DDFS<VertexValueType>::search(int vid, int numOfInitV, const int *initVSet, Vertex *vSet, VertexValueType *vValues)
+template <typename VertexValueType, typename MessageValueType>
+int DDFS<VertexValueType, MessageValueType>::search(int vid, int numOfInitV, const int *initVSet, Vertex *vSet, VertexValueType *vValues)
 {
     bool chk = false;
     for(auto &vState : vValues[vid].vStateList)
     {
-        if(!(vState.second & MARK_VISITED))
+        if(!(vState.second == MARK_VISITED))
         {
             chk = true;
-            vState.second |= MARK_VISITED;
-            vState.second |= MSG_SEND_TOKEN;
+            vState.second = MARK_SON;
+            vValues[vid].opbit |= OP_MSG_FROM_SEARCH;
+            vValues[vid].opbit |= OP_MSG_DOWNWARD;
             //Vertex which will send msg will be activated
             vSet[vid].isActive = true;
+            return vState.first;
         }
     }
 
@@ -199,7 +210,20 @@ int DDFS<VertexValueType>::search(int vid, int numOfInitV, const int *initVSet, 
     {
         if(vid == initVSet[0]) return -1;
         else
-            vValues[vid].vStateList[vValues[vid].parentIndex].second |= MSG_SEND_TOKEN;
+        {
+            //There should be some approach more efficient
+            for(auto &vState : vValues[vid].vStateList)
+            {
+                if(vState.second == MARK_PARENT)
+                {
+                    //Vertex which will send msg will be activated
+                    vSet[vid].isActive = true;
+                    vValues[vid].opbit |= OP_MSG_FROM_SEARCH;
+                    return vState.first;
+                }
+            }
+
+        }
     }
 
     return 0;
