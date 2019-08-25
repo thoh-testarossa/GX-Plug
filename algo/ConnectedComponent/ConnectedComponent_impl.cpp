@@ -4,4 +4,4 @@
 
 #include "ConnectedComponent.cpp"
 
-template class ConnectedComponent<int>;
+template class ConnectedComponent<int, int>;

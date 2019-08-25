@@ -10,8 +10,8 @@
 #include "ConnectedComponent.h"
 #include "../../include/GPUconfig.h"
 
-template <typename VertexValueType>
-class ConnectedComponentGPU : public ConnectedComponent<VertexValueType>
+template <typename VertexValueType, typename MessageValueType>
+class ConnectedComponentGPU : public ConnectedComponent<VertexValueType, MessageValueType>
 {
 public:
     ConnectedComponentGPU();
@@ -21,8 +21,8 @@ public:
     void Deploy(int vCount, int eCount, int numOfInitV) override;
     void Free() override;
 
-    void MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues) override;
-    void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, VertexValueType *mValues) override;
+    void MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues) override;
+    void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues) override;
 
 protected:
     int vertexLimit;
@@ -32,14 +32,14 @@ protected:
     VertexValueType *vValueSet;
     int *d_vValueSet;
 
-    VertexValueType *mValueTable;
+    MessageValueType *mValueTable;
     int *d_mValueTable;
 
     int *mInitVIndexSet;
     int *d_mInitVIndexSet;
     int *mDstSet;
     int *d_mDstSet;
-    VertexValueType *mValueSet;
+    MessageValueType *mValueSet;
     int *d_mValueSet;
 
     Vertex *d_vSet;

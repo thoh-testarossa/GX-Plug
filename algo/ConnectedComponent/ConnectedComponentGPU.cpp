@@ -8,14 +8,14 @@
 #include <iostream>
 #include <algorithm>
 
-template<typename VertexValueType>
-ConnectedComponentGPU<VertexValueType>::ConnectedComponentGPU()
+template <typename VertexValueType, typename MessageValueType>
+ConnectedComponentGPU<VertexValueType, MessageValueType>::ConnectedComponentGPU()
 {
 
 }
 
-template<typename VertexValueType>
-void ConnectedComponentGPU<VertexValueType>::Init(int vCount, int eCount, int numOfInitV)
+template <typename VertexValueType, typename MessageValueType>
+void ConnectedComponentGPU<VertexValueType, MessageValueType>::Init(int vCount, int eCount, int numOfInitV)
 {
     ConnectedComponent<VertexValueType>::Init(vCount, eCount, numOfInitV);
 
@@ -24,15 +24,15 @@ void ConnectedComponentGPU<VertexValueType>::Init(int vCount, int eCount, int nu
     this->ePerEdgeSet = EDGESCALEINGPU;
 }
 
-template<typename VertexValueType>
-void ConnectedComponentGPU<VertexValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices,
+template <typename VertexValueType, typename MessageValueType>
+void ConnectedComponentGPU<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices,
                                                        const std::vector<int> &initVList)
 {
     ConnectedComponent<VertexValueType>::GraphInit(g, activeVertices, initVList);
 }
 
-template<typename VertexValueType>
-void ConnectedComponentGPU<VertexValueType>::Deploy(int vCount, int eCount, int numOfInitV)
+template <typename VertexValueType, typename MessageValueType>
+void ConnectedComponentGPU<VertexValueType, MessageValueType>::Deploy(int vCount, int eCount, int numOfInitV)
 {
     ConnectedComponent<VertexValueType>::Deploy(vCount, eCount, numOfInitV);
 
@@ -57,8 +57,8 @@ void ConnectedComponentGPU<VertexValueType>::Deploy(int vCount, int eCount, int 
     err = cudaMalloc((void **)&this->d_mValueSet, mSize * sizeof(int));
 }
 
-template<typename VertexValueType>
-void ConnectedComponentGPU<VertexValueType>::Free()
+template <typename VertexValueType, typename MessageValueType>
+void ConnectedComponentGPU<VertexValueType, MessageValueType>::Free()
 {
     ConnectedComponent<VertexValueType>::Free();
 
@@ -79,10 +79,10 @@ void ConnectedComponentGPU<VertexValueType>::Free()
     cudaFree(this->d_mValueSet);
 }
 
-template<typename VertexValueType>
-void ConnectedComponentGPU<VertexValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV,
+template<typename VertexValueType, typename MessageValueType>
+void ConnectedComponentGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV,
                                                             const int *initVSet, VertexValueType *vValues,
-                                                            VertexValueType *mValues)
+                                                            MessageValueType *mValues)
 {
     //Availability check
     if(vCount == 0) return;
@@ -106,9 +106,9 @@ void ConnectedComponentGPU<VertexValueType>::MSGApply_array(int vCount, int eCou
 
     //Apply msgs to v
     int mGCount = 0;
-    auto mGSet = MessageSet<VertexValueType>();
+    auto mGSet = MessageSet<MessageValueType>();
 
-    auto r_mGSet = MessageSet<VertexValueType>();
+    auto r_mGSet = MessageSet<MessageValueType>();
     auto r_vSet = std::vector<Vertex>();
     auto r_vValueSet = std::vector<VertexValueType>();
 
@@ -116,7 +116,7 @@ void ConnectedComponentGPU<VertexValueType>::MSGApply_array(int vCount, int eCou
     {
         if(mValues[i] != INVALID_MASSAGE) //Adding msgs to batchs
         {
-            mGSet.insertMsg(Message<VertexValueType>(INVALID_INITV_INDEX, i, mValues[i]));
+            mGSet.insertMsg(Message<MessageValueType>(INVALID_INITV_INDEX, i, mValues[i]));
             mGCount++;
         }
         if(mGCount == this->mPerMSGSet || i == vCount - 1) //A batch of msgs will be transferred into GPU. Don't forget last batch!
@@ -210,11 +210,11 @@ void ConnectedComponentGPU<VertexValueType>::MSGApply_array(int vCount, int eCou
     }
 }
 
-template<typename VertexValueType>
+template<typename VertexValueType, typename MessageValueType>
 void
-ConnectedComponentGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet,
+ConnectedComponentGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet,
                                                           int numOfInitV, const int *initVSet,
-                                                          const VertexValueType *vValues, VertexValueType *mValues)
+                                                          const VertexValueType *vValues, MessageValueType *mValues)
 {
     //Generate merged msgs directly
 
@@ -222,7 +222,7 @@ ConnectedComponentGPU<VertexValueType>::MSGGenMerge_array(int vCount, int eCount
     if(vCount == 0) return;
 
     //Invalid message init
-    for(int i = 0; i < vCount; i++) mValues[i] = (VertexValueType)INVALID_MASSAGE;
+    for(int i = 0; i < vCount; i++) mValues[i] = (MessageValueType)INVALID_MASSAGE;
 
     //Memory allocation
     cudaError_t err = cudaSuccess;
