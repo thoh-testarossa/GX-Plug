@@ -4,8 +4,8 @@
 
 #include "GraphUtil.h"
 
-template <typename VertexValueType>
-std::vector<Graph<VertexValueType>> GraphUtil<VertexValueType>::DivideGraphByEdge(const Graph<VertexValueType> &g, int partitionCount)
+template <typename VertexValueType, typename MessageValueType>
+std::vector<Graph<VertexValueType>> GraphUtil<VertexValueType, MessageValueType>::DivideGraphByEdge(const Graph<VertexValueType> &g, int partitionCount)
 {
     std::vector<Graph<VertexValueType>> res = std::vector<Graph<VertexValueType>>();
     for(int i = 0; i < partitionCount; i++) res.push_back(Graph<VertexValueType>(0));
@@ -22,8 +22,8 @@ std::vector<Graph<VertexValueType>> GraphUtil<VertexValueType>::DivideGraphByEdg
     return res;
 }
 
-template<typename VertexValueType>
-int GraphUtil<VertexValueType>::reflect(const std::vector<int> &originalIntList, int originalIntRange, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex)
+template <typename VertexValueType, typename MessageValueType>
+int GraphUtil<VertexValueType, MessageValueType>::reflect(const std::vector<int> &originalIntList, int originalIntRange, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex)
 {
     //Init
     //Guarantee: size of reflectIndex is not greater than originalIntList.size(), and size of reversedIndex is not greater than originalIntRange
@@ -46,9 +46,9 @@ int GraphUtil<VertexValueType>::reflect(const std::vector<int> &originalIntList,
     return reflectCount;
 }
 
-template<typename VertexValueType>
+template <typename VertexValueType, typename MessageValueType>
 Graph<VertexValueType>
-GraphUtil<VertexValueType>::reflectG(const Graph<VertexValueType> &o_g, const std::vector<Edge> &eSet, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex)
+GraphUtil<VertexValueType, MessageValueType>::reflectG(const Graph<VertexValueType> &o_g, const std::vector<Edge> &eSet, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex)
 {
     //Init
     int vCount = o_g.vCount;
@@ -99,11 +99,11 @@ GraphUtil<VertexValueType>::reflectG(const Graph<VertexValueType> &o_g, const st
     return Graph<VertexValueType>(r_vSet, r_eSet, r_vValueSet);
 }
 
-template<typename VertexValueType>
-MessageSet<VertexValueType>
-GraphUtil<VertexValueType>::reflectM(const MessageSet<VertexValueType> &o_mSet, int vCount, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex)
+template <typename VertexValueType, typename MessageValueType>
+MessageSet<MessageValueType>
+GraphUtil<VertexValueType, MessageValueType>::reflectM(const MessageSet<MessageValueType> &o_mSet, int vCount, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex)
 {
-    auto r_mSet = MessageSet<VertexValueType>();
+    auto r_mSet = MessageSet<MessageValueType>();
 
     reflectIndex.reserve(o_mSet.mSet.size());
     reversedIndex.reserve(vCount);
@@ -116,7 +116,7 @@ GraphUtil<VertexValueType>::reflectM(const MessageSet<VertexValueType> &o_mSet, 
 
     int reflectCount = this->reflect(originalIntList, vCount, reflectIndex, reversedIndex);
 
-    for(const auto &m : o_mSet.mSet) r_mSet.insertMsg(Message<VertexValueType>(m.src, reversedIndex.at(m.dst), m.value));
+    for(const auto &m : o_mSet.mSet) r_mSet.insertMsg(Message<MessageValueType>(m.src, reversedIndex.at(m.dst), m.value));
 
     return r_mSet;
 }

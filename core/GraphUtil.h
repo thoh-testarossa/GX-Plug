@@ -12,18 +12,18 @@
 
 #define NO_REFLECTION -1
 
-template <typename VertexValueType>
+template <typename VertexValueType, typename MessageValueType>
 class GraphUtil
 {
 public:
-    virtual void MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<VertexValueType> &mSet) = 0;
-    virtual void MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertices, MessageSet<VertexValueType> &mSet) = 0;
+    virtual void MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<MessageValueType> &mSet) = 0;
+    virtual void MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertices, MessageSet<MessageValueType> &mSet) = 0;
 
     //For transportation between jni part and processing part by using share memory
     //Also for less data transformation in order to achieve higher performance
     //Data struct Graph is not necessary!?
-    virtual void MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues) = 0;
-    virtual void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, VertexValueType *mValues) = 0;
+    virtual void MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues) = 0;
+    virtual void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues) = 0;
 
     //Master function
     virtual void Init(int vCount, int eCount, int numOfInitV) = 0;
@@ -41,7 +41,7 @@ public:
     int reflect(const std::vector<int> &originalIntList, int originalIntRange, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex);
 
     Graph<VertexValueType> reflectG(const Graph<VertexValueType> &o_g, const std::vector<Edge> &eSet, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex);
-    MessageSet<VertexValueType> reflectM(const MessageSet<VertexValueType> &o_mSet, int vCount, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex);
+    MessageSet<MessageValueType> reflectM(const MessageSet<MessageValueType> &o_mSet, int vCount, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex);
 
     //This two parameter is used to initialize memory blocks the program will use
     int totalVValuesCount;
