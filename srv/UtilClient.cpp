@@ -5,8 +5,8 @@
 #include <cstring>
 #include "UtilClient.h"
 
-template <typename VertexValueType>
-UtilClient<VertexValueType>::UtilClient(int vCount, int eCount, int numOfInitV, int nodeNo)
+template <typename VertexValueType, typename MessageValueType>
+UtilClient<VertexValueType, MessageValueType>::UtilClient(int vCount, int eCount, int numOfInitV, int nodeNo)
 {
     this->nodeNo = nodeNo;
 
@@ -34,8 +34,8 @@ UtilClient<VertexValueType>::UtilClient(int vCount, int eCount, int numOfInitV, 
     this->filteredVCount = nullptr;
 }
 
-template <typename VertexValueType>
-int UtilClient<VertexValueType>::connect()
+template <typename VertexValueType, typename MessageValueType>
+int UtilClient<VertexValueType, MessageValueType>::connect()
 {
     int ret = 0;
 
@@ -61,7 +61,7 @@ int UtilClient<VertexValueType>::connect()
         this->filteredVCount_shm.attach(0666);
 
         this->vValues = (VertexValueType *)this->vValues_shm.shmaddr;
-        this->mValues = (VertexValueType *)this->mValues_shm.shmaddr;
+        this->mValues = (MessageValueType *)this->mValues_shm.shmaddr;
         this->vSet = (Vertex *)this->vSet_shm.shmaddr;
         this->eSet = (Edge *)this->eSet_shm.shmaddr;
         this->initVSet = (int *)this->initVSet_shm.shmaddr;
@@ -72,8 +72,8 @@ int UtilClient<VertexValueType>::connect()
     return ret;
 }
 
-template <typename VertexValueType>
-int UtilClient<VertexValueType>::transfer(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int *initVSet, bool *filteredV, int filteredVCount)
+template <typename VertexValueType, typename MessageValueType>
+int UtilClient<VertexValueType, MessageValueType>::transfer(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int *initVSet, bool *filteredV, int filteredVCount)
 {
     if(this->vCount > 0 && this->eCount > 0 && this->numOfInitV > 0)
     {
@@ -95,8 +95,8 @@ int UtilClient<VertexValueType>::transfer(VertexValueType *vValues, Vertex *vSet
     else return -1;
 }
 
-template <typename VertexValueType>
-int UtilClient<VertexValueType>::update(VertexValueType *vValues, Vertex *vSet)
+template <typename VertexValueType, typename MessageValueType>
+int UtilClient<VertexValueType, MessageValueType>::update(VertexValueType *vValues, Vertex *vSet)
 {
     if(this->vCount > 0 && this->eCount > 0 && this->numOfInitV > 0)
     {
@@ -110,8 +110,8 @@ int UtilClient<VertexValueType>::update(VertexValueType *vValues, Vertex *vSet)
     else return -1;
 }
 
-template <typename VertexValueType>
-void UtilClient<VertexValueType>::request()
+template <typename VertexValueType, typename MessageValueType>
+void UtilClient<VertexValueType, MessageValueType>::request()
 {
     char tmp[256];
 
@@ -119,8 +119,8 @@ void UtilClient<VertexValueType>::request()
     this->server_msq.recv(tmp, (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
 }
 
-template <typename VertexValueType>
-void UtilClient<VertexValueType>::disconnect()
+template <typename VertexValueType, typename MessageValueType>
+void UtilClient<VertexValueType, MessageValueType>::disconnect()
 {
     this->vValues_shm.detach();
     this->mValues_shm.detach();
@@ -139,8 +139,8 @@ void UtilClient<VertexValueType>::disconnect()
     this->filteredVCount = nullptr;
 }
 
-template <typename VertexValueType>
-void UtilClient<VertexValueType>::shutdown()
+template <typename VertexValueType, typename MessageValueType>
+void UtilClient<VertexValueType, MessageValueType>::shutdown()
 {
     this->client_msq.send("exit", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
     this->disconnect();

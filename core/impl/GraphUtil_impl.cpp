@@ -4,6 +4,6 @@
 
 #include "../GraphUtil.cpp"
 
-template class GraphUtil<double>;
-template class GraphUtil<int>;
-template class GraphUtil<std::pair<int, int>>;
+template class GraphUtil<double, double>;
+template class GraphUtil<int, int>;
+template class GraphUtil<std::pair<int, int>, std::pair<int, int>>;

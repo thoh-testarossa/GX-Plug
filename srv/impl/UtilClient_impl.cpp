@@ -4,5 +4,5 @@
 
 #include "../UtilClient.cpp"
 
-template class UtilClient<double>;
-template class UtilClient<std::pair<int, int>>;
+template class UtilClient<double, double>;
+template class UtilClient<std::pair<int, int>, std::pair<int, int>>;

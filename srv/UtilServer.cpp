@@ -7,8 +7,8 @@
 #include <string>
 #include <iostream>
 
-template <typename GraphUtilType, typename VertexValueType>
-UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
+template <typename GraphUtilType, typename VertexValueType, typename MessageValueType>
+UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
 {
     //Test
     std::cout << "Server init" << std::endl;
@@ -20,7 +20,7 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
     this->eCount = eCount;
     this->numOfInitV = numOfInitV;
 
-    this->isLegal = TIsExtended<GraphUtilType, GraphUtil<VertexValueType>>::Result &&
+    this->isLegal = TIsExtended<GraphUtilType, GraphUtil<VertexValueType, MessageValueType>>::Result &&
                     vCount > 0 &&
                     eCount > 0 &&
                     numOfInitV > 0 &&
@@ -57,7 +57,7 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
                 0666);
         if(chk != -1)
             chk = this->mValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (MVALUES_SHM << SHM_OFFSET)),
-                this->executor.totalMValuesCount * sizeof(VertexValueType),
+                this->executor.totalMValuesCount * sizeof(MessageValueType),
                 0666);
         if(chk != -1)
             chk = this->vSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (VSET_SHM << SHM_OFFSET)),
@@ -101,7 +101,7 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
             this->filteredVCount_shm.attach(0666);
 
             this->vValues = (VertexValueType *) this->vValues_shm.shmaddr;
-            this->mValues = (VertexValueType *) this->mValues_shm.shmaddr;
+            this->mValues = (MessageValueType *) this->mValues_shm.shmaddr;
             this->vSet = (Vertex *) this->vSet_shm.shmaddr;
             this->eSet = (Edge *) this->eSet_shm.shmaddr;
             this->initVSet = (int *) this->initVSet_shm.shmaddr;
@@ -127,8 +127,8 @@ UtilServer<GraphUtilType, VertexValueType>::UtilServer(int vCount, int eCount, i
     }
 }
 
-template <typename GraphUtilType, typename VertexValueType>
-UtilServer<GraphUtilType, VertexValueType>::~UtilServer()
+template <typename GraphUtilType, typename VertexValueType, typename MessageValueType>
+UtilServer<GraphUtilType, VertexValueType, MessageValueType>::~UtilServer()
 {
     this->executor.Free();
 
@@ -153,8 +153,8 @@ UtilServer<GraphUtilType, VertexValueType>::~UtilServer()
     this->client_msq.control(IPC_RMID);
 }
 
-template <typename GraphUtilType, typename VertexValueType>
-void UtilServer<GraphUtilType, VertexValueType>::run()
+template <typename GraphUtilType, typename VertexValueType, typename MessageValueType>
+void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
 {
     if(!this->isLegal) return;
 

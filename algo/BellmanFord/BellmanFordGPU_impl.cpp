@@ -7,4 +7,4 @@
 
 #include "BellmanFordGPU.cpp"
 
-template class BellmanFordGPU<double>;
+template class BellmanFordGPU<double, double>;

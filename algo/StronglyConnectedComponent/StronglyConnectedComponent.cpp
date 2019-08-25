@@ -7,98 +7,98 @@
 #include <iostream>
 #include <ctime>
 
-template<typename VertexValueType>
-StronglyConnectedComponent_stage_1<VertexValueType>::StronglyConnectedComponent_stage_1()
+template <typename VertexValueType, typename MessageValueType>
+StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::StronglyConnectedComponent_stage_1()
 {
 
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_1<VertexValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet<VertexValueType> &mSet)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet<MessageValueType> &mSet)
 {
 
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_1<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<VertexValueType> &mSet)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet)
 {
 
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_1<VertexValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
 {
 
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_1<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, VertexValueType *mValues)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
 {
 
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_1<VertexValueType>::MergeGraph(Graph<VertexValueType> &g, const std::vector<Graph<VertexValueType>> &subGSet, std::set<int> &activeVertices, const std::vector<std::set<int>> &activeVerticeSet, const std::vector<int> &initVList)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueType> &g, const std::vector<Graph<VertexValueType>> &subGSet, std::set<int> &activeVertices, const std::vector<std::set<int>> &activeVerticeSet, const std::vector<int> &initVList)
 {
 
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_1<VertexValueType>::Init(int vCount, int eCount, int numOfInitV)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::Init(int vCount, int eCount, int numOfInitV)
 {
 
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_1<VertexValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList)
 {
 
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_1<VertexValueType>::Deploy(int vCount, int eCount, int numOfInitV)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::Deploy(int vCount, int eCount, int numOfInitV)
 {
 
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_1<VertexValueType>::Free()
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::Free()
 {
 
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_1<VertexValueType>::ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices)
 {
 
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_1<VertexValueType>::Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList)
 {
 
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_1<VertexValueType>::ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList, int partitionCount)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList, int partitionCount)
 {
 
 }
 
-template<typename VertexValueType>
-StronglyConnectedComponent_stage_2<VertexValueType>::StronglyConnectedComponent_stage_2()
+template <typename VertexValueType, typename MessageValueType>
+StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::StronglyConnectedComponent_stage_2()
 {
 
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_2<VertexValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet,std::set<int> &activeVertice, const MessageSet<VertexValueType> &mSet)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet,std::set<int> &activeVertice, const MessageSet<MessageValueType> &mSet)
 {
     //Availability check
     if(g.vCount <= 0) return;
 
-    VertexValueType *mValues = new VertexValueType [g.vCount];
-    for(int i = 0; i < g.vCount; i++) mValues[i] = INVALID_MASSAGE;
+    MessageValueType *mValues = new MessageValueType [g.vCount];
+    for(int i = 0; i < g.vCount; i++) mValues[i] = (MessageValueType)INVALID_MASSAGE;
     for(const auto &m : mSet.mSet) mValues[m.dst] = m.value;
 
     this->MSGApply_array(g.vCount, g.eCount, &g.vList[0], 0, nullptr, &g.verticesValue[0], mValues);
@@ -111,42 +111,42 @@ void StronglyConnectedComponent_stage_2<VertexValueType>::MSGApply(Graph<VertexV
     }
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_2<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<VertexValueType> &mSet)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet)
 {
     //Availability check
     if(g.vCount <= 0) return;
 
-    VertexValueType *mValues = new VertexValueType [g.vCount];
+    MessageValueType *mValues = new MessageValueType [g.vCount];
 
     this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], 0, nullptr, &g.verticesValue[0], mValues);
 
     //Package mValues into result mSet
     for(int i = 0; i < g.vCount; i++)
     {
-        if(mValues[i] != (VertexValueType)INVALID_MASSAGE)
-            mSet.insertMsg(Message<VertexValueType>(INVALID_INITV_INDEX, i, mValues[i]));
+        if(mValues[i] != (MessageValueType)INVALID_MASSAGE)
+            mSet.insertMsg(Message<MessageValueType>(INVALID_INITV_INDEX, i, mValues[i]));
     }
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_2<VertexValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
 {
     //isActive reset
     for(int i = 0; i < vCount; i++) vSet[i].isActive = false;
 
     for(int i = 0; i < vCount; i++)
     {
-        if(vValues[i] > mValues[i])
+        if(vValues[i] > (VertexValueType)mValues[i])
         {
-            vValues[i] = mValues[i];
+            vValues[i] = (VertexValueType)mValues[i];
             vSet[i].isActive = true;
         }
     }
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_2<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, VertexValueType *mValues)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
 {
     //Invalid MSG init
     for(int i = 0; i < vCount; i++) mValues[i] = (VertexValueType)INVALID_MASSAGE;
@@ -155,14 +155,14 @@ void StronglyConnectedComponent_stage_2<VertexValueType>::MSGGenMerge_array(int 
     {
         if(vSet[eSet[i].src].isActive)
         {
-            if(mValues[eSet[i].dst] > vValues[eSet[i].src])
-                mValues[eSet[i].dst] = vValues[eSet[i].src];
+            if(mValues[eSet[i].dst] > (MessageValueType)vValues[eSet[i].src])
+                mValues[eSet[i].dst] = (MessageValueType)vValues[eSet[i].src];
         }
     }
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_2<VertexValueType>::MergeGraph(Graph<VertexValueType> &g, const std::vector<Graph<VertexValueType>> &subGSet, std::set<int> &activeVertices, const std::vector<std::set<int>> &activeVerticeSet, const std::vector<int> &initVList)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueType> &g, const std::vector<Graph<VertexValueType>> &subGSet, std::set<int> &activeVertices, const std::vector<std::set<int>> &activeVerticeSet, const std::vector<int> &initVList)
 {
     //Init
     activeVertices.clear();
@@ -189,16 +189,16 @@ void StronglyConnectedComponent_stage_2<VertexValueType>::MergeGraph(Graph<Verte
     }
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_2<VertexValueType>::Init(int vCount, int eCount, int numOfInitV)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::Init(int vCount, int eCount, int numOfInitV)
 {
     this->totalVValuesCount = vCount;
     this->totalMValuesCount = vCount;
 }
 
-template<typename VertexValueType>
+template <typename VertexValueType, typename MessageValueType>
 void
-StronglyConnectedComponent_stage_2<VertexValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList)
+StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList)
 {
     //v init
     for(auto &v : g.vList)
@@ -213,23 +213,23 @@ StronglyConnectedComponent_stage_2<VertexValueType>::GraphInit(Graph<VertexValue
     for(int i = 0; i < g.vCount; i++) g.verticesValue.at(i) = (VertexValueType)i;
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_2<VertexValueType>::Deploy(int vCount, int eCount, int numOfInitV)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::Deploy(int vCount, int eCount, int numOfInitV)
 {
 
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_2<VertexValueType>::Free()
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::Free()
 {
 
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_2<VertexValueType>::ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices)
 {
-    MessageSet<VertexValueType> mGenSet = MessageSet<VertexValueType>();
-    MessageSet<VertexValueType> mMergedSet = MessageSet<VertexValueType>();
+    auto mGenSet = MessageSet<MessageValueType>();
+    auto mMergedSet = MessageSet<MessageValueType>();
 
     mMergedSet.mSet.clear();
     MSGGenMerge(g, initVSet, activeVertices, mMergedSet);
@@ -246,14 +246,14 @@ void StronglyConnectedComponent_stage_2<VertexValueType>::ApplyStep(Graph<Vertex
     //Test end
 }
 
-template<typename VertexValueType>
+template <typename VertexValueType, typename MessageValueType>
 void
-StronglyConnectedComponent_stage_2<VertexValueType>::Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList)
+StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList)
 {
     //Init the Graph
     std::set<int> activeVertices = std::set<int>();
-    MessageSet<VertexValueType> mGenSet = MessageSet<VertexValueType>();
-    MessageSet<VertexValueType> mMergedSet = MessageSet<VertexValueType>();
+    auto mGenSet = MessageSet<MessageValueType>();
+    auto mMergedSet = MessageSet<MessageValueType>();
 
     Init(g.vCount, g.eCount, initVList.size());
 
@@ -267,18 +267,18 @@ StronglyConnectedComponent_stage_2<VertexValueType>::Apply(Graph<VertexValueType
     Free();
 }
 
-template<typename VertexValueType>
-void StronglyConnectedComponent_stage_2<VertexValueType>::ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList, int partitionCount)
+template <typename VertexValueType, typename MessageValueType>
+void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList, int partitionCount)
 {
     //Init the Graph
     std::set<int> activeVertices = std::set<int>();
 
     std::vector<std::set<int>> AVSet = std::vector<std::set<int>>();
     for(int i = 0; i < partitionCount; i++) AVSet.push_back(std::set<int>());
-    std::vector<MessageSet<VertexValueType>> mGenSetSet = std::vector<MessageSet<VertexValueType>>();
-    for(int i = 0; i < partitionCount; i++) mGenSetSet.push_back(MessageSet<VertexValueType>());
-    std::vector<MessageSet<VertexValueType>> mMergedSetSet = std::vector<MessageSet<VertexValueType>>();
-    for(int i = 0; i < partitionCount; i++) mMergedSetSet.push_back(MessageSet<VertexValueType>());
+    auto mGenSetSet = std::vector<MessageSet<MessageValueType>>();
+    for(int i = 0; i < partitionCount; i++) mGenSetSet.push_back(MessageSet<MessageValueType>());
+    auto mMergedSetSet = std::vector<MessageSet<MessageValueType>>();
+    for(int i = 0; i < partitionCount; i++) mMergedSetSet.push_back(MessageSet<MessageValueType>());
 
     Init(g.vCount, g.eCount, initVList.size());
 

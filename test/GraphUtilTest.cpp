@@ -41,7 +41,7 @@ int main()
 
     //BF on original graph
     std::cout << "Result for Original graph:" << std::endl;
-    BellmanFord<double> executor = BellmanFord<double>();
+    auto executor = BellmanFord<double, double>();
     executor.ApplyD(test, initVList, 4);
     for(int i = 0; i < test.vCount * initVList.size(); i++)
     {
@@ -53,7 +53,7 @@ int main()
 
     //BF on reflected graph
     std::cout << "Result for reflected graph:" << std::endl;
-    BellmanFord<double> executor2 = BellmanFord<double>();
+    auto executor2 = BellmanFord<double, double>();
     auto reflectIndex = std::vector<int>();
     auto reversedIndex = std::vector<int>();
     auto r_test2 = executor2.reflectG(test2, test2.eList, reflectIndex, reversedIndex);
@@ -77,7 +77,7 @@ int main()
 
     //BF result on deflected graph
     std::cout << "Result for deflected graph:" << std::endl;
-    BellmanFord<double> executor3 = BellmanFord<double>();
+    auto executor3 = BellmanFord<double, double>();
     auto AVSet = std::set<int>();
     executor3.Init(test2.vCount, test2.eCount, initVList.size());
     executor3.GraphInit(test2, AVSet, initVList);

@@ -30,7 +30,7 @@ int main()
 
     std::vector<int> initVList = std::vector<int>();
 
-    ConnectedComponent<int> executor = ConnectedComponent<int>();
+    ConnectedComponent<int, int> executor = ConnectedComponent<int, int>();
     //executor.Apply(test, initVList);
     executor.ApplyD(test, initVList, 4);
 

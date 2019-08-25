@@ -7,5 +7,5 @@
 #include "../../algo/BellmanFord/BellmanFord.h"
 #include "../../algo/LabelPropagation/LabelPropagation.h"
 
-template class UtilServer<BellmanFord<double>, double>;
-template class UtilServer<LabelPropagation<std::pair<int, int>>, std::pair<int, int>>;
+template class UtilServer<BellmanFord<double, double>, double, double>;
+template class UtilServer<LabelPropagation<std::pair<int, int>, std::pair<int, int>>, std::pair<int, int>, std::pair<int, int>>;

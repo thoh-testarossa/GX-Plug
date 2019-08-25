@@ -12,7 +12,7 @@
 #include "../srv/UNIX_msg.h"
 #include "../include/UNIX_marco.h"
 
-template <typename VertexValueType>
+template <typename VertexValueType, typename MessageValueType>
 class UtilClient
 {
 public:
@@ -36,7 +36,7 @@ public:
     bool *filteredV;
     int *filteredVCount;
     VertexValueType *vValues;
-    VertexValueType *mValues;
+    MessageValueType *mValues;
     Vertex *vSet;
     Edge *eSet;
 

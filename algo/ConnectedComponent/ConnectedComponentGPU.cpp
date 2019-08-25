@@ -17,7 +17,7 @@ ConnectedComponentGPU<VertexValueType, MessageValueType>::ConnectedComponentGPU(
 template <typename VertexValueType, typename MessageValueType>
 void ConnectedComponentGPU<VertexValueType, MessageValueType>::Init(int vCount, int eCount, int numOfInitV)
 {
-    ConnectedComponent<VertexValueType>::Init(vCount, eCount, numOfInitV);
+    ConnectedComponent<VertexValueType, MessageValueType>::Init(vCount, eCount, numOfInitV);
 
     this->vertexLimit = VERTEXSCALEINGPU;
     this->mPerMSGSet = MSGSCALEINGPU;
@@ -28,13 +28,13 @@ template <typename VertexValueType, typename MessageValueType>
 void ConnectedComponentGPU<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices,
                                                        const std::vector<int> &initVList)
 {
-    ConnectedComponent<VertexValueType>::GraphInit(g, activeVertices, initVList);
+    ConnectedComponent<VertexValueType, MessageValueType>::GraphInit(g, activeVertices, initVList);
 }
 
 template <typename VertexValueType, typename MessageValueType>
 void ConnectedComponentGPU<VertexValueType, MessageValueType>::Deploy(int vCount, int eCount, int numOfInitV)
 {
-    ConnectedComponent<VertexValueType>::Deploy(vCount, eCount, numOfInitV);
+    ConnectedComponent<VertexValueType, MessageValueType>::Deploy(vCount, eCount, numOfInitV);
 
     cudaError_t err = cudaSuccess;
 
@@ -60,7 +60,7 @@ void ConnectedComponentGPU<VertexValueType, MessageValueType>::Deploy(int vCount
 template <typename VertexValueType, typename MessageValueType>
 void ConnectedComponentGPU<VertexValueType, MessageValueType>::Free()
 {
-    ConnectedComponent<VertexValueType>::Free();
+    ConnectedComponent<VertexValueType, MessageValueType>::Free();
 
     free(this->vValueSet);
     cudaFree(this->d_vValueSet);

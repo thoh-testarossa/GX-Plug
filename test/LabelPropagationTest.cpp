@@ -30,7 +30,7 @@ int main()
 
     Gin.close();
 
-    LabelPropagation<std::pair<int, int>> executor = LabelPropagation<std::pair<int, int>>();
+    auto executor = LabelPropagation<std::pair<int, int>, std::pair<int, int>>();
     executor.ApplyD(test, initVList, 4);
 }
 

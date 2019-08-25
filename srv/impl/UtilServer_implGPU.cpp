@@ -6,4 +6,4 @@
 
 #include "../../algo/BellmanFord/BellmanFordGPU.h"
 
-template class UtilServer<BellmanFordGPU<double>, double>;
+template class UtilServer<BellmanFordGPU<double, double>, double, double>;

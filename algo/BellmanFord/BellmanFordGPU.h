@@ -10,8 +10,8 @@
 #include "BellmanFord.h"
 #include "../../include/GPUconfig.h"
 
-template <typename VertexValueType>
-class BellmanFordGPU : public BellmanFord<VertexValueType>
+template <typename VertexValueType, typename MessageValueType>
+class BellmanFordGPU : public BellmanFord<VertexValueType, MessageValueType>
 {
 public:
     BellmanFordGPU();
@@ -21,8 +21,8 @@ public:
     void Deploy(int vCount, int eCount, int numOfInitV) override;
     void Free() override;
 
-    void MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues) override;
-    void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, VertexValueType *mValues) override;
+    void MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues) override;
+    void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues) override;
 
 protected:
     int vertexLimit;
@@ -35,19 +35,19 @@ protected:
     VertexValueType *vValueSet;
     double *d_vValueSet;
 
-    VertexValueType *mValueTable;
+    MessageValueType *mValueTable;
 
     int *mInitVIndexSet;
     int *d_mInitVIndexSet;
     int *mDstSet;
     int *d_mDstSet;
-    VertexValueType *mValueSet;
+    MessageValueType *mValueSet;
     double *d_mValueSet;
 
     Vertex *d_vSet;
     Edge *d_eGSet;
 
-    VertexValueType *mMergedMSGValueSet;
+    MessageValueType *mMergedMSGValueSet;
     unsigned long long int *mTransformedMergedMSGValueSet;
     unsigned long long int *d_mTransformedMergedMSGValueSet;
 

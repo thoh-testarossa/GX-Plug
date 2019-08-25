@@ -4,3 +4,4 @@
 
 #include "StronglyConnectedComponent.cpp"
 
+template class StronglyConnectedComponent_stage_2<int, int>;
