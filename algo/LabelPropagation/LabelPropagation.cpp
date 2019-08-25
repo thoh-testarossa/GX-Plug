@@ -7,13 +7,13 @@
 #include <iostream>
 #include <chrono>
 
-template <typename VertexValueType>
-LabelPropagation<VertexValueType>::LabelPropagation()
+template <typename VertexValueType, typename MessageValueType>
+LabelPropagation<VertexValueType, MessageValueType>::LabelPropagation()
 {
 }
 
-template <typename VertexValueType>
-void LabelPropagation<VertexValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<VertexValueType> &mSet)
+template <typename VertexValueType, typename MessageValueType>
+void LabelPropagation<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<MessageValueType> &mSet)
 {
     //store the labels of neighbors for each vertice
     auto labelsVector = std::vector<std::map<int, int>>();
@@ -55,8 +55,8 @@ void LabelPropagation<VertexValueType>::MSGApply(Graph<VertexValueType> &g, cons
     }
 }
 
-template <typename VertexValueType>
-void LabelPropagation<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<VertexValueType> &mSet)
+template <typename VertexValueType, typename MessageValueType>
+void LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet)
 {
     //Generate merged msgs directly
     mSet.mSet.clear();
@@ -66,12 +66,12 @@ void LabelPropagation<VertexValueType>::MSGGenMerge(const Graph<VertexValueType>
     {
         //msg value -- <destinationID, Label>
         auto msgValue = std::pair<int, int>(e.dst, g.verticesValue.at(e.src).first);
-        mSet.insertMsg(Message<VertexValueType>(e.src, e.dst, msgValue));
+        mSet.insertMsg(Message<MessageValueType>(e.src, e.dst, msgValue));
     }
 }
 
-template <typename VertexValueType>
-void LabelPropagation<VertexValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, VertexValueType *mValues)
+template <typename VertexValueType, typename MessageValueType>
+void LabelPropagation<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
 {
     //store the labels of neighbors for each vertice
     auto labelsVector = std::vector<std::map<int, int>>();
@@ -117,8 +117,8 @@ void LabelPropagation<VertexValueType>::MSGApply_array(int vCount, int eCount, V
     }
 }
 
-template <typename VertexValueType>
-void LabelPropagation<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, VertexValueType *mValues)
+template <typename VertexValueType, typename MessageValueType>
+void LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
 {
     for(int i = 0; i < eCount; i++)
     {
@@ -128,15 +128,15 @@ void LabelPropagation<VertexValueType>::MSGGenMerge_array(int vCount, int eCount
     }
 }
 
-template <typename VertexValueType>
-void LabelPropagation<VertexValueType>::Init(int vCount, int eCount, int numOfInitV)
+template <typename VertexValueType, typename MessageValueType>
+void LabelPropagation<VertexValueType, MessageValueType>::Init(int vCount, int eCount, int numOfInitV)
 {
     this->totalVValuesCount = vCount;
     this->totalMValuesCount = eCount;
 }
 
-template <typename VertexValueType>
-void LabelPropagation<VertexValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList)
+template <typename VertexValueType, typename MessageValueType>
+void LabelPropagation<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList)
 {
     //vValues init
     g.verticesValue.reserve(g.vCount);
@@ -146,20 +146,20 @@ void LabelPropagation<VertexValueType>::GraphInit(Graph<VertexValueType> &g, std
         g.verticesValue.at(i).first = g.vList.at(i).vertexID;
 }
 
-template <typename VertexValueType>
-void LabelPropagation<VertexValueType>::Deploy(int vCount, int eCount, int numOfInitV)
+template <typename VertexValueType, typename MessageValueType>
+void LabelPropagation<VertexValueType, MessageValueType>::Deploy(int vCount, int eCount, int numOfInitV)
 {
 
 }
 
-template <typename VertexValueType>
-void LabelPropagation<VertexValueType>::Free()
+template <typename VertexValueType, typename MessageValueType>
+void LabelPropagation<VertexValueType, MessageValueType>::Free()
 {
 
 }
 
-template <typename VertexValueType>
-void LabelPropagation<VertexValueType>::MergeGraph(Graph<VertexValueType> &g, const std::vector<Graph<VertexValueType>> &subGSet,
+template <typename VertexValueType, typename MessageValueType>
+void LabelPropagation<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueType> &g, const std::vector<Graph<VertexValueType>> &subGSet,
                     std::set<int> &activeVertices, const std::vector<std::set<int>> &activeVerticeSet,
                     const std::vector<int> &initVList)
 {
@@ -199,10 +199,10 @@ void LabelPropagation<VertexValueType>::MergeGraph(Graph<VertexValueType> &g, co
     g = resG;
 }
 
-template <typename VertexValueType>
-void LabelPropagation<VertexValueType>::ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices)
+template <typename VertexValueType, typename MessageValueType>
+void LabelPropagation<VertexValueType, MessageValueType>::ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices)
 {
-    MessageSet<VertexValueType> mMergedSet = MessageSet<VertexValueType>();
+    MessageSet<MessageValueType> mMergedSet = MessageSet<MessageValueType>();
 
     mMergedSet.mSet.clear();
 
@@ -214,13 +214,13 @@ void LabelPropagation<VertexValueType>::ApplyStep(Graph<VertexValueType> &g, con
     auto applyEnd = std::chrono::system_clock::now();
 }
 
-template <typename VertexValueType>
-void LabelPropagation<VertexValueType>::Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList)
+template <typename VertexValueType, typename MessageValueType>
+void LabelPropagation<VertexValueType, MessageValueType>::Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList)
 {
     //Init the Graph
     std::set<int> activeVertice = std::set<int>();
-    MessageSet<VertexValueType> mGenSet = MessageSet<VertexValueType>();
-    MessageSet<VertexValueType> mMergedSet = MessageSet<VertexValueType>();
+    MessageSet<MessageValueType> mGenSet = MessageSet<MessageValueType>();
+    MessageSet<MessageValueType> mMergedSet = MessageSet<MessageValueType>();
 
     Init(g.vCount, g.eCount, initVList.size());
 
@@ -235,18 +235,18 @@ void LabelPropagation<VertexValueType>::Apply(Graph<VertexValueType> &g, const s
 }
 
 
-template <typename VertexValueType>
-void LabelPropagation<VertexValueType>::ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList, int partitionCount)
+template <typename VertexValueType, typename MessageValueType>
+void LabelPropagation<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList, int partitionCount)
 {
     //Init the Graph
     std::set<int> activeVertice = std::set<int>();
 
     std::vector<std::set<int>> AVSet = std::vector<std::set<int>>();
     for(int i = 0; i < partitionCount; i++) AVSet.push_back(std::set<int>());
-    std::vector<MessageSet<VertexValueType>> mGenSetSet = std::vector<MessageSet<VertexValueType>>();
-    for(int i = 0; i < partitionCount; i++) mGenSetSet.push_back(MessageSet<VertexValueType>());
-    std::vector<MessageSet<VertexValueType>> mMergedSetSet = std::vector<MessageSet<VertexValueType>>();
-    for(int i = 0; i < partitionCount; i++) mMergedSetSet.push_back(MessageSet<VertexValueType>());
+    std::vector<MessageSet<MessageValueType>> mGenSetSet = std::vector<MessageSet<MessageValueType>>();
+    for(int i = 0; i < partitionCount; i++) mGenSetSet.push_back(MessageSet<MessageValueType>());
+    std::vector<MessageSet<MessageValueType>> mMergedSetSet = std::vector<MessageSet<MessageValueType>>();
+    for(int i = 0; i < partitionCount; i++) mMergedSetSet.push_back(MessageSet<MessageValueType>());
 
     Init(g.vCount, g.eCount, initVList.size());
 

@@ -7,21 +7,21 @@
 #include <iostream>
 #include <ctime>
 
-template<typename VertexValueType>
-ConnectedComponent<VertexValueType>::ConnectedComponent()
+template <typename VertexValueType, typename MessageValueType>
+ConnectedComponent<VertexValueType, MessageValueType>::ConnectedComponent()
 {
 
 }
 
-template<typename VertexValueType>
-void ConnectedComponent<VertexValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet,
+template<typename VertexValueType, typename MessageValueType>
+void ConnectedComponent<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet,
                                                    std::set<int> &activeVertice,
-                                                   const MessageSet<VertexValueType> &mSet)
+                                                   const MessageSet<MessageValueType> &mSet)
 {
     //Availability check
     if(g.vCount <= 0) return;
 
-    VertexValueType *mValues = new VertexValueType [g.vCount];
+    auto *mValues = new MessageValueType[g.vCount];
     for(int i = 0; i < g.vCount; i++) mValues[i] = INVALID_MASSAGE;
     for(const auto &m : mSet.mSet) mValues[m.dst] = m.value;
 
@@ -35,30 +35,30 @@ void ConnectedComponent<VertexValueType>::MSGApply(Graph<VertexValueType> &g, co
     }
 }
 
-template<typename VertexValueType>
-void ConnectedComponent<VertexValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet,
+template<typename VertexValueType, typename MessageValueType>
+void ConnectedComponent<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet,
                                                       const std::set<int> &activeVertice,
-                                                      MessageSet<VertexValueType> &mSet)
+                                                      MessageSet<MessageValueType> &mSet)
 {
     //Availability check
     if(g.vCount <= 0) return;
 
-    VertexValueType *mValues = new VertexValueType [g.vCount];
+    auto *mValues = new MessageValueType[g.vCount];
 
     this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], 0, nullptr, &g.verticesValue[0], mValues);
 
     //Package mValues into result mSet
     for(int i = 0; i < g.vCount; i++)
     {
-        if(mValues[i] != (VertexValueType)INVALID_MASSAGE)
+        if(mValues[i] != (MessageValueType)INVALID_MASSAGE)
             mSet.insertMsg(Message<VertexValueType>(INVALID_INITV_INDEX, i, mValues[i]));
     }
 }
 
-template<typename VertexValueType>
-void ConnectedComponent<VertexValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV,
+template<typename VertexValueType, typename MessageValueType>
+void ConnectedComponent<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV,
                                                          const int *initVSet, VertexValueType *vValues,
-                                                         VertexValueType *mValues)
+                                                         MessageValueType *mValues)
 {
     //Activity reset
     for(int i = 0; i < vCount; i++) vSet[i].isActive = false;
@@ -74,13 +74,13 @@ void ConnectedComponent<VertexValueType>::MSGApply_array(int vCount, int eCount,
     }
 }
 
-template<typename VertexValueType>
+template<typename VertexValueType, typename MessageValueType>
 void
-ConnectedComponent<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet,
+ConnectedComponent<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet,
                                                        int numOfInitV, const int *initVSet,
-                                                       const VertexValueType *vValues, VertexValueType *mValues)
+                                                       const VertexValueType *vValues, MessageValueType *mValues)
 {
-    for(int i = 0; i < vCount; i++) mValues[i] = (VertexValueType)INVALID_MASSAGE;
+    for(int i = 0; i < vCount; i++) mValues[i] = (MessageValueType)INVALID_MASSAGE;
 
     for(int i = 0; i < eCount; i++)
     {
@@ -92,8 +92,8 @@ ConnectedComponent<VertexValueType>::MSGGenMerge_array(int vCount, int eCount, c
     }
 }
 
-template<typename VertexValueType>
-void ConnectedComponent<VertexValueType>::MergeGraph(Graph<VertexValueType> &g,
+template <typename VertexValueType, typename MessageValueType>
+void ConnectedComponent<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueType> &g,
                                                      const std::vector<Graph<VertexValueType>> &subGSet,
                                                      std::set<int> &activeVertices,
                                                      const std::vector<std::set<int>> &activeVerticeSet,
@@ -124,15 +124,15 @@ void ConnectedComponent<VertexValueType>::MergeGraph(Graph<VertexValueType> &g,
     }
 }
 
-template<typename VertexValueType>
-void ConnectedComponent<VertexValueType>::Init(int vCount, int eCount, int numOfInitV)
+template <typename VertexValueType, typename MessageValueType>
+void ConnectedComponent<VertexValueType, MessageValueType>::Init(int vCount, int eCount, int numOfInitV)
 {
     this->totalVValuesCount = vCount;
     this->totalMValuesCount = vCount;
 }
 
-template<typename VertexValueType>
-void ConnectedComponent<VertexValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices,
+template <typename VertexValueType, typename MessageValueType>
+void ConnectedComponent<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices,
                                                     const std::vector<int> &initVList)
 {
     //v init
@@ -149,24 +149,24 @@ void ConnectedComponent<VertexValueType>::GraphInit(Graph<VertexValueType> &g, s
 }
 
 
-template<typename VertexValueType>
-void ConnectedComponent<VertexValueType>::Deploy(int vCount, int eCount, int numOfInitV)
+template <typename VertexValueType, typename MessageValueType>
+void ConnectedComponent<VertexValueType, MessageValueType>::Deploy(int vCount, int eCount, int numOfInitV)
 {
 
 }
 
-template<typename VertexValueType>
-void ConnectedComponent<VertexValueType>::Free()
+template <typename VertexValueType, typename MessageValueType>
+void ConnectedComponent<VertexValueType, MessageValueType>::Free()
 {
 
 }
 
-template<typename VertexValueType>
-void ConnectedComponent<VertexValueType>::ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet,
+template<typename VertexValueType, typename MessageValueType>
+void ConnectedComponent<VertexValueType, MessageValueType>::ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet,
                                                     std::set<int> &activeVertices)
 {
-    MessageSet<VertexValueType> mGenSet = MessageSet<VertexValueType>();
-    MessageSet<VertexValueType> mMergedSet = MessageSet<VertexValueType>();
+    auto mGenSet = MessageSet<MessageValueType>();
+    auto mMergedSet = MessageSet<MessageValueType>();
 
     mMergedSet.mSet.clear();
     MSGGenMerge(g, initVSet, activeVertices, mMergedSet);
@@ -183,13 +183,13 @@ void ConnectedComponent<VertexValueType>::ApplyStep(Graph<VertexValueType> &g, c
     //Test end
 }
 
-template<typename VertexValueType>
-void ConnectedComponent<VertexValueType>::Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList)
+template<typename VertexValueType, typename MessageValueType>
+void ConnectedComponent<VertexValueType, MessageValueType>::Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList)
 {
     //Init the Graph
     std::set<int> activeVertices = std::set<int>();
-    MessageSet<VertexValueType> mGenSet = MessageSet<VertexValueType>();
-    MessageSet<VertexValueType> mMergedSet = MessageSet<VertexValueType>();
+    auto mGenSet = MessageSet<MessageValueType>();
+    auto mMergedSet = MessageSet<MessageValueType>();
 
     Init(g.vCount, g.eCount, initVList.size());
 
@@ -203,8 +203,8 @@ void ConnectedComponent<VertexValueType>::Apply(Graph<VertexValueType> &g, const
     Free();
 }
 
-template<typename VertexValueType>
-void ConnectedComponent<VertexValueType>::ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList,
+template<typename VertexValueType, typename MessageValueType>
+void ConnectedComponent<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList,
                                                  int partitionCount)
 {
     //Init the Graph
@@ -212,10 +212,10 @@ void ConnectedComponent<VertexValueType>::ApplyD(Graph<VertexValueType> &g, cons
 
     std::vector<std::set<int>> AVSet = std::vector<std::set<int>>();
     for(int i = 0; i < partitionCount; i++) AVSet.push_back(std::set<int>());
-    std::vector<MessageSet<VertexValueType>> mGenSetSet = std::vector<MessageSet<VertexValueType>>();
-    for(int i = 0; i < partitionCount; i++) mGenSetSet.push_back(MessageSet<VertexValueType>());
-    std::vector<MessageSet<VertexValueType>> mMergedSetSet = std::vector<MessageSet<VertexValueType>>();
-    for(int i = 0; i < partitionCount; i++) mMergedSetSet.push_back(MessageSet<VertexValueType>());
+    std::vector<MessageSet<MessageValueType>> mGenSetSet = std::vector<MessageSet<MessageValueType>>();
+    for(int i = 0; i < partitionCount; i++) mGenSetSet.push_back(MessageSet<MessageValueType>());
+    std::vector<MessageSet<MessageValueType>> mMergedSetSet = std::vector<MessageSet<MessageValueType>>();
+    for(int i = 0; i < partitionCount; i++) mMergedSetSet.push_back(MessageSet<MessageValueType>());
 
     Init(g.vCount, g.eCount, initVList.size());
 
