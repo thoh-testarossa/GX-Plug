@@ -39,6 +39,8 @@ public:
     int startTime;
     int endTime;
     int relatedVCount;
+
+    //Ordered by vState.first anytime
     std::vector<std::pair<int, char>> vStateList;
 };
 
@@ -81,6 +83,8 @@ public:
     void GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) override;
     void Deploy(int vCount, int eCount, int numOfInitV) override;
     void Free() override;
+
+    std::vector<Graph<VertexValueType>> DivideGraphByEdge(const Graph<VertexValueType> &g, int partitionCount);
 
     void ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices);
     void Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList);
