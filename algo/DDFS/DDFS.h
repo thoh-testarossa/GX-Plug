@@ -29,10 +29,34 @@
 #define MSG_SEND_VISITED 64
 #define MSG_SEND_RESET 31
 
+//Customised comparison
+struct cmp{
+    bool operator()(std::pair<int, char> a, std::pair<int, char> b)
+    {
+        return a.first > b.first;
+    }
+};
+
 //DFS value class definition
 class DFSValue
 {
 public:
+    DFSValue() : DFSValue(false, 0, -1, 0, 0, 0, std::vector<std::pair<int, char>>())
+    {
+
+    }
+
+    DFSValue(bool state, char opbit, int vNextMSGNo, int startTime, int endTime, int relatedVCount, std::vector<std::pair<int, char>> vStateList)
+    {
+        this->state = state;
+        this->opbit = opbit;
+        this->vNextMSGTo = vNextMSGNo;
+        this->startTime = startTime;
+        this->endTime = endTime;
+        this->relatedVCount = relatedVCount;
+        this->vStateList = vStateList;
+    }
+
     bool state;
     char opbit;
     int vNextMSGTo;
@@ -48,6 +72,11 @@ public:
 class DFSMSG
 {
 public:
+    DFSMSG() : DFSMSG(-1, -1, 0, 0)
+    {
+
+    }
+
     DFSMSG(int src, int dst, int timestamp, char msgbit)
     {
         this->src = src;

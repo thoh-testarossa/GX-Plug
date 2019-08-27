@@ -18,14 +18,50 @@ template <typename VertexValueType, typename MessageValueType>
 void DDFS<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet,
                                      std::set<int> &activeVertice, const MessageSet<MessageValueType> &mSet)
 {
+    //Activity reset
+    activeVertice.clear();
 
+    //Availability check
+    if(g.vCount <= 0) return;
+
+    //Organize MessageValueType vector
+    auto tmpMSGVector = std::vector<MessageValueType>();
+    tmpMSGVector.reserve(mSet.mSet.size());
+    for(const auto &m : mSet.mSet) tmpMSGVector.emplace_back(m.value);
+
+    //array form computation
+    this->MSGApply_array(g.vCount, mSet.mSet.size(), &g.vList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], &tmpMSGVector[0]);
+
+    //Active vertices set assembly
+    for(int i = 0; i < g.vCount; i++)
+    {
+        if(g.vList.at(i).isActive)
+            activeVertice.insert(i);
+    }
 }
 
 template <typename VertexValueType, typename MessageValueType>
 void DDFS<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet,
                                         const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet)
 {
+    //Availability check
+    if(g.vCount <= 0) return;
 
+    //Reset mSet
+    mSet.mSet.clear();
+    mSet.mSet.reserve(2 * g.eCount);
+
+    auto tmpMSGSet = std::vector<MessageValueType>(2 * g.eCount, MessageValueType());
+
+    //array form computation
+    this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], this->numOfInitV, &initVSet[0], &g.verticesValue[0], &tmpMSGSet[0]);
+
+    //Package msgs
+    for(const auto &m : tmpMSGSet)
+    {
+        if(m.src != -1) mSet.insertMsg(m);
+        else break;
+    }
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -46,6 +82,7 @@ void DDFS<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCo
     //Check each msgs
     //msgs are sent from edges
     //eCount here is the account of edges which contains messages rather than the account of g's edges
+    //(eCount = mValues.size)
     for(int i = 0; i < eCount; i++)
     {
         //msg token check
@@ -108,33 +145,36 @@ DDFS<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCoun
 
     for(int i = 0; i < vCount; i++)
     {
-        //Check if needed to generate broadcast msg
-        if(vValues[i].opbit & OP_BROADCAST)
+        if(vSet[i].isActive)
         {
-            for(const auto &vState : vValues[i].vStateList)
+            //Check if needed to generate broadcast msg
+            if (vValues[i].opbit & OP_BROADCAST)
             {
-                if(vState.second == MARK_UNVISITED || vState.second == MARK_VISITED)
+                for (const auto &vState : vValues[i].vStateList)
                 {
-                    mValues[msgCount].src = i;
-                    mValues[msgCount].dst = vState.first;
-                    mValues[msgCount].msgbit = MSG_VISITED;
-                    //Not implemented yet
-                    mValues[msgCount].timestamp = 0;
+                    if (vState.second == MARK_UNVISITED || vState.second == MARK_VISITED)
+                    {
+                        mValues[msgCount].src = i;
+                        mValues[msgCount].dst = vState.first;
+                        mValues[msgCount].msgbit = MSG_VISITED;
+                        //Not implemented yet
+                        mValues[msgCount].timestamp = 0;
 
-                    msgCount++;
+                        msgCount++;
+                    }
                 }
             }
-        }
-        //Check if needed to generate search msg
-        if(vValues[i].opbit & OP_MSG_FROM_SEARCH)
-        {
-            mValues[msgCount].src = i;
-            mValues[msgCount].dst = vValues[i].vNextMSGTo;
-            mValues[msgCount].msgbit = MSG_TOKEN;
-            //Not implemented yet
-            mValues[msgCount].timestamp = 0;
+            //Check if needed to generate search msg
+            if (vValues[i].opbit & OP_MSG_FROM_SEARCH)
+            {
+                mValues[msgCount].src = i;
+                mValues[msgCount].dst = vValues[i].vNextMSGTo;
+                mValues[msgCount].msgbit = MSG_TOKEN;
+                //Not implemented yet
+                mValues[msgCount].timestamp = 0;
 
-            msgCount++;
+                msgCount++;
+            }
         }
     }
 }
@@ -194,14 +234,23 @@ void DDFS<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueType> 
         {
             for(int k = 0; k < subGCount; k++)
             {
-                if(vV.vStateList.at(j).first == subGSet.at(k).verticesValue.vStateList.at(subGIndex[k]).first)
+                if(vV.vStateList.at(j).first == subGSet.at(k).verticesValue.at(i).vStateList.at(subGIndex[k]).first)
                 {
-                    vV.vStateList.at(j).second = subGSet.at(k).verticesValue.vStateList.at(subGIndex[k]).second;
+                    vV.vStateList.at(j).second = subGSet.at(k).verticesValue.at(i).vStateList.at(subGIndex[k]).second;
                     subGIndex[k]++;
                     break;
                 }
             }
         }
+    }
+
+    //Merge activeVertices
+    activeVertices.clear();
+
+    for(const auto &avs : activeVerticeSet)
+    {
+        for(const auto &av : avs)
+            activeVertices.insert(av);
     }
 }
 
@@ -220,16 +269,32 @@ void DDFS<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &
                                       const std::vector<int> &initVList)
 {
     //Global init
+    //Init graph parameters
+    for(int i = 0; i < g.vCount; i++) g.verticesValue.emplace_back(VertexValueType());
     //Scan edges in graph and collect info
     /*
      * for edge (a, b):
-     *     add pair (b, 0) as (vid, mark) into a's vState priority queue ordered by vid
-     *     add pair (a, 0) as (vid, mark) into b's vState priority queue ordered by vid
-     * (here 0 = MARK_UNVISITED)
+     *     add pair (b, MARK_UNVISITED) as (vid, mark) into a's vState priority queue ordered by vid
+     *     add pair (a, MARK_UNVISITED) as (vid, mark) into b's vState priority queue ordered by vid
     */
+    auto pqVector = std::vector<std::priority_queue<std::pair<int, char>, std::vector<std::pair<int, char>>, cmp>>(g.vCount, std::priority_queue<std::pair<int, char>, std::vector<std::pair<int, char>>, cmp>());
+    for(const auto &e : g.eList)
+    {
+        pqVector.at(e.src).push(std::pair<int, char>(e.dst, MARK_UNVISITED));
+        pqVector.at(e.dst).push(std::pair<int, char>(e.src, MARK_UNVISITED));
+    }
 
     //For every vertex (for example i), pull sorted vState pairs from pq and push them into g.verticesValue.at(i).vStateList
     //The order of verticesValue.vStateList in graph can be ensured
+    for(int i = 0; i < g.vCount; i++)
+    {
+        while(!pqVector.at(i).empty())
+        {
+            g.verticesValue.at(i).vStateList.emplace_back(pqVector.at(i).top());
+            g.verticesValue.at(i).relatedVCount++;
+            pqVector.at(i).pop();
+        }
+    }
 
     //initV init
     int initV = initVList.at(0);
@@ -258,22 +323,82 @@ template<typename VertexValueType, typename MessageValueType>
 std::vector<Graph<VertexValueType>>
 DDFS<VertexValueType, MessageValueType>::DivideGraphByEdge(const Graph<VertexValueType> &g, int partitionCount)
 {
-    //Use STL priority queue to make subgraphs with ordered vStateList for each v copy in subgraphs
+    auto res = std::vector<Graph<VertexValueType>>();
 
     //Divide edges into multiple subgraphs
+    auto eG = std::vector<std::vector<Edge>>();
+    for(int i = 0; i < partitionCount; i++) eG.emplace_back(std::vector<Edge>());
+    for(int i = 0; i < partitionCount; i++)
+    {
+        for(int j = (i * g.eCount) / partitionCount; j < ((i + 1) * g.eCount) / partitionCount; j++)
+            eG.at(i).emplace_back(g.eList.at(j));
+    }
 
-    //Scan edges in each subgraph and collect info
-    /*
-     * for edge (a, b):
-     *     add pair (b, 0) as (vid, mark) into a's vState priority queue ordered by vid
-     *     add pair (a, 0) as (vid, mark) into b's vState priority queue ordered by vid
-     * (here 0 = MARK_UNVISITED)
-    */
+    //Init subGs parameters
+    auto templateBlankVV = std::vector<VertexValueType>(g.vCount, VertexValueType());
+    for(int i = 0; i < g.vCount; i++)
+    {
+        templateBlankVV.at(i).state = g.verticesValue.at(i).state;
+        templateBlankVV.at(i).opbit = g.verticesValue.at(i).opbit;
+        templateBlankVV.at(i).vNextMSGTo = g.verticesValue.at(i).vNextMSGTo;
+        templateBlankVV.at(i).startTime = g.verticesValue.at(i).startTime;
+        templateBlankVV.at(i).endTime = g.verticesValue.at(i).endTime;
+    }
 
-    //For every vertex (for example i), pull sorted vState pairs from pq and push them into g.verticesValue.at(i).vStateList
-    //The order of verticesValue.vStateList in subgraph can be ensured
+    for(int i = 0; i < partitionCount; i++)
+        res.emplace_back(Graph<VertexValueType>(g.vList, eG.at(i), templateBlankVV));
+
+    for(auto &subG : res)
+    {
+        //Scan edges in each subgraph and collect info
+        /*
+         * for edge (a, b):
+         *     add pair (b, MARK_UNVISITED) as (vid, mark) into a's vState priority queue ordered by vid
+         *     add pair (a, MARK_UNVISITED) as (vid, mark) into b's vState priority queue ordered by vid
+        */
+        auto pqVector = std::vector<std::priority_queue<std::pair<int, char>, std::vector<std::pair<int, char>>, cmp>>(g.vCount, std::priority_queue<std::pair<int, char>, std::vector<std::pair<int, char>>, cmp>());
+        for(const auto &e : subG.eList)
+        {
+            pqVector.at(e.src).push(std::pair<int, char>(e.dst, MARK_UNVISITED));
+            pqVector.at(e.dst).push(std::pair<int, char>(e.src, MARK_UNVISITED));
+        }
+
+        //For every vertex (for example i), pull sorted vState pairs from pq and push them into g.verticesValue.at(i).vStateList
+        //The order of verticesValue.vStateList in subgraph can be ensured
+        for(int i = 0; i < subG.vCount; i++)
+        {
+            while(!pqVector.at(i).empty())
+            {
+                subG.verticesValue.at(i).vStateList.emplace_back(pqVector.at(i).top());
+                subG.verticesValue.at(i).relatedVCount++;
+                pqVector.at(i).pop();
+            }
+        }
+    }
 
     //Copy vState from global graph into corresponding subgraph.verticesValue.vStateList
+    int subGCount = partitionCount;
+    int *subGIndex = new int [subGCount];
+
+    for(int i = 0; i < g.vCount; i++)
+    {
+        for(int j = 0; j < subGCount; j++) subGIndex[j] = 0;
+        for(int j = 0; j < g.verticesValue.at(i).relatedVCount; j++)
+        {
+            const auto &vV = g.verticesValue.at(i).vStateList.at(j);
+            for(int k = 0; k < subGCount; k++)
+            {
+                if(res.at(k).verticesValue.at(i).vStateList.at(subGIndex[k]).first == vV.first)
+                {
+                    res.at(k).verticesValue.at(i).vStateList.at(subGIndex[k]).second = vV.second;
+                    subGIndex[k]++;
+                    break;
+                }
+            }
+        }
+    }
+
+    return res;
 }
 
 template <typename VertexValueType, typename MessageValueType>
