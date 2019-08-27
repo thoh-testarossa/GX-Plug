@@ -2,7 +2,7 @@
 // Created by cave-g-f on 2019-05-17.
 //
 
-#include "../algo/LabelPropagation/LabelPropagation.h"
+#include "LabelPropagation.h"
 
 #include <iostream>
 #include <chrono>

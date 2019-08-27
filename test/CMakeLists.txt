@@ -119,4 +119,14 @@ if(UNIX)
             srv_UNIX_shm
             srv_UNIX_msg
             srv_UtilClient)
+
+    add_executable(srv_UtilClientTest_LabelPropagation
+            UtilClientTest_LabelPropagation.cpp)
+
+    target_link_libraries(srv_UtilClientTest_LabelPropagation
+            pthread
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilClient)
+
 ENDIF(UNIX)
