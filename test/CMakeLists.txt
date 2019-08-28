@@ -40,6 +40,15 @@ target_link_libraries(algo_ConnectedComponentTest
         core_MessageSet
         core_GraphUtil)
 
+add_executable(algo_DDFSTest
+        DDFSTest.cpp)
+
+target_link_libraries(algo_DDFSTest
+        algo_DDFS
+        core_Graph
+        core_MessageSet
+        core_GraphUtil)
+
 add_executable(core_GraphAccessTest
         GraphAccessTest.cpp)
 

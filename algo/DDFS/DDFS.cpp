@@ -85,6 +85,9 @@ int DDFS<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCou
         vValues[i].vNextMSGTo = -1;
     }
 
+    //Test
+    std::cout << eCount << std::endl;
+
     //Check each msgs
     //msgs are sent from edges
     //eCount here is the account of edges which contains messages rather than the account of g's edges
@@ -94,6 +97,9 @@ int DDFS<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCou
         //msg token check
         if(mValues[i].msgbit & MSG_TOKEN)
         {
+            //Test
+            std::cout << "TOKEN" << std::endl;
+
             if(vValues[mValues[i].dst].state == STATE_IDLE)
             {
                 //Mark j as i's father
@@ -124,6 +130,9 @@ int DDFS<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCou
         //msg visited check
         else if(mValues[i].msgbit & MSG_VISITED)
         {
+            //Test
+            std::cout << "VISITED" << std::endl;
+
             //There should be some approach more efficient
             for(auto &vState : vValues[mValues[i].dst].vStateList)
             {
@@ -147,6 +156,12 @@ int DDFS<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCou
 
     return avCount;
 }
+
+/*
+ * There are 2 problems which exist in MSGGenMerge
+ * 1. VNextMSGTo may not exist in specific subgraph since there may no any edges(vState) connected to this vertex in this subgraph
+ * 2. vState can not tell the relationship between 2 vertices which corresponding edge can tell
+ */
 
 template <typename VertexValueType, typename MessageValueType>
 int
@@ -321,6 +336,8 @@ void DDFS<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &
     vV.state = STATE_DISCOVERED;
     this->search(initV, this->numOfInitV, &initVList[0], &g.vList[0], &g.verticesValue[0], avCount);
     vV.opbit |= OP_BROADCAST;
+
+    activeVertices.insert(initV);
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -404,11 +421,14 @@ DDFS<VertexValueType, MessageValueType>::DivideGraphByEdge(const Graph<VertexVal
             const auto &vV = g.verticesValue.at(i).vStateList.at(j);
             for(int k = 0; k < subGCount; k++)
             {
-                if(res.at(k).verticesValue.at(i).vStateList.at(subGIndex[k]).first == vV.first)
+                if(res.at(k).verticesValue.at(i).relatedVCount > subGIndex[k])
                 {
-                    res.at(k).verticesValue.at(i).vStateList.at(subGIndex[k]).second = vV.second;
-                    subGIndex[k]++;
-                    break;
+                    if (res.at(k).verticesValue.at(i).vStateList.at(subGIndex[k]).first == vV.first)
+                    {
+                        res.at(k).verticesValue.at(i).vStateList.at(subGIndex[k]).second = vV.second;
+                        subGIndex[k]++;
+                        break;
+                    }
                 }
             }
         }
@@ -461,3 +481,103 @@ int DDFS<VertexValueType, MessageValueType>::search(int vid, int numOfInitV, con
 
     return -1;
 }
+
+template<typename VertexValueType, typename MessageValueType>
+void DDFS<VertexValueType, MessageValueType>::ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet,
+                                                        std::set<int> &activeVertices)
+{
+    auto mSet = MessageSet<MessageValueType>();
+
+    mSet.mSet.clear();
+    MSGGenMerge(g, initVSet, activeVertices, mSet);
+
+    //Test
+    std::cout << "MGenMerge:" << clock() << std::endl;
+    //Test end
+
+    activeVertices.clear();
+    MSGApply(g, initVSet, activeVertices, mSet);
+
+    //Test
+    std::cout << "Apply:" << clock() << std::endl;
+    //Test end
+}
+
+template<typename VertexValueType, typename MessageValueType>
+void DDFS<VertexValueType, MessageValueType>::Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList)
+{
+    //Init the Graph
+    std::set<int> activeVertices = std::set<int>();
+    //auto mGenSet = MessageSet<MessageValueType>();
+    //auto mMergedSet = MessageSet<MessageValueType>();
+
+    Init(g.vCount, g.eCount, initVList.size());
+
+    GraphInit(g, activeVertices, initVList);
+
+    Deploy(g.vCount, g.eCount, initVList.size());
+
+    while(activeVertices.size() > 0)
+        ApplyStep(g, initVList, activeVertices);
+
+    Free();
+}
+
+template<typename VertexValueType, typename MessageValueType>
+void DDFS<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList,
+                                                     int partitionCount)
+{
+    //Init the Graph
+    std::set<int> activeVertices = std::set<int>();
+
+    std::vector<std::set<int>> AVSet = std::vector<std::set<int>>();
+    for(int i = 0; i < partitionCount; i++) AVSet.push_back(std::set<int>());
+    //auto mGenSetSet = std::vector<MessageSet<MessageValueType>>();
+    //for(int i = 0; i < partitionCount; i++) mGenSetSet.push_back(MessageSet<MessageValueType>());
+    //auto mMergedSetSet = std::vector<MessageSet<MessageValueType>>();
+    //for(int i = 0; i < partitionCount; i++) mMergedSetSet.push_back(MessageSet<MessageValueType>());
+
+    Init(g.vCount, g.eCount, initVList.size());
+
+    GraphInit(g, activeVertices, initVList);
+
+    Deploy(g.vCount, g.eCount, initVList.size());
+
+    int iterCount = 0;
+
+    while(activeVertices.size() > 0)
+    {
+        //Test
+        std::cout << ++iterCount << ":" << clock() << std::endl;
+        //Test end
+
+        auto subGraphSet = this->DivideGraphByEdge(g, partitionCount);
+
+        for(int i = 0; i < partitionCount; i++)
+        {
+            AVSet.at(i).clear();
+            AVSet.at(i) = activeVertices;
+        }
+
+        //Test
+        std::cout << "GDivide:" << clock() << std::endl;
+        //Test end
+
+        for(int i = 0; i < partitionCount; i++)
+            ApplyStep(subGraphSet.at(i), initVList, AVSet.at(i));
+
+        activeVertices.clear();
+        MergeGraph(g, subGraphSet, activeVertices, AVSet, initVList);
+        //Test
+        std::cout << "GMerge:" << clock() << std::endl;
+        //Test end
+    }
+
+    Free();
+
+    //Test
+    std::cout << "end" << ":" << clock() << std::endl;
+    //Test end
+}
+
+
