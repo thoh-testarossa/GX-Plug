@@ -173,9 +173,9 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
         cmd = msgp;
         if(std::string("execute") == cmd)
         {
-            this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+            int msgCount = this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
 
-            this->executor.MSGApply_array(this->vCount, this->eCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, mValues);
+            int avCount = this->executor.MSGApply_array(this->vCount, msgCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, mValues);
 
             this->server_msq.send("finished", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
         }

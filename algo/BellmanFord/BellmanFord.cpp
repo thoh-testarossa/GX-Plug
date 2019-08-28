@@ -13,13 +13,13 @@ BellmanFord<VertexValueType, MessageValueType>::BellmanFord()
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void BellmanFord<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet<MessageValueType> &mSet)
+int BellmanFord<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet<MessageValueType> &mSet)
 {
     //Activity reset
     activeVertice.clear();
 
     //Availability check
-    if(g.vCount <= 0) return;
+    if(g.vCount <= 0) return 0;
 
     //MSG Init
     MessageValueType *mValues = new MessageValueType [g.vCount * this->numOfInitV];
@@ -44,15 +44,17 @@ void BellmanFord<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueT
     }
 
     free(mValues);
+
+    return activeVertice.size();
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void BellmanFord<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet)
+int BellmanFord<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet)
 {
     //Generate merged msgs directly
 
     //Availability check
-    if(g.vCount <= 0) return;
+    if(g.vCount <= 0) return 0;
 
     //mValues init
     MessageValueType *mValues = new MessageValueType [g.vCount * this->numOfInitV];
@@ -72,11 +74,15 @@ void BellmanFord<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<Ver
     }
 
     free(mValues);
+
+    return mSet.mSet.size();
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void BellmanFord<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
+int BellmanFord<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
 {
+    int avCount = 0;
+
     for(int i = 0; i < vCount; i++) vSet[i].isActive = false;
 
     for(int i = 0; i < vCount * numOfInitV; i++)
@@ -84,13 +90,19 @@ void BellmanFord<VertexValueType, MessageValueType>::MSGApply_array(int vCount, 
         if(vValues[i] > (VertexValueType)mValues[i])
         {
             vValues[i] = (VertexValueType)mValues[i];
-            vSet[i / numOfInitV].isActive = true;
+            if(!vSet[i / numOfInitV].isActive)
+            {
+                vSet[i / numOfInitV].isActive = true;
+                avCount++;
+            }
         }
     }
+
+    return avCount;
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void BellmanFord<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
+int BellmanFord<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
 {
     for(int i = 0; i < vCount * numOfInitV; i++) mValues[i] = (MessageValueType)INVALID_MASSAGE;
 
@@ -105,6 +117,8 @@ void BellmanFord<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCoun
             }
         }
     }
+
+    return vCount * numOfInitV;
 }
 
 template <typename VertexValueType, typename MessageValueType>

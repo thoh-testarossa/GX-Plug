@@ -15,14 +15,14 @@ DDFS<VertexValueType, MessageValueType>::DDFS()
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void DDFS<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet,
+int DDFS<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet,
                                      std::set<int> &activeVertice, const MessageSet<MessageValueType> &mSet)
 {
     //Activity reset
     activeVertice.clear();
 
     //Availability check
-    if(g.vCount <= 0) return;
+    if(g.vCount <= 0) return 0;
 
     //Organize MessageValueType vector
     auto tmpMSGVector = std::vector<MessageValueType>();
@@ -38,14 +38,16 @@ void DDFS<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g
         if(g.vList.at(i).isActive)
             activeVertice.insert(i);
     }
+
+    return activeVertice.size();
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void DDFS<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet,
+int DDFS<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet,
                                         const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet)
 {
     //Availability check
-    if(g.vCount <= 0) return;
+    if(g.vCount <= 0) return 0;
 
     //Reset mSet
     mSet.mSet.clear();
@@ -62,12 +64,16 @@ void DDFS<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValu
         if(m.src != -1) mSet.insertMsg(m);
         else break;
     }
+
+    return mSet.mSet.size();
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void DDFS<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet,
+int DDFS<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet,
                                            VertexValueType *vValues, MessageValueType *mValues)
 {
+    int avCount = 0;
+
     //Reset vertex activity
     for(int i = 0; i < vCount; i++)
         vSet[i].isActive = false;
@@ -102,13 +108,17 @@ void DDFS<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCo
                 }
 
                 vValues[mValues[i].dst].state = STATE_DISCOVERED;
-                vValues[mValues[i].dst].vNextMSGTo = this->search(mValues[i].dst, numOfInitV, initVSet, vSet, vValues);
+                vValues[mValues[i].dst].vNextMSGTo = this->search(mValues[i].dst, numOfInitV, initVSet, vSet, vValues, avCount);
 
                 //prepare to broadcast msg "visited" to other vertices
                 vValues[mValues[i].dst].opbit |= OP_BROADCAST;
 
                 //Vertex which will send msg will be activated
-                vSet[mValues[i].dst].isActive = true;
+                if(!vSet[mValues[i].dst].isActive)
+                {
+                    vSet[mValues[i].dst].isActive = true;
+                    avCount++;
+                }
             }
         }
         //msg visited check
@@ -127,17 +137,19 @@ void DDFS<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCo
                     else if(vState.second == MARK_SON)
                     {
                         vState.second = MARK_VISITED;
-                        vValues[mValues[i].dst].vNextMSGTo = this->search(mValues[i].dst, numOfInitV, initVSet, vSet, vValues);
+                        vValues[mValues[i].dst].vNextMSGTo = this->search(mValues[i].dst, numOfInitV, initVSet, vSet, vValues, avCount);
                     }
                 }
             }
         }
         else;
     }
+
+    return avCount;
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void
+int
 DDFS<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV,
                                          const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
 {
@@ -177,6 +189,8 @@ DDFS<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCoun
             }
         }
     }
+
+    return msgCount;
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -268,6 +282,8 @@ template <typename VertexValueType, typename MessageValueType>
 void DDFS<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices,
                                       const std::vector<int> &initVList)
 {
+    int avCount = 0;
+
     //Global init
     //Init graph parameters
     for(int i = 0; i < g.vCount; i++) g.verticesValue.emplace_back(VertexValueType());
@@ -303,7 +319,7 @@ void DDFS<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &
 
     auto &vV = g.verticesValue.at(initV);
     vV.state = STATE_DISCOVERED;
-    this->search(initV, this->numOfInitV, &initVList[0], &g.vList[0], &g.verticesValue[0]);
+    this->search(initV, this->numOfInitV, &initVList[0], &g.vList[0], &g.verticesValue[0], avCount);
     vV.opbit |= OP_BROADCAST;
 }
 
@@ -402,7 +418,7 @@ DDFS<VertexValueType, MessageValueType>::DivideGraphByEdge(const Graph<VertexVal
 }
 
 template <typename VertexValueType, typename MessageValueType>
-int DDFS<VertexValueType, MessageValueType>::search(int vid, int numOfInitV, const int *initVSet, Vertex *vSet, VertexValueType *vValues)
+int DDFS<VertexValueType, MessageValueType>::search(int vid, int numOfInitV, const int *initVSet, Vertex *vSet, VertexValueType *vValues, int &avCount)
 {
     bool chk = false;
     for(auto &vState : vValues[vid].vStateList)
@@ -414,6 +430,8 @@ int DDFS<VertexValueType, MessageValueType>::search(int vid, int numOfInitV, con
             vValues[vid].opbit |= OP_MSG_FROM_SEARCH;
             vValues[vid].opbit |= OP_MSG_DOWNWARD;
             //Vertex which will send msg will be activated
+            if(!vSet[vid].isActive)
+                avCount++;
             vSet[vid].isActive = true;
             return vState.first;
         }
@@ -430,6 +448,8 @@ int DDFS<VertexValueType, MessageValueType>::search(int vid, int numOfInitV, con
                 if(vState.second == MARK_PARENT)
                 {
                     //Vertex which will send msg will be activated
+                    if(!vSet[vid].isActive)
+                        avCount++;
                     vSet[vid].isActive = true;
                     vValues[vid].opbit |= OP_MSG_FROM_SEARCH;
                     return vState.first;
@@ -439,5 +459,5 @@ int DDFS<VertexValueType, MessageValueType>::search(int vid, int numOfInitV, con
         }
     }
 
-    return 0;
+    return -1;
 }

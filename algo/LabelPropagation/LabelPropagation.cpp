@@ -13,7 +13,7 @@ LabelPropagation<VertexValueType, MessageValueType>::LabelPropagation()
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void LabelPropagation<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<MessageValueType> &mSet)
+int LabelPropagation<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<MessageValueType> &mSet)
 {
     //store the labels of neighbors for each vertice
     auto labelsVector = std::vector<std::map<int, int>>();
@@ -53,10 +53,12 @@ void LabelPropagation<VertexValueType, MessageValueType>::MSGApply(Graph<VertexV
             g.verticesValue.at(i).second = label.second;
         }
     }
+
+    return 0;
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet)
+int LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet)
 {
     //Generate merged msgs directly
     mSet.mSet.clear();
@@ -68,10 +70,12 @@ void LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge(const Grap
         auto msgValue = std::pair<int, int>(e.dst, g.verticesValue.at(e.src).first);
         mSet.insertMsg(Message<MessageValueType>(e.src, e.dst, msgValue));
     }
+
+    return mSet.mSet.size();
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void LabelPropagation<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
+int LabelPropagation<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
 {
     //store the labels of neighbors for each vertice
     auto labelsVector = std::vector<std::map<int, int>>();
@@ -115,10 +119,12 @@ void LabelPropagation<VertexValueType, MessageValueType>::MSGApply_array(int vCo
            vValues[i].second = label.second;
         }
     }
+
+    return 0;
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
+int LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
 {
     for(int i = 0; i < eCount; i++)
     {
@@ -126,6 +132,8 @@ void LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge_array(int 
         auto msgValue = std::pair<int, int>(eSet[i].dst, vValues[eSet[i].src].first);
         mValues[i] = msgValue;
     }
+
+    return eCount;
 }
 
 template <typename VertexValueType, typename MessageValueType>
