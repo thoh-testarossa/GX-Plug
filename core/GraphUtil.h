@@ -16,14 +16,14 @@ template <typename VertexValueType, typename MessageValueType>
 class GraphUtil
 {
 public:
-    virtual void MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<MessageValueType> &mSet) = 0;
-    virtual void MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertices, MessageSet<MessageValueType> &mSet) = 0;
+    virtual int MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<MessageValueType> &mSet) = 0;
+    virtual int MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertices, MessageSet<MessageValueType> &mSet) = 0;
 
     //For transportation between jni part and processing part by using share memory
     //Also for less data transformation in order to achieve higher performance
     //Data struct Graph is not necessary!?
-    virtual void MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues) = 0;
-    virtual void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues) = 0;
+    virtual int MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues) = 0;
+    virtual int MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues) = 0;
 
     //Master function
     virtual void Init(int vCount, int eCount, int numOfInitV) = 0;

@@ -14,25 +14,25 @@ StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::StronglyC
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet<MessageValueType> &mSet)
+int StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet<MessageValueType> &mSet)
 {
 
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet)
+int StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet)
 {
 
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
+int StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
 {
 
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
+int StronglyConnectedComponent_stage_1<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
 {
 
 }
@@ -92,10 +92,10 @@ StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::StronglyC
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet,std::set<int> &activeVertice, const MessageSet<MessageValueType> &mSet)
+int StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet,std::set<int> &activeVertice, const MessageSet<MessageValueType> &mSet)
 {
     //Availability check
-    if(g.vCount <= 0) return;
+    if(g.vCount <= 0) return 0;
 
     MessageValueType *mValues = new MessageValueType [g.vCount];
     for(int i = 0; i < g.vCount; i++) mValues[i] = (MessageValueType)INVALID_MASSAGE;
@@ -109,13 +109,15 @@ void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MSGA
         if(v.isActive)
             activeVertice.insert(v.vertexID);
     }
+
+    return activeVertice.size();
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet)
+int StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet)
 {
     //Availability check
-    if(g.vCount <= 0) return;
+    if(g.vCount <= 0) return 0;
 
     MessageValueType *mValues = new MessageValueType [g.vCount];
 
@@ -127,11 +129,15 @@ void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MSGG
         if(mValues[i] != (MessageValueType)INVALID_MASSAGE)
             mSet.insertMsg(Message<MessageValueType>(INVALID_INITV_INDEX, i, mValues[i]));
     }
+
+    return mSet.mSet.size();
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
+int StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
 {
+    int avCount = 0;
+
     //isActive reset
     for(int i = 0; i < vCount; i++) vSet[i].isActive = false;
 
@@ -140,13 +146,19 @@ void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MSGA
         if(vValues[i] > (VertexValueType)mValues[i])
         {
             vValues[i] = (VertexValueType)mValues[i];
-            vSet[i].isActive = true;
+            if(!vSet[i].isActive)
+            {
+                vSet[i].isActive = true;
+                avCount++;
+            }
         }
     }
+
+    return avCount;
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
+int StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
 {
     //Invalid MSG init
     for(int i = 0; i < vCount; i++) mValues[i] = (VertexValueType)INVALID_MASSAGE;
@@ -159,6 +171,8 @@ void StronglyConnectedComponent_stage_2<VertexValueType, MessageValueType>::MSGG
                 mValues[eSet[i].dst] = (MessageValueType)vValues[eSet[i].src];
         }
     }
+
+    return vCount;
 }
 
 template <typename VertexValueType, typename MessageValueType>

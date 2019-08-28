@@ -80,7 +80,7 @@ void ConnectedComponentGPU<VertexValueType, MessageValueType>::Free()
 }
 
 template<typename VertexValueType, typename MessageValueType>
-void ConnectedComponentGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV,
+int ConnectedComponentGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV,
                                                             const int *initVSet, VertexValueType *vValues,
                                                             MessageValueType *mValues)
 {
@@ -208,10 +208,20 @@ void ConnectedComponentGPU<VertexValueType, MessageValueType>::MSGApply_array(in
         err = cudaMemcpy(vSet, this->d_vSet, vCount * sizeof(Vertex), cudaMemcpyDeviceToHost);
         err = cudaMemcpy((int *)vValues, this->d_vValueSet, vCount * sizeof(int), cudaMemcpyDeviceToHost);
     }
+
+    //avCount calculation
+    int avCount = 0;
+    for(int i = 0; i < vCount; i++)
+    {
+        if(vSet[i].isActive)
+            avCount++;
+    }
+
+    return avCount;
 }
 
 template<typename VertexValueType, typename MessageValueType>
-void
+int
 ConnectedComponentGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet,
                                                           int numOfInitV, const int *initVSet,
                                                           const VertexValueType *vValues, MessageValueType *mValues)
@@ -342,8 +352,10 @@ ConnectedComponentGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int 
         err = cudaMemcpy((int *)this->mValueTable, this->d_mValueTable, vCount * sizeof(int), cudaMemcpyDeviceToHost);
 
         //Transform back to original double form
-        for (int i = 0; i < vCount * numOfInitV; i++)
+        for (int i = 0; i < vCount; i++)
             mValues[i] = this->mValueTable[i];
     }
+
+    return vCount;
 }
 

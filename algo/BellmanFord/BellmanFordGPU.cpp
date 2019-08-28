@@ -153,10 +153,10 @@ void BellmanFordGPU<VertexValueType, MessageValueType>::Free()
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
+int BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
 {
     //Availability check
-    if(vCount == 0) return;
+    if(vCount == 0) return 0;
 
     //CUDA init
     cudaError_t err = cudaSuccess;
@@ -286,15 +286,25 @@ void BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCoun
         err = cudaMemcpy((double *)vValues, this->d_vValueSet, vCount * numOfInitV * sizeof(double),
                          cudaMemcpyDeviceToHost);
     }
+
+    //avCount calculation
+    int avCount = 0;
+    for(int i = 0; i < vCount; i++)
+    {
+        if(vSet[i].isActive)
+            avCount++;
+    }
+
+    return avCount;
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void BellmanFordGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
+int BellmanFordGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
 {
     //Generate merged msgs directly
 
     //Availability check
-    if(vCount == 0) return;
+    if(vCount == 0) return 0;
 
     //Invalid message init
     for(int i = 0; i < vCount * numOfInitV; i++) mValues[i] = (MessageValueType)INVALID_MASSAGE;
@@ -426,4 +436,6 @@ void BellmanFordGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vC
         for (int i = 0; i < vCount * numOfInitV; i++)
             mValues[i] = (MessageValueType) (longLongIntAsDouble(this->mTransformedMergedMSGValueSet[i]));
     }
+
+    return vCount * numOfInitV;
 }
