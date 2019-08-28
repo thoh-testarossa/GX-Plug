@@ -85,7 +85,7 @@ int ConnectedComponentGPU<VertexValueType, MessageValueType>::MSGApply_array(int
                                                             MessageValueType *mValues)
 {
     //Availability check
-    if(vCount == 0) return;
+    if(vCount <= 0) return 0;
 
     //CUDA init
     cudaError_t err = cudaSuccess;
@@ -229,7 +229,7 @@ ConnectedComponentGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int 
     //Generate merged msgs directly
 
     //Availability check
-    if(vCount == 0) return;
+    if(vCount <= 0) return 0;
 
     //Invalid message init
     for(int i = 0; i < vCount; i++) mValues[i] = (MessageValueType)INVALID_MASSAGE;
