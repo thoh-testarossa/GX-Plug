@@ -106,9 +106,9 @@ int DDFS<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCou
                 //There should be some approach more efficient
                 for(auto &vState : vValues[mValues[i].dst].vStateList)
                 {
-                    if(vState.first == mValues[i].src)
+                    if(vState.second.first == mValues[i].src)
                     {
-                        vState.second = MARK_PARENT;
+                        vState.second.second = MARK_PARENT;
                         break;
                     }
                 }
@@ -138,14 +138,14 @@ int DDFS<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCou
             {
                 if(vState.first == mValues[i].src)
                 {
-                    if(vState.second == MARK_UNVISITED)
+                    if(vState.second.second == MARK_UNVISITED)
                     {
-                        vState.second = MARK_VISITED;
+                        vState.second.second = MARK_VISITED;
                         vValues[mValues[i].dst].vNextMSGTo = -1;
                     }
-                    else if(vState.second == MARK_SON)
+                    else if(vState.second.second == MARK_SON)
                     {
-                        vState.second = MARK_VISITED;
+                        vState.second.second = MARK_VISITED;
                         vValues[mValues[i].dst].vNextMSGTo = this->search(mValues[i].dst, numOfInitV, initVSet, vSet, vValues, avCount);
                     }
                 }
@@ -174,33 +174,46 @@ DDFS<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCoun
     {
         if(vSet[i].isActive)
         {
-            //Check if needed to generate broadcast msg
-            if (vValues[i].opbit & OP_BROADCAST)
+            for(const auto &vState : vValues[i].vStateList)
             {
-                for (const auto &vState : vValues[i].vStateList)
+                if (vState.first)
                 {
-                    if (vState.second == MARK_UNVISITED || vState.second == MARK_VISITED)
+                    //Check if needed to generate broadcast msg
+                    if (vValues[i].opbit & OP_BROADCAST)
                     {
-                        mValues[msgCount].src = i;
-                        mValues[msgCount].dst = vState.first;
-                        mValues[msgCount].msgbit = MSG_VISITED;
-                        //Not implemented yet
-                        mValues[msgCount].timestamp = 0;
+                        if (vState.second.second == MARK_UNVISITED || vState.second.second == MARK_VISITED)
+                        {
+                            mValues[msgCount].src = i;
+                            mValues[msgCount].dst = vState.second.first;
+                            mValues[msgCount].msgbit = MSG_VISITED;
+                            //Not implemented yet
+                            mValues[msgCount].timestamp = 0;
 
-                        msgCount++;
+                            //Test
+                            std::cout << i << " " << vState.second.first << ": " << "visited" << std::endl;
+
+                            msgCount++;
+                        }
+                    }
+
+                    //Check if needed to generate search msg
+                    if (vValues[i].opbit & OP_MSG_FROM_SEARCH)
+                    {
+                        if (vState.second.first == vValues[i].vNextMSGTo)
+                        {
+                            mValues[msgCount].src = i;
+                            mValues[msgCount].dst = vValues[i].vNextMSGTo;
+                            mValues[msgCount].msgbit = MSG_TOKEN;
+                            //Not implemented yet
+                            mValues[msgCount].timestamp = 0;
+
+                            //Test
+                            std::cout << i << " " << vState.second.first << ": " << "token" << std::endl;
+
+                            msgCount++;
+                        }
                     }
                 }
-            }
-            //Check if needed to generate search msg
-            if (vValues[i].opbit & OP_MSG_FROM_SEARCH)
-            {
-                mValues[msgCount].src = i;
-                mValues[msgCount].dst = vValues[i].vNextMSGTo;
-                mValues[msgCount].msgbit = MSG_TOKEN;
-                //Not implemented yet
-                mValues[msgCount].timestamp = 0;
-
-                msgCount++;
             }
         }
     }
@@ -239,8 +252,8 @@ void DDFS<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueType> 
             //state merge
             vV.state |= vVSub.state;
             //vNextMSGTo merge
-            if(!(vV.opbit & OP_MSG_FROM_SEARCH) && (vVSub.opbit & OP_MSG_FROM_SEARCH)) vV.vNextMSGTo = vVSub.vNextMSGTo;
-            else if(!(vV.opbit & OP_MSG_DOWNWARD) && (vVSub.opbit & OP_MSG_DOWNWARD)) vV.vNextMSGTo = vVSub.vNextMSGTo;
+            if((!(vV.opbit & OP_MSG_FROM_SEARCH)) && (vVSub.opbit & OP_MSG_FROM_SEARCH)) vV.vNextMSGTo = vVSub.vNextMSGTo;
+            else if((!(vV.opbit & OP_MSG_DOWNWARD)) && (vVSub.opbit & OP_MSG_DOWNWARD)) vV.vNextMSGTo = vVSub.vNextMSGTo;
             else;
             //opbit merge
             vV.opbit |= vVSub.opbit;
@@ -263,11 +276,15 @@ void DDFS<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueType> 
         {
             for(int k = 0; k < subGCount; k++)
             {
-                if(vV.vStateList.at(j).first == subGSet.at(k).verticesValue.at(i).vStateList.at(subGIndex[k]).first)
+                if(subGIndex[k] < subGSet.at(k).verticesValue.at(i).vStateList.size())
                 {
-                    vV.vStateList.at(j).second = subGSet.at(k).verticesValue.at(i).vStateList.at(subGIndex[k]).second;
-                    subGIndex[k]++;
-                    break;
+                    if (vV.vStateList.at(j).second.first ==
+                        subGSet.at(k).verticesValue.at(i).vStateList.at(subGIndex[k]).second.first)
+                    {
+                        vV.vStateList.at(j).second.second = subGSet.at(k).verticesValue.at(i).vStateList.at(subGIndex[k]).second.second;
+                        subGIndex[k]++;
+                        break;
+                    }
                 }
             }
         }
@@ -308,11 +325,13 @@ void DDFS<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &
      *     add pair (b, MARK_UNVISITED) as (vid, mark) into a's vState priority queue ordered by vid
      *     add pair (a, MARK_UNVISITED) as (vid, mark) into b's vState priority queue ordered by vid
     */
-    auto pqVector = std::vector<std::priority_queue<std::pair<int, char>, std::vector<std::pair<int, char>>, cmp>>(g.vCount, std::priority_queue<std::pair<int, char>, std::vector<std::pair<int, char>>, cmp>());
+    auto pqVector = std::vector<std::priority_queue<std::pair<bool, std::pair<int, char>>, std::vector<std::pair<bool, std::pair<int, char>>>, cmp>>(g.vCount, std::priority_queue<std::pair<bool, std::pair<int, char>>, std::vector<std::pair<bool, std::pair<int, char>>>, cmp>());
     for(const auto &e : g.eList)
     {
-        pqVector.at(e.src).push(std::pair<int, char>(e.dst, MARK_UNVISITED));
-        pqVector.at(e.dst).push(std::pair<int, char>(e.src, MARK_UNVISITED));
+        auto srcVV = std::pair<bool, std::pair<int, char>>(true, std::pair<int, char>(e.dst, MARK_UNVISITED));
+        pqVector.at(e.src).push(srcVV);
+        auto dstVV = std::pair<bool, std::pair<int, char>>(false, std::pair<int, char>(e.src, MARK_UNVISITED));
+        pqVector.at(e.dst).push(dstVV);
     }
 
     //For every vertex (for example i), pull sorted vState pairs from pq and push them into g.verticesValue.at(i).vStateList
@@ -334,7 +353,7 @@ void DDFS<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &
 
     auto &vV = g.verticesValue.at(initV);
     vV.state = STATE_DISCOVERED;
-    this->search(initV, this->numOfInitV, &initVList[0], &g.vList[0], &g.verticesValue[0], avCount);
+    vV.vNextMSGTo = this->search(initV, this->numOfInitV, &initVList[0], &g.vList[0], &g.verticesValue[0], avCount);
     vV.opbit |= OP_BROADCAST;
 
     activeVertices.insert(initV);
@@ -389,11 +408,13 @@ DDFS<VertexValueType, MessageValueType>::DivideGraphByEdge(const Graph<VertexVal
          *     add pair (b, MARK_UNVISITED) as (vid, mark) into a's vState priority queue ordered by vid
          *     add pair (a, MARK_UNVISITED) as (vid, mark) into b's vState priority queue ordered by vid
         */
-        auto pqVector = std::vector<std::priority_queue<std::pair<int, char>, std::vector<std::pair<int, char>>, cmp>>(g.vCount, std::priority_queue<std::pair<int, char>, std::vector<std::pair<int, char>>, cmp>());
+        auto pqVector = std::vector<std::priority_queue<std::pair<bool, std::pair<int, char>>, std::vector<std::pair<bool, std::pair<int, char>>>, cmp>>(g.vCount, std::priority_queue<std::pair<bool, std::pair<int, char>>, std::vector<std::pair<bool, std::pair<int, char>>>, cmp>());
         for(const auto &e : subG.eList)
         {
-            pqVector.at(e.src).push(std::pair<int, char>(e.dst, MARK_UNVISITED));
-            pqVector.at(e.dst).push(std::pair<int, char>(e.src, MARK_UNVISITED));
+            auto srcVV = std::pair<bool, std::pair<int, char>>(true, std::pair<int, char>(e.dst, MARK_UNVISITED));
+            pqVector.at(e.src).push(srcVV);
+            auto dstVV = std::pair<bool, std::pair<int, char>>(false, std::pair<int, char>(e.src, MARK_UNVISITED));
+            pqVector.at(e.dst).push(dstVV);
         }
 
         //For every vertex (for example i), pull sorted vState pairs from pq and push them into g.verticesValue.at(i).vStateList
@@ -443,17 +464,18 @@ int DDFS<VertexValueType, MessageValueType>::search(int vid, int numOfInitV, con
     bool chk = false;
     for(auto &vState : vValues[vid].vStateList)
     {
-        if(!(vState.second == MARK_VISITED))
+        if(vState.second.second == MARK_UNVISITED)
         {
             chk = true;
-            vState.second = MARK_SON;
+            vState.second.second = MARK_SON;
             vValues[vid].opbit |= OP_MSG_FROM_SEARCH;
             vValues[vid].opbit |= OP_MSG_DOWNWARD;
+
             //Vertex which will send msg will be activated
             if(!vSet[vid].isActive)
                 avCount++;
             vSet[vid].isActive = true;
-            return vState.first;
+            return vState.second.first;
         }
     }
 
@@ -465,14 +487,14 @@ int DDFS<VertexValueType, MessageValueType>::search(int vid, int numOfInitV, con
             //There should be some approach more efficient
             for(auto &vState : vValues[vid].vStateList)
             {
-                if(vState.second == MARK_PARENT)
+                if(vState.second.second == MARK_PARENT)
                 {
                     //Vertex which will send msg will be activated
                     if(!vSet[vid].isActive)
                         avCount++;
                     vSet[vid].isActive = true;
                     vValues[vid].opbit |= OP_MSG_FROM_SEARCH;
-                    return vState.first;
+                    return vState.second.first;
                 }
             }
 

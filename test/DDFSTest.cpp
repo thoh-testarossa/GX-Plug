@@ -41,7 +41,7 @@ int main()
         std::cout << "Parent: ";
         for(const auto &vV : test.verticesValue.at(i).vStateList)
         {
-            if(vV.second == MARK_PARENT)
+            if(vV.second.second == MARK_PARENT)
                 std::cout << vV.first << " ";
         }
         std::cout << std::endl;
@@ -49,7 +49,7 @@ int main()
         std::cout << "Sons: ";
         for(const auto &vV : test.verticesValue.at(i).vStateList)
         {
-            if(vV.second == MARK_SON)
+            if(vV.second.second == MARK_SON)
                 std::cout << vV.first << " ";
         }
         std::cout << std::endl;

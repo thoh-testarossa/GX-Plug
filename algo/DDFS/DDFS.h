@@ -31,9 +31,9 @@
 
 //Customised comparison
 struct cmp{
-    bool operator()(std::pair<int, char> a, std::pair<int, char> b)
+    bool operator()(std::pair<bool, std::pair<int, char>> a, std::pair<bool, std::pair<int, char>> b)
     {
-        return a.first > b.first;
+        return a.second.first > b.second.first;
     }
 };
 
@@ -41,12 +41,12 @@ struct cmp{
 class DFSValue
 {
 public:
-    DFSValue() : DFSValue(false, 0, -1, 0, 0, 0, std::vector<std::pair<int, char>>())
+    DFSValue() : DFSValue(false, 0, -1, 0, 0, 0, std::vector<std::pair<bool, std::pair<int, char>>>())
     {
 
     }
 
-    DFSValue(bool state, char opbit, int vNextMSGNo, int startTime, int endTime, int relatedVCount, std::vector<std::pair<int, char>> vStateList)
+    DFSValue(bool state, char opbit, int vNextMSGNo, int startTime, int endTime, int relatedVCount, const std::vector<std::pair<bool, std::pair<int, char>>> &vStateList)
     {
         this->state = state;
         this->opbit = opbit;
@@ -65,7 +65,7 @@ public:
     int relatedVCount;
 
     //Ordered by vState.first anytime
-    std::vector<std::pair<int, char>> vStateList;
+    std::vector<std::pair<bool, std::pair<int, char>>> vStateList;
 };
 
 //DFS msg class definition
