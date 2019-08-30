@@ -30,12 +30,12 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGApply(Graph<VertexVa
     {
         auto &labelCntMap = labelsVector.at(m.dst);
         auto &maxLabel = maxCntLabel.at(m.dst);
-        
+
         if(labelCntMap.find(m.value.second) == labelCntMap.end())
             labelCntMap.insert(std::map<int, int>::value_type(m.value.second, 1));
         else
             labelCntMap.at(m.value.second)++;
-        
+
         if(maxLabel.second < labelCntMap.at(m.value.second))
         {
             maxLabel.first = m.value.second;
@@ -51,6 +51,10 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGApply(Graph<VertexVa
         {
             g.verticesValue.at(i).first = label.first;
             g.verticesValue.at(i).second = label.second;
+        }
+        else
+        {
+            g.verticesValue.at(i).second = 0;
         }
     }
 
@@ -101,7 +105,7 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGApply_array(int vCou
         {
             labelCntMap.at(mValues[i].second)++;
         }
-        
+
         if(maxLabel.second < labelCntMap.at(mValues[i].second))
         {
             maxLabel.first = mValues[i].second;
@@ -117,6 +121,10 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGApply_array(int vCou
         {
            vValues[i].first = label.first;
            vValues[i].second = label.second;
+        }
+        else
+        {
+            vValues[i].second = 0;
         }
     }
 
@@ -174,6 +182,14 @@ void LabelPropagation<VertexValueType, MessageValueType>::MergeGraph(Graph<Verte
     //Merge graphs
     auto resG = Graph<VertexValueType>(0);
 
+    auto labelCntPerVertice = std::vector<std::map<int, int>>();
+    auto maxLabelCnt = std::vector<std::pair<int, int>>();
+
+    labelCntPerVertice.reserve(g.vCount);
+    labelCntPerVertice.assign(g.vCount, std::map<int, int>());
+    maxLabelCnt.reserve(g.vCount);
+    maxLabelCnt.assign(g.vCount, std::pair<int, int>(0, 0));
+
     if(subGSet.size() <= 0);
     else
     {
@@ -188,19 +204,38 @@ void LabelPropagation<VertexValueType, MessageValueType>::MergeGraph(Graph<Verte
         //Merge subGraphs
         for(const auto &subG : subGSet)
         {
-            //Merge vValues
+            //vValues merge
             for(int i = 0; i < subG.verticesValue.size(); i++)
             {
-                if(resG.verticesValue.at(i).first != subG.verticesValue.at(i).first && resG.verticesValue.at(i).second < subG.verticesValue.at(i).second)
+                auto &labelCnt = labelCntPerVertice.at(i);
+                auto &maxLabel = maxLabelCnt.at(i);
+                auto value = subG.verticesValue.at(i);
+
+                if(labelCnt.find(value.first) == labelCnt.end())
                 {
-                    resG.verticesValue.at(i).first = subG.verticesValue.at(i).first;
-                    resG.verticesValue.at(i).second = subG.verticesValue.at(i).second;
+                    labelCnt[value.first] = value.second;
+                }
+                else
+                {
+                    labelCnt[value.first] += value.second;
+                }
+
+                if(maxLabel.second < labelCnt[value.first])
+                {
+                    maxLabel.first = value.first;
+                    maxLabel.second = labelCnt[value.first];
                 }
             }
 
             //Merge Edge
             //There should be not any relevant edges since subgraphs are divided by dividing edge set
             resG.eList.insert(resG.eList.end(), subG.eList.begin(), subG.eList.end());
+        }
+
+        for(int i = 0; i < g.vCount; i++)
+        {
+            resG.verticesValue.at(i).first = maxLabelCnt.at(i).first;
+            resG.verticesValue.at(i).second = maxLabelCnt.at(i).second;
         }
     }
 
@@ -266,7 +301,7 @@ void LabelPropagation<VertexValueType, MessageValueType>::ApplyD(Graph<VertexVal
 
     while(iterCount < 100)
     {
-        //std::cout << "iterCount: " << iterCount << std::endl;
+        std::cout << "iterCount: " << iterCount << std::endl;
         auto start = std::chrono::system_clock::now();
         auto subGraphSet = this->DivideGraphByEdge(g, partitionCount);
         auto divideGraphFinish = std::chrono::system_clock::now();
@@ -280,7 +315,7 @@ void LabelPropagation<VertexValueType, MessageValueType>::ApplyD(Graph<VertexVal
         MergeGraph(g, subGraphSet, activeVertice, AVSet, initVList);
         iterCount++;
         auto end = std::chrono::system_clock::now();
-    } 
+    }
 
     for(int i = 0; i < g.vCount; i++)
         std::cout << g.verticesValue.at(i).first << std::endl;
