@@ -15,48 +15,21 @@ LabelPropagation<VertexValueType, MessageValueType>::LabelPropagation()
 template <typename VertexValueType, typename MessageValueType>
 int LabelPropagation<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<MessageValueType> &mSet)
 {
-    //store the labels of neighbors for each vertice
-    auto labelsVector = std::vector<std::map<int, int>>();
+    //Availability check
+    if(g.eCount <= 0 || g.vCount <= 0) return 0;
 
-    //store the most often label for each vertice
-    auto maxCntLabel = std::vector<std::pair<int, int>>();
+    //mValues init
+    MessageValueType *mValues = new MessageValueType [g.eCount];
 
-    labelsVector.reserve(g.vCount);
-    labelsVector.assign(g.vCount, std::map<int, int>());
-    maxCntLabel.reserve(g.vCount);
-    maxCntLabel.assign(g.vCount, std::pair<int, int>(0, 0));
-
-    for(const auto &m : mSet.mSet)
+    for(int i = 0; i < g.eCount; i++)
     {
-        auto &labelCntMap = labelsVector.at(m.dst);
-        auto &maxLabel = maxCntLabel.at(m.dst);
-
-        if(labelCntMap.find(m.value.second) == labelCntMap.end())
-            labelCntMap.insert(std::map<int, int>::value_type(m.value.second, 1));
-        else
-            labelCntMap.at(m.value.second)++;
-
-        if(maxLabel.second < labelCntMap.at(m.value.second))
-        {
-            maxLabel.first = m.value.second;
-            maxLabel.second = labelCntMap.at(m.value.second);
-        }
+        mValues[i] = mSet.mSet.at(i).value;
     }
 
-    for(int i = 0; i < g.vList.size(); i++)
-    {
-        auto label = maxCntLabel.at(i);
+    //array form computation
+    this->MSGApply_array(g.vCount, g.eCount, &g.vList[0], 0, &initVSet[0], &g.verticesValue[0], mValues);
 
-        if(label.second != 0)
-        {
-            g.verticesValue.at(i).first = label.first;
-            g.verticesValue.at(i).second = label.second;
-        }
-        else
-        {
-            g.verticesValue.at(i).second = 0;
-        }
-    }
+    delete[] mValues;
 
     return 0;
 }
@@ -64,18 +37,27 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGApply(Graph<VertexVa
 template <typename VertexValueType, typename MessageValueType>
 int LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet)
 {
+    //Availability check
+    if(g.eCount <= 0 || g.vCount <= 0) return 0;
+
+    //mValues init
+    MessageValueType *mValues = new MessageValueType [g.eCount];
+
+    //array form computation
+    this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], 0, &initVSet[0], &g.verticesValue[0], mValues);
+
     //Generate merged msgs directly
     mSet.mSet.clear();
     mSet.mSet.reserve(g.eCount);
 
-    for(auto e : g.eList)
+    for(int i = 0; i < g.eCount; i++)
     {
-        //msg value -- <destinationID, Label>
-        auto msgValue = std::pair<int, int>(e.dst, g.verticesValue.at(e.src).first);
-        mSet.insertMsg(Message<MessageValueType>(e.src, e.dst, msgValue));
+        mSet.insertMsg(Message<MessageValueType>(g.eList.at(i).src, g.eList.at(i).dst, mValues[i]));
     }
 
-    return mSet.mSet.size();
+    delete[] mValues;
+
+    return g.eCount;
 }
 
 template <typename VertexValueType, typename MessageValueType>
