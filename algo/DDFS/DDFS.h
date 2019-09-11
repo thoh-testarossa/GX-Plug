@@ -33,7 +33,11 @@
 struct cmp{
     bool operator()(std::pair<bool, std::pair<int, char>> a, std::pair<bool, std::pair<int, char>> b)
     {
-        return a.second.first > b.second.first;
+        if(a.second.first > b.second.first) return true;
+        else if(a.second.first == b.second.first) return !a.first;
+        else if(a.second.first < b.second.first) return false;
+
+        else return a.second.first > b.second.first;
     }
 };
 
@@ -41,28 +45,35 @@ struct cmp{
 class DFSValue
 {
 public:
-    DFSValue() : DFSValue(false, 0, -1, 0, 0, 0, std::vector<std::pair<bool, std::pair<int, char>>>())
+    DFSValue() : DFSValue(false, 0, -1, 0, 0, 0, std::vector<std::pair<bool, std::pair<int, char>>>(), 0, false, -1)
     {
 
     }
 
-    DFSValue(bool state, char opbit, int vNextMSGNo, int startTime, int endTime, int relatedVCount, const std::vector<std::pair<bool, std::pair<int, char>>> &vStateList)
+    DFSValue(bool state, char opbit, int parent, int startTime, int endTime, int relatedVCount, const std::vector<std::pair<bool, std::pair<int, char>>> &vStateList, int searchDownwardVCount, bool needGenToken, int vNextTokenMSGNo)
     {
         this->state = state;
         this->opbit = opbit;
-        this->vNextMSGTo = vNextMSGNo;
+        this->parent = parent;
         this->startTime = startTime;
         this->endTime = endTime;
         this->relatedVCount = relatedVCount;
         this->vStateList = vStateList;
+
+        this->searchDownwardVCount = searchDownwardVCount;
+        this->needGenToken = needGenToken;
+        this->vNextTokenMSGTo = vNextTokenMSGNo;
     }
 
     bool state;
     char opbit;
-    int vNextMSGTo;
+    int parent;
     int startTime;
     int endTime;
     int relatedVCount;
+    int searchDownwardVCount;
+    bool needGenToken;
+    int vNextTokenMSGTo;
 
     //Ordered by vState.first anytime
     std::vector<std::pair<bool, std::pair<int, char>>> vStateList;

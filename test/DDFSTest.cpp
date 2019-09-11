@@ -29,7 +29,7 @@ int main()
     Gin.close();
 
     std::vector<int> initVList = std::vector<int>();
-    initVList.push_back(5);
+    initVList.push_back(0);
 
     auto executor = DDFS<DFSValue, DFSMSG>();
     executor.ApplyD(test, initVList, 4);
@@ -42,7 +42,7 @@ int main()
         for(const auto &vV : test.verticesValue.at(i).vStateList)
         {
             if(vV.second.second == MARK_PARENT)
-                std::cout << vV.first << " ";
+                std::cout << vV.second.first << " ";
         }
         std::cout << std::endl;
 
@@ -50,7 +50,7 @@ int main()
         for(const auto &vV : test.verticesValue.at(i).vStateList)
         {
             if(vV.second.second == MARK_SON)
-                std::cout << vV.first << " ";
+                std::cout << vV.second.first << " ";
         }
         std::cout << std::endl;
     }
