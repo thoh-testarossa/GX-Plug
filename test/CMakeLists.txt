@@ -48,6 +48,15 @@ target_link_libraries(core_GraphAccessTest
         core_MessageSet
         core_GraphUtil)
 
+add_executable(algo_PageRankTest
+        PageRankTest.cpp)
+
+target_link_libraries(algo_PageRankTest
+        algo_PageRank
+        core_Graph
+        core_MessageSet
+        core_GraphUtil)
+
 if(CUDA_FOUND)
     add_executable(algo_BellmanFordGPUTest
             BellmanFordGPUTest.cpp)

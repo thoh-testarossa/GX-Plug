@@ -17,6 +17,7 @@ public:
     int vertexID;
     bool isActive;
     int initVIndex;
+    int outDegree;
 };
 
 class Edge
