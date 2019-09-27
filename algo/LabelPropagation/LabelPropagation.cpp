@@ -66,48 +66,41 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGApply_array(int vCou
     //store the labels of neighbors for each vertice
     auto labelsVector = std::vector<std::map<int, int>>();
 
-    //store the most often label for each vertice
-    auto maxCntLabel = std::vector<std::pair<int, int>>();
-
     labelsVector.reserve(vCount);
     labelsVector.assign(vCount, std::map<int, int>());
-    maxCntLabel.reserve(vCount);
-    maxCntLabel.assign(vCount, std::pair<int, int>(0, 0));
 
     for(int i = 0; i < eCount; i++)
     {
         auto &labelCntMap = labelsVector.at(mValues[i].first);
-        auto &maxLabel = maxCntLabel.at(mValues[i].first);
 
         if(labelCntMap.find(mValues[i].second) == labelCntMap.end())
         {
-            labelCntMap.insert(std::map<int, int>::value_type(mValues[i].second, 1));
+            labelCntMap[mValues[i].second] = 1;
         }
         else
         {
             labelCntMap.at(mValues[i].second)++;
         }
-
-        if(maxLabel.second < labelCntMap.at(mValues[i].second))
-        {
-            maxLabel.first = mValues[i].second;
-            maxLabel.second = labelCntMap.at(mValues[i].second);
-        }
     }
 
+    //set vValue
+    auto valueCnt = 0;
     for(int i = 0; i < vCount; i++)
     {
-        auto label = maxCntLabel.at(i);
-
-        if(label.second != 0)
+        auto labelMap = labelsVector.at(i);
+        if(!labelMap.empty())
         {
-           vValues[i].first = label.first;
-           vValues[i].second = label.second;
+            for(auto &label : labelMap)
+            {
+                vValues[valueCnt] = LPA_Value(i, label.first, label.second);
+                valueCnt++;
+            }
         }
-        else
-        {
-            vValues[i].second = 0;
-        }
+    }
+    //set the end flag of vValue array
+    if(valueCnt < eCount)
+    {
+        vValues[valueCnt] = LPA_Value(INVALID_INITV_INDEX, -1, -1);
     }
 
     return 0;
@@ -119,7 +112,7 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge_array(int v
     for(int i = 0; i < eCount; i++)
     {
         //msg value -- <destinationID, Label>
-        auto msgValue = std::pair<int, int>(eSet[i].dst, vValues[eSet[i].src].first);
+        auto msgValue = std::pair<int, int>(eSet[i].dst, vValues[eSet[i].src].label);
         mValues[i] = msgValue;
     }
 
@@ -129,7 +122,8 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge_array(int v
 template <typename VertexValueType, typename MessageValueType>
 void LabelPropagation<VertexValueType, MessageValueType>::Init(int vCount, int eCount, int numOfInitV)
 {
-    this->totalVValuesCount = vCount;
+    //vValue size = e in order to store the label info for merging the subgraph
+    this->totalVValuesCount = eCount;
     this->totalMValuesCount = eCount;
 }
 
@@ -137,11 +131,13 @@ template <typename VertexValueType, typename MessageValueType>
 void LabelPropagation<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList)
 {
     //vValues init
-    g.verticesValue.reserve(g.vCount);
-    g.verticesValue.assign(g.vCount, std::pair<int, int>(0, 0));
+    g.verticesValue.reserve(this->totalVValuesCount);
+    g.verticesValue.assign(this->totalVValuesCount, LPA_Value(INVALID_INITV_INDEX, -1, 0));
 
-    for(int i = 0; i < g.vList.size(); i++)
-        g.verticesValue.at(i).first = g.vList.at(i).vertexID;
+    for(int i = 0; i < g.vCount; i++)
+    {
+        g.verticesValue.at(i) = LPA_Value(g.vList.at(i).vertexID, g.vList.at(i).vertexID, 0);
+    }
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -161,9 +157,11 @@ void LabelPropagation<VertexValueType, MessageValueType>::MergeGraph(Graph<Verte
                     std::set<int> &activeVertices, const std::vector<std::set<int>> &activeVerticeSet,
                     const std::vector<int> &initVList)
 {
-    //Merge graphs
-    auto resG = Graph<VertexValueType>(0);
+    //init
+    g.verticesValue.clear();
+    g.verticesValue.assign(g.eCount, LPA_Value(INVALID_INITV_INDEX, -1, 0));
 
+    //Merge graphs
     auto labelCntPerVertice = std::vector<std::map<int, int>>();
     auto maxLabelCnt = std::vector<std::pair<int, int>>();
 
@@ -172,56 +170,49 @@ void LabelPropagation<VertexValueType, MessageValueType>::MergeGraph(Graph<Verte
     maxLabelCnt.reserve(g.vCount);
     maxLabelCnt.assign(g.vCount, std::pair<int, int>(0, 0));
 
-    if(subGSet.size() <= 0);
-    else
+    for(const auto &subG : subGSet)
     {
-        resG = subGSet.at(0);
-
-        resG.eList.clear();
-        resG.eCount = 0;
-
-        for(const auto &subG : subGSet) resG.eCount += subG.eCount;
-        resG.eList.reserve(resG.eCount);
-
-        //Merge subGraphs
-        for(const auto &subG : subGSet)
+        //vValues merge
+        for(int i = 0; i < subG.eCount; i++)
         {
-            //vValues merge
-            for(int i = 0; i < subG.verticesValue.size(); i++)
+            auto lpaValue = subG.verticesValue.at(i);
+
+            if(lpaValue.destVId == INVALID_INITV_INDEX)
             {
-                auto &labelCnt = labelCntPerVertice.at(i);
-                auto &maxLabel = maxLabelCnt.at(i);
-                auto value = subG.verticesValue.at(i);
-
-                if(labelCnt.find(value.first) == labelCnt.end())
-                {
-                    labelCnt[value.first] = value.second;
-                }
-                else
-                {
-                    labelCnt[value.first] += value.second;
-                }
-
-                if(maxLabel.second < labelCnt[value.first])
-                {
-                    maxLabel.first = value.first;
-                    maxLabel.second = labelCnt[value.first];
-                }
+                break;
             }
 
-            //Merge Edge
-            //There should be not any relevant edges since subgraphs are divided by dividing edge set
-            resG.eList.insert(resG.eList.end(), subG.eList.begin(), subG.eList.end());
-        }
+            auto &labelCnt = labelCntPerVertice.at(lpaValue.destVId);
+            auto &maxLabel = maxLabelCnt.at(lpaValue.destVId);
 
-        for(int i = 0; i < g.vCount; i++)
-        {
-            resG.verticesValue.at(i).first = maxLabelCnt.at(i).first;
-            resG.verticesValue.at(i).second = maxLabelCnt.at(i).second;
+            if(labelCnt.find(lpaValue.label) == labelCnt.end())
+            {
+                labelCnt[lpaValue.label] = lpaValue.labelCnt;
+            }
+            else
+            {
+                labelCnt[lpaValue.label] += lpaValue.labelCnt;
+            }
+
+            if(maxLabel.second <= labelCnt[lpaValue.label])
+            {
+                maxLabel.first = lpaValue.label;
+                maxLabel.second = labelCnt[lpaValue.label];
+            }
         }
     }
 
-    g = resG;
+    for(int i = 0; i < g.vCount; i++)
+    {
+        if(maxLabelCnt.at(i).second != 0)
+        {
+            g.verticesValue.at(i) = LPA_Value(i, maxLabelCnt.at(i).first, maxLabelCnt.at(i).second);
+        }
+        else
+        {
+            g.verticesValue.at(i) = LPA_Value(i, i, 0);
+        }
+    }
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -287,20 +278,21 @@ void LabelPropagation<VertexValueType, MessageValueType>::ApplyD(Graph<VertexVal
         auto start = std::chrono::system_clock::now();
         auto subGraphSet = this->DivideGraphByEdge(g, partitionCount);
         auto divideGraphFinish = std::chrono::system_clock::now();
-
         for(int i = 0; i < partitionCount; i++)
             ApplyStep(subGraphSet.at(i), initVList, AVSet.at(i));
-
         activeVertice.clear();
 
         auto mergeGraphStart = std::chrono::system_clock::now();
         MergeGraph(g, subGraphSet, activeVertice, AVSet, initVList);
         iterCount++;
         auto end = std::chrono::system_clock::now();
+
+//        for(int i = 0; i < g.vCount; i++)
+//            std::cout << i << " " << g.verticesValue.at(i).label << std::endl;
     }
 
     for(int i = 0; i < g.vCount; i++)
-        std::cout << g.verticesValue.at(i).first << std::endl;
+        std::cout << i << " " << g.verticesValue.at(i).label << std::endl;
 
     Free();
 }

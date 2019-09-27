@@ -9,6 +9,26 @@
 
 #include "../../core/GraphUtil.h"
 
+class LPA_Value
+{
+public:
+    LPA_Value():LPA_Value(INVALID_INITV_INDEX, -1, -1)
+    {
+
+    }
+
+    LPA_Value(int destVId, int label, int labelCnt)
+    {
+        this->destVId = destVId;
+        this->label = label;
+        this->labelCnt = labelCnt;
+    }
+
+    int destVId;
+    int label;
+    int labelCnt;
+};
+
 template <typename VertexValueType, typename MessageValueType>
 class LabelPropagation : public GraphUtil<VertexValueType, MessageValueType>
 {

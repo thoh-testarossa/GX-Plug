@@ -96,7 +96,6 @@ if(UNIX)
                 srv_UNIX_msg
                 srv_UtilServer
                 algo_BellmanFord
-                algo_LabelPropagation
                 algo_BellmanFordGPU)
     ENDIF(CUDA_FOUND)
 
@@ -107,8 +106,7 @@ if(UNIX)
             srv_UNIX_shm
             srv_UNIX_msg
             srv_UtilServer
-            algo_BellmanFord
-            algo_LabelPropagation)
+            algo_BellmanFord)
 
     add_executable(srv_UtilServerTest_LabelPropagation
             UtilServerTest_LabelPropagation.cpp)
@@ -117,7 +115,6 @@ if(UNIX)
             srv_UNIX_shm
             srv_UNIX_msg
             srv_UtilServer
-            algo_BellmanFord
             algo_LabelPropagation)
 
     add_executable(srv_UtilClientTest
@@ -127,7 +124,8 @@ if(UNIX)
             pthread
             srv_UNIX_shm
             srv_UNIX_msg
-            srv_UtilClient)
+            srv_UtilClient
+            algo_BellmanFord)
 
     add_executable(srv_UtilClientTest_LabelPropagation
             UtilClientTest_LabelPropagation.cpp)
@@ -136,6 +134,7 @@ if(UNIX)
             pthread
             srv_UNIX_shm
             srv_UNIX_msg
-            srv_UtilClient)
+            srv_UtilClient
+            algo_LabelPropagation)
 
 ENDIF(UNIX)

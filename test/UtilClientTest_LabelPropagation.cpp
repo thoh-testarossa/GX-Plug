@@ -7,6 +7,7 @@
 #include "../srv/UtilClient.h"
 #include "../srv/UNIX_shm.h"
 #include "../srv/UNIX_msg.h"
+#include "../algo/LabelPropagation/LabelPropagation.h"
 
 #include <iostream>
 #include <fstream>
@@ -35,7 +36,7 @@ int main(int argc, char *argv[])
     int vCount = atoi(argv[1]);
     int eCount = atoi(argv[2]);
     int numOfInitV = atoi(argv[3]);
-    int nodeCount = (argc == 4) ? 1 : atoi(argv[4]);
+    int nodeCount = atoi(argv[4]);
 
     //Parameter check
     if(vCount <= 0 || eCount <= 0 || numOfInitV <= 0 || nodeCount <= 0)
@@ -44,9 +45,8 @@ int main(int argc, char *argv[])
         return 3;
     }
 
-    //Init the Graph
     int *initVSet = new int [numOfInitV];
-    std::pair<int, int> *vValues = new std::pair<int, int>[vCount];
+    LPA_Value *vValues = new LPA_Value [eCount];
     bool *filteredV = new bool [vCount];
 
     std::vector<Vertex> vSet = std::vector<Vertex>();
@@ -75,8 +75,7 @@ int main(int argc, char *argv[])
 
     for(int i = 0; i < vCount; i++)
     {
-        vValues[i].first = i;
-        vValues[i].second = 0;
+        vValues[i] = LPA_Value(i, i, 0);
     }
     for(int i = 0; i < vCount; i++) vSet.emplace_back(i, false, -1);
 
@@ -91,9 +90,9 @@ int main(int argc, char *argv[])
     Gin.close();
 
     //Client Init Data Transfer
-    auto clientVec = std::vector<UtilClient<std::pair<int, int>, std::pair<int, int>>>();
+    auto clientVec = std::vector<UtilClient<LPA_Value, std::pair<int, int>>>();
     for(int i = 0; i < nodeCount; i++)
-        clientVec.push_back(UtilClient<std::pair<int, int>, std::pair<int, int>>(vCount, ((i + 1) * eCount) / nodeCount - (i * eCount) / nodeCount, numOfInitV, i));
+        clientVec.push_back(UtilClient<LPA_Value, std::pair<int, int>>(vCount, ((i + 1) * eCount) / nodeCount - (i * eCount) / nodeCount, numOfInitV, i));
     int chk = 0;
     for(int i = 0; i < nodeCount && chk != -1; i++)
     {
@@ -137,7 +136,7 @@ int main(int argc, char *argv[])
         auto futList = new std::future<void> [nodeCount];
         for(int i = 0; i < nodeCount; i++)
         {
-            std::future<void> tmpFut = std::async(testFut<std::pair<int, int>, std::pair<int, int>>, &clientVec.at(i), vValues, &vSet[0]);
+            std::future<void> tmpFut = std::async(testFut<LPA_Value, std::pair<int, int>>, &clientVec.at(i), vValues, &vSet[0]);
             futList[i] = std::move(tmpFut);
         }
 
@@ -150,25 +149,31 @@ int main(int argc, char *argv[])
             clientVec.at(i).connect();
 
             //Collect data
-            for(int j = 0; j < vCount; j++)
+            for(int j = 0; j < clientVec.at(i).eCount; j++)
             {
-                auto &labelCnt = labelCntPerVertice.at(j);
-                auto &maxLabel = maxLabelCnt.at(j);
                 auto value = clientVec.at(i).vValues[j];
 
-                if(labelCnt.find(value.first) == labelCnt.end())
+                if(value.destVId == INVALID_INITV_INDEX)
                 {
-                    labelCnt[value.first] = value.second;
+                    break;
+                }
+
+                auto &labelCnt = labelCntPerVertice.at(value.destVId);
+                auto &maxLabel = maxLabelCnt.at(value.destVId);
+
+                if(labelCnt.find(value.label) == labelCnt.end())
+                {
+                    labelCnt[value.label] = value.labelCnt;
                 }
                 else
                 {
-                    labelCnt[value.first] += value.second;
+                    labelCnt[value.label] += value.labelCnt;
                 }
 
-                if(maxLabel.second < labelCnt[value.first])
+                if(maxLabel.second <= labelCnt[value.label])
                 {
-                    maxLabel.first = value.first;
-                    maxLabel.second = labelCnt[value.first];
+                    maxLabel.first = value.label;
+                    maxLabel.second = labelCnt[value.label];
                 }
             }
 
@@ -177,16 +182,26 @@ int main(int argc, char *argv[])
 
         for(int i = 0; i < vCount; i++)
         {
-            vValues[i] = maxLabelCnt.at(i);
+            if(maxLabelCnt.at(i).second != 0)
+            {
+                vValues[i].destVId = i;
+                vValues[i].label = maxLabelCnt.at(i).first;
+                vValues[i].labelCnt = maxLabelCnt.at(i).second;
+            }
+            else
+            {
+                vValues[i].destVId = i;
+                vValues[i].label = i;
+                vValues[i].labelCnt = 0;
+            }
         }
-
     }
 
     std::cout << "result" << std::endl;
     //result check
     for(int i = 0; i < vCount; i++)
     {
-        std::cout << i << ":" << vValues[i].first << " " << vValues[i].second << std::endl ;
+        std::cout << i << ":" << vValues[i].label << " " << vValues[i].labelCnt << std::endl ;
     }
 
     for(int i = 0; i < nodeCount; i++) clientVec.at(i).shutdown();
