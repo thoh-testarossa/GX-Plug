@@ -36,6 +36,8 @@ public:
 
     void ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList, int partitionCount);
 
+    void normalizeGraph(Graph<VertexValueType> &g);
+
 protected:
     int numOfInitV;
     double resetProb;

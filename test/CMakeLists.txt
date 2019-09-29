@@ -117,6 +117,15 @@ if(UNIX)
             srv_UtilServer
             algo_LabelPropagation)
 
+    add_executable(srv_UtilServerTest_PageRank
+            UtilServerTest_PageRank.cpp)
+
+    target_link_libraries(srv_UtilServerTest_PageRank
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilServer
+            algo_PageRank)
+
     add_executable(srv_UtilClientTest
             UtilClientTest.cpp)
 
@@ -136,5 +145,15 @@ if(UNIX)
             srv_UNIX_msg
             srv_UtilClient
             algo_LabelPropagation)
+
+    add_executable(srv_UtilClientTest_PageRank
+            UtilClientTest_PageRank.cpp)
+
+    target_link_libraries(srv_UtilClientTest_PageRank
+            pthread
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilClient
+            algo_PageRank)
 
 ENDIF(UNIX)

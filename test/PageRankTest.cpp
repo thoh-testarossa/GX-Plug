@@ -30,8 +30,6 @@ int main()
 
     std::vector<int> initVList = std::vector<int>();
     initVList.push_back(1);
-    initVList.push_back(2);
-    initVList.push_back(4);
 
     PageRank<std::pair<double, double>, std::pair<int, double>> executor = PageRank<std::pair<double, double>, std::pair<int, double>>();
     //executor.Apply(test, initVList);
