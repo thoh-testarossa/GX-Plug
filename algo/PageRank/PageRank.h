@@ -7,6 +7,24 @@
 
 #include "../../core/GraphUtil.h"
 
+class PRA_MSG
+{
+public:
+    PRA_MSG():PRA_MSG(-1, -1)
+    {
+
+    }
+
+    PRA_MSG(int destVId, double rank)
+    {
+        this->destVId = destVId;
+        this->rank = rank;
+    }
+
+    int destVId;
+    double rank;
+};
+
 template <typename VertexValueType, typename MessageValueType>
 class PageRank : public GraphUtil<VertexValueType, MessageValueType>
 {

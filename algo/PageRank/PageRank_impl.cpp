@@ -3,4 +3,4 @@
 //
 #include "PageRank.cpp"
 
-template class PageRank<std::pair<double, double>, std::pair<int, double>>;
+template class PageRank<std::pair<double, double>, PRA_MSG>;

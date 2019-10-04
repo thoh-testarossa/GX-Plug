@@ -10,4 +10,4 @@
 
 template class UtilServer<BellmanFord<double, double>, double, double>;
 template class UtilServer<LabelPropagation<LPA_Value, std::pair<int, int>>, LPA_Value, std::pair<int, int>>;
-template class UtilServer<PageRank<std::pair<double, double>, std::pair<int, double>>, std::pair<double, double>, std::pair<int, double>>;
+template class UtilServer<PageRank<std::pair<double, double>, PRA_MSG>, std::pair<double, double>, PRA_MSG>;

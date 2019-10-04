@@ -66,6 +66,15 @@ if(CUDA_FOUND)
             core_Graph
             core_MessageSet
             core_GraphUtil)
+
+    add_executable(algo_PageRankGPUTest
+            PageRankGPUTest.cpp)
+
+    target_link_libraries(algo_PageRankGPUTest
+            algo_PageRankGPU
+            core_Graph
+            core_MessageSet
+            core_GraphUtil)
 endif(CUDA_FOUND)
 
 if(UNIX)

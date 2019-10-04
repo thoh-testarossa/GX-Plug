@@ -31,11 +31,11 @@ int PageRank<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType>
     }
 
     //array form computation
-    this->MSGApply_array(g.vCount, msgSize, &g.vList[0], 0, &initVSet[0], &g.verticesValue[0], mValues);
+    auto avCount = this->MSGApply_array(g.vCount, msgSize, &g.vList[0], 0, &initVSet[0], &g.verticesValue[0], mValues);
 
     delete[] mValues;
 
-    return initVSet.size();
+    return avCount;
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -56,7 +56,7 @@ int PageRank<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexV
 
     for(int i = 0; i < msgCnt; i++)
     {
-        mSet.insertMsg(Message<MessageValueType>(0, mValues[i].first, mValues[i]));
+        mSet.insertMsg(Message<MessageValueType>(0, mValues[i].destVId, mValues[i]));
     }
 
     delete[] mValues;
@@ -72,52 +72,56 @@ int PageRank<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int 
 
     for(int i = 0; i < msgCnt; i++)
     {
-        auto destVId = mValues[i].first;
+        auto destVId = mValues[i].destVId;
         bool isActive = vSet[destVId].isActive;
+
+        if(destVId == -1)
+        {
+            continue;
+        }
 
         if(!isActive)
         {
             //set isActive flag for merging subgraphs
             vSet[destVId].isActive = true;
-            vValues[destVId].second = (1.0 - this->resetProb) * mValues[i].second;
+            vValues[destVId].second = (1.0 - this->resetProb) * mValues[i].rank;
             avCount++;
         }
         else
         {
-            vValues[destVId].second += (1.0 - this->resetProb) * mValues[i].second;
+            vValues[destVId].second += (1.0 - this->resetProb) * mValues[i].rank;
         }
     }
 
-    return 0;
+    return avCount;
 }
 
 template <typename VertexValueType, typename MessageValueType>
 int PageRank<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
 {
     //test
-    std::cout << " =========== msg info =============" << std::endl;
+    //std::cout << " =========== msg info =============" << std::endl;
 
-    int msgCnt = 0;
     for(int i = 0; i < eCount; i++)
     {
         auto srcVId = eSet[i].src;
+
+        auto msgValue = MessageValueType(-1, -1);
         if(vValues[srcVId].second > this->deltaThreshold)
         {
             //msg value -- <destinationID, rank>
-            auto msgValue = MessageValueType(eSet[i].dst, vValues[eSet[i].src].second * eSet[i].weight);
-            mValues[msgCnt] = msgValue;
+            msgValue = MessageValueType(eSet[i].dst, vValues[eSet[i].src].second * eSet[i].weight);
 
             //test
-            std::cout << srcVId << " -> " << eSet[i].dst << " : " << mValues[msgCnt].second << std::endl;
-
-            msgCnt++;
+            //std::cout << srcVId << " -> " << eSet[i].dst << " : " << mValues[i].rank << std::endl;
         }
+        mValues[i] = msgValue;
     }
 
     //test
-    std::cout << " ==================================" << std::endl;
+    //std::cout << " ==================================" << std::endl;
 
-    return msgCnt;
+    return eCount;
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -268,6 +272,10 @@ void PageRank<VertexValueType, MessageValueType>::ApplyStep(Graph<VertexValueTyp
 
     MSGApply(g, initVSet, activeVertices, mMergedSet);
     auto applyEnd = std::chrono::system_clock::now();
+
+    //test
+    std::cout << "msg gen time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count() << std::endl;
+    std::cout << "apply time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(applyEnd - mergeEnd).count() << std::endl;
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -312,7 +320,7 @@ void PageRank<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> 
 
     int iterCount = 0;
 
-    while(iterCount < 10)
+    while(iterCount < 100)
     {
         std::cout << "iterCount: " << iterCount << std::endl;
         auto start = std::chrono::system_clock::now();
@@ -329,13 +337,23 @@ void PageRank<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> 
         iterCount++;
         auto end = std::chrono::system_clock::now();
 
-        for(int i = 0; i < g.vCount; i++)
-        {
-            //std::cout << "outdegree: " << g.vList.at(i).outDegree << std::endl;
-            std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
-        }
+        //test
+        // for(int i = 0; i < g.vCount; i++)
+        // {
+        //     //std::cout << "outdegree: " << g.vList.at(i).outDegree << std::endl;
+        //     std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
+        // }
 
+        //time test
+        std::cout << "merge time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - mergeGraphStart).count() << std::endl;
     }
+
+    for(int i = 0; i < g.vCount; i++)
+    {
+        //std::cout << "outdegree: " << g.vList.at(i).outDegree << std::endl;
+        std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
+    }
+
 
     Free();
 }

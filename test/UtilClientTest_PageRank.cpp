@@ -115,9 +115,9 @@ int main(int argc, char *argv[])
     Gin.close();
 
     //Client Init Data Transfer
-    auto clientVec = std::vector<UtilClient<std::pair<double, double>, std::pair<int, double>>>();
+    auto clientVec = std::vector<UtilClient<std::pair<double, double>, PRA_MSG>>();
     for(int i = 0; i < nodeCount; i++)
-        clientVec.push_back(UtilClient<std::pair<double, double>, std::pair<int, double>>(vCount, ((i + 1) * eCount) / nodeCount - (i * eCount) / nodeCount, numOfInitV, i));
+        clientVec.push_back(UtilClient<std::pair<double, double>, PRA_MSG>(vCount, ((i + 1) * eCount) / nodeCount - (i * eCount) / nodeCount, numOfInitV, i));
     int chk = 0;
     for(int i = 0; i < nodeCount && chk != -1; i++)
     {
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
         auto futList = new std::future<void> [nodeCount];
         for(int i = 0; i < nodeCount; i++)
         {
-            std::future<void> tmpFut = std::async(testFut<std::pair<double, double>, std::pair<int, double>>, &clientVec.at(i), vValues, &vSet[0]);
+            std::future<void> tmpFut = std::async(testFut<std::pair<double, double>, PRA_MSG>, &clientVec.at(i), vValues, &vSet[0]);
             futList[i] = std::move(tmpFut);
         }
 

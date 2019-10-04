@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     int numOfInitV = atoi(argv[3]);
     int nodeNo = (argc == 4) ? 0 : atoi(argv[4]);
 
-    auto testUtilServer = UtilServer<PageRank<std::pair<double, double>, std::pair<int, double>>, std::pair<double, double>, std::pair<int, double>>(vCount, eCount, numOfInitV, nodeNo);
+    auto testUtilServer = UtilServer<PageRank<std::pair<double, double>, PRA_MSG>, std::pair<double, double>, PRA_MSG>(vCount, eCount, numOfInitV, nodeNo);
     if(!testUtilServer.isLegal)
     {
         std::cout << "mem allocation failed or parameters are illegal" << std::endl;

@@ -2,7 +2,7 @@
 // Created by cave-g-f on 2019-9-23
 //
 
-#include "../algo/PageRank/PageRank.h"
+#include "../algo/PageRank/PageRankGPU.h"
 
 #include <iostream>
 #include <fstream>
@@ -31,7 +31,7 @@ int main()
     std::vector<int> initVList = std::vector<int>();
     initVList.push_back(1);
 
-    PageRank<std::pair<double, double>, PRA_MSG> executor = PageRank<std::pair<double, double>, PRA_MSG>();
+    PageRankGPU<std::pair<double, double>, PRA_MSG> executor = PageRankGPU<std::pair<double, double>, PRA_MSG>();
     //executor.Apply(test, initVList);
     executor.ApplyD(test, initVList, 4);
 }

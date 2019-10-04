@@ -4,9 +4,10 @@
 
 #include "../GraphUtil.cpp"
 #include "../../algo/LabelPropagation/LabelPropagation.h"
+#include "../../algo/PageRank/PageRank.h"
 
 
 template class GraphUtil<double, double>;
 template class GraphUtil<int, int>;
-template class GraphUtil<std::pair<double, double>, std::pair<int, double>>;
+template class GraphUtil<std::pair<double, double>, PRA_MSG>;
 template class GraphUtil<LPA_Value, std::pair<int, int>>;
