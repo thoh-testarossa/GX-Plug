@@ -9,6 +9,7 @@
 
 #include "PageRank.h"
 #include "../../include/GPUconfig.h"
+#include "kernel_src/PageRankGPU_kernel.h"
 
 template <typename VertexValueType, typename MessageValueType>
 class PageRankGPU : public PageRank<VertexValueType, MessageValueType>

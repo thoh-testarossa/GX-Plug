@@ -58,6 +58,8 @@ target_link_libraries(algo_PageRankTest
         core_GraphUtil)
 
 if(CUDA_FOUND)
+    include_directories("${CUDA_INCLUDE_DIRS}")
+
     add_executable(algo_BellmanFordGPUTest
             BellmanFordGPUTest.cpp)
 
@@ -106,6 +108,16 @@ if(UNIX)
                 srv_UtilServer
                 algo_BellmanFord
                 algo_BellmanFordGPU)
+
+        add_executable(srv_UtilServerTest_PageRankGPU
+                UtilServerTest_PageRankGPU.cpp)
+
+        target_link_libraries(srv_UtilServerTest_PageRankGPU
+                srv_UNIX_shm
+                srv_UNIX_msg
+                srv_UtilServer
+                algo_PageRank
+                algo_PageRankGPU)
     ENDIF(CUDA_FOUND)
 
     add_executable(srv_UtilServerTest_BellmanFord

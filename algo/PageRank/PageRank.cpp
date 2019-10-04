@@ -320,7 +320,7 @@ void PageRank<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> 
 
     int iterCount = 0;
 
-    while(iterCount < 100)
+    while(iterCount < 10)
     {
         std::cout << "iterCount: " << iterCount << std::endl;
         auto start = std::chrono::system_clock::now();
