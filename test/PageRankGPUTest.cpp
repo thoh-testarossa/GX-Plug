@@ -23,13 +23,16 @@ int main()
         double weight;
 
         Gin >> src >> dst >> weight;
-        test.insertEdge(src, dst, weight);
+        test.insertEdgeWithVertexInfo(src, dst, weight);
     }
 
     Gin.close();
 
     std::vector<int> initVList = std::vector<int>();
-    initVList.push_back(1);
+    for(int i = 0; i < vCount; i++)
+    {
+        initVList.push_back(i);
+    }
 
     PageRankGPU<std::pair<double, double>, PRA_MSG> executor = PageRankGPU<std::pair<double, double>, PRA_MSG>();
     //executor.Apply(test, initVList);

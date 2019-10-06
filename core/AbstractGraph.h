@@ -18,6 +18,7 @@ public:
     bool isActive;
     int initVIndex;
     int outDegree;
+    int inDegree;
 };
 
 class Edge
@@ -28,6 +29,9 @@ public:
     int src;
     int dst;
     double weight;
+
+    //correspond to the index of the
+    int posOfMValues;
 };
 
 class AbstractGraph
@@ -38,6 +42,7 @@ public:
     AbstractGraph(int vCount, int eCount, int *eSrcSet, int *eDstSet, double *eWeightSet);
 
     void insertEdge(int src, int dst, double weight);
+    void insertEdgeWithVertexInfo(int src, int dst, double weight);
 
     int vCount;
     int eCount;

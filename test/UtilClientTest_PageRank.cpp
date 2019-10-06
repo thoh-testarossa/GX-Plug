@@ -74,8 +74,13 @@ int main(int argc, char *argv[])
     }
 
     //init v index
-    initVSet[0] = 1;
+    std::cout << "init initVSet ..." << std::endl;
+    for(int i = 0; i < numOfInitV; i++)
+    {
+        initVSet[i] = i;
+    }
 
+    std::cout << "init vSet ..." << std::endl;
     for(int i = 0; i < vCount; i++)
     {
         vSet.emplace_back(i, false, INVALID_INITV_INDEX);
@@ -86,6 +91,7 @@ int main(int argc, char *argv[])
         vSet.at(initVSet[i]).initVIndex = initVSet[i];
     }
 
+    std::cout << "init vValues ..." << std::endl;
     for(int i = 0; i < vCount; i++)
     {
         if(vSet[i].initVIndex == INVALID_INITV_INDEX)
@@ -114,11 +120,14 @@ int main(int argc, char *argv[])
 
     Gin.close();
 
+    numOfInitV = 1;
+
     //Client Init Data Transfer
     auto clientVec = std::vector<UtilClient<std::pair<double, double>, PRA_MSG>>();
     for(int i = 0; i < nodeCount; i++)
         clientVec.push_back(UtilClient<std::pair<double, double>, PRA_MSG>(vCount, ((i + 1) * eCount) / nodeCount - (i * eCount) / nodeCount, numOfInitV, i));
     int chk = 0;
+
     for(int i = 0; i < nodeCount && chk != -1; i++)
     {
         chk = clientVec.at(i).connect();
