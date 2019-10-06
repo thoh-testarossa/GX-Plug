@@ -361,6 +361,7 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount
 
                 err = MSGGenMerge_kernel_exec(this->d_mTransformedMergedMSGValueSet, this->d_vSet,
                                                 this->d_vValueSet, edgeNumUsedForExec, &this->d_eGSet[j],  batchCnt, this->deltaThreshold);
+                batchCnt++;
             }
 
             //Deflection
@@ -390,8 +391,6 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount
             eGCount = 0;
             eGSet.clear();
             //for(int j = 0; j < vCount; j++) isDst[j] = false;
-
-            batchCnt++;
         }
     }
 
