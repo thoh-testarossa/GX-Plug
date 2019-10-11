@@ -2,7 +2,7 @@
 // Created by cave-g-f on 2019-05-29.
 //
 
-#include "../algo/LabelPropagation/LabelPropagation.h"
+#include "../algo/PageRank/PageRankGPU.h"
 #include "../core/GraphUtil.h"
 #include "../srv/UtilServer.h"
 #include "../srv/UNIX_shm.h"
@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 {
     if(argc != 4 && argc != 5)
     {
-        std::cout << "Usage:" << std::endl << "./UtilServerTest_LabelPropagation vCount eCount numOfInitV [nodeNo]" << std::endl;
+        std::cout << "Usage:" << std::endl << "./UtilServerTest_PageRank vCount eCount numOfInitV [nodeNo]" << std::endl;
         return 1;
     }
 
@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     int numOfInitV = atoi(argv[3]);
     int nodeNo = (argc == 4) ? 0 : atoi(argv[4]);
 
-    auto testUtilServer = UtilServer<LabelPropagation<LPA_Value, std::pair<int, int>>, LPA_Value, std::pair<int, int>>(vCount, eCount, numOfInitV, nodeNo);
+    auto testUtilServer = UtilServer<PageRankGPU<std::pair<double, double>, PRA_MSG>, std::pair<double, double>, PRA_MSG>(vCount, eCount, numOfInitV, nodeNo);
     if(!testUtilServer.isLegal)
     {
         std::cout << "mem allocation failed or parameters are illegal" << std::endl;

@@ -1,39 +1,35 @@
 //
-// Created by cave-g-f on 2019-05-17.
+// Created by cave-g-f on 2019-9-21
 //
 
-#pragma once
-
-#ifndef GRAPH_ALGO_LABELPROPAGATION_H
-#define GRAPH_ALGO_LABELPROPAGATION_H
+#ifndef GRAPH_ALGO_PAGERANK_H
+#define GRAPH_ALGO_PAGERANK_H
 
 #include "../../core/GraphUtil.h"
 
-class LPA_Value
+class PRA_MSG
 {
 public:
-    LPA_Value():LPA_Value(INVALID_INITV_INDEX, -1, -1)
+    PRA_MSG():PRA_MSG(-1, -1)
     {
 
     }
 
-    LPA_Value(int destVId, int label, int labelCnt)
+    PRA_MSG(int destVId, double rank)
     {
         this->destVId = destVId;
-        this->label = label;
-        this->labelCnt = labelCnt;
+        this->rank = rank;
     }
 
     int destVId;
-    int label;
-    int labelCnt;
+    double rank;
 };
 
 template <typename VertexValueType, typename MessageValueType>
-class LabelPropagation : public GraphUtil<VertexValueType, MessageValueType>
+class PageRank : public GraphUtil<VertexValueType, MessageValueType>
 {
 public:
-    LabelPropagation();
+    PageRank();
 
     int MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet<MessageValueType> &mSet) override;
     int MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet) override;
@@ -46,6 +42,8 @@ public:
                     std::set<int> &activeVertices, const std::vector<std::set<int>> &activeVerticeSet,
                     const std::vector<int> &initVList) override;
 
+    std::vector<Graph<VertexValueType>> DivideGraphByEdge(const Graph<VertexValueType> &g, int partitionCount);
+
     void Init(int vCount, int eCount, int numOfInitV) override;
     void GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) override;
     void Deploy(int vCount, int eCount, int numOfInitV) override;
@@ -55,6 +53,13 @@ public:
     void Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList);
 
     void ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList, int partitionCount);
+
+    void normalizeGraph(Graph<VertexValueType> &g);
+
+protected:
+    int numOfInitV;
+    double resetProb;
+    double deltaThreshold;
 };
 
-#endif
+#endif //GRAPH_ALGO_PAGERANK_H
