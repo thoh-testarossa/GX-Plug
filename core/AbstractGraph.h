@@ -16,6 +16,7 @@ public:
 
     int vertexID;
     bool isActive;
+    bool needMerge;
     int initVIndex;
     int outDegree;
     int inDegree;
@@ -29,9 +30,6 @@ public:
     int src;
     int dst;
     double weight;
-
-    //correspond to the index of the
-    int posOfMValues;
 };
 
 class AbstractGraph
