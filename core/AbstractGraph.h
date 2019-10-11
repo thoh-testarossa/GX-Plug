@@ -16,6 +16,7 @@ public:
 
     int vertexID;
     bool isActive;
+    bool needMerge;
     int initVIndex;
     int outDegree;
     int inDegree;

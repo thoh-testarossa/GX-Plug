@@ -12,6 +12,7 @@ __global__ void MSGApply_kernel(Vertex *vSet, double *vValues, int numOfMsg, int
 		// printf("vId : %d value : %f\n", vID, mValueSet[tid].rank);
 
 		vSet[vID].isActive = true;
+		vSet[vID].needMerge = true;
 		atomicAdd(&vValues[(vID << 1) + 1], (1.0 - resetProb) * mValueSet[tid].rank);
 	}
 }

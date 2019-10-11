@@ -178,11 +178,11 @@ int main(int argc, char *argv[])
             for(int j = 0; j < vCount; j++)
             {
                 auto &value = clientVec.at(i).vValues[j];
-                if(clientVec.at(i).vSet[j].isActive)
+                if(clientVec.at(i).vSet[j].needMerge)
                 {
-                    if(!vSet.at(j).isActive)
+                    if(!vSet.at(j).needMerge)
                     {
-                        vSet.at(j).isActive |= clientVec.at(i).vSet[j].isActive;
+                        vSet.at(j).needMerge |= clientVec.at(i).vSet[j].needMerge;
                         vValues[j].first = value.first;
                         vValues[j].second = value.second;
                     }
@@ -191,11 +191,11 @@ int main(int argc, char *argv[])
                         vValues[j].second += value.second;
                     }
                 }
-                else if(!vSet.at(j).isActive)
+                else if(!vSet.at(j).needMerge)
                 {
                     vValues[j] = value;
                 }
-                clientVec.at(i).vSet[j].isActive = false;
+                clientVec.at(i).vSet[j].needMerge = false;
             }
 
             clientVec.at(i).disconnect();
@@ -203,13 +203,13 @@ int main(int argc, char *argv[])
 
         for(int i = 0; i < vCount; i++)
         {
-            if(vSet.at(i).isActive)
+            if(vSet.at(i).needMerge)
             {
                 auto oldRank = vValues[i].first;
                 vValues[i].first = vValues[i].second + oldRank;
                 vValues[i].second = vValues[i].first - oldRank;
             }
-            vSet.at(i).isActive = false;
+            vSet.at(i).needMerge = false;
         }
     }
 

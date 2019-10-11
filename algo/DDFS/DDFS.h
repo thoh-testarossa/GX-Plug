@@ -124,6 +124,8 @@ public:
     void Deploy(int vCount, int eCount, int numOfInitV) override;
     void Free() override;
 
+    void InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount);
+
     std::vector<Graph<VertexValueType>> DivideGraphByEdge(const Graph<VertexValueType> &g, int partitionCount);
 
     void ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices);

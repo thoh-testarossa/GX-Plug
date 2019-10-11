@@ -49,11 +49,11 @@ auto PageRankGPU<VertexValueType, MessageValueType>::MSGApply_GPU_VVCopy(Vertex 
 {
     auto err = cudaSuccess;
 
-    //vSet copy_back to update the isActive flag
+    //vSet copy_back to update the needMerge flag
     err = cudaMemcpy(vSet, d_vSet, vGCount * sizeof(Vertex), cudaMemcpyDeviceToHost);
     for(int i = 0; i < vGCount; i++)
     {
-        if(vSet[i].isActive)
+        if(vSet[i].needMerge)
         {
             vValues[(i << 1) + 1] = 0;
         } 
@@ -145,7 +145,7 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount, i
     bool needReflect = vCount > this->vertexLimit;
 
     //AVCheck
-    for (int i = 0; i < vCount; i++) vSet[i].isActive = false;
+    for (int i = 0; i < vCount; i++) vSet[i].needMerge = false;
 
     if(!needReflect)
     {
@@ -274,7 +274,7 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount, i
     int avCount = 0;
     for(int i = 0; i < vCount; i++)
     {
-        if(vSet[i].isActive)
+        if(vSet[i].needMerge)
             avCount++;
     }
 
@@ -307,7 +307,7 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount
     // auto tmp_o_g = Graph<VertexValueType>(0);
     if(needReflect)
     {
-        // for(int i = 0; i < vCount; i++) tmp_AVCheckList[i] = vSet[i].isActive;
+        // for(int i = 0; i < vCount; i++) tmp_AVCheckList[i] = vSet[i].needMerge;
         // tmp_o_g = Graph<VertexValueType>(vCount, 0, numOfInitV, initVSet, nullptr, nullptr, nullptr, tmp_AVCheckList);
         // tmp_o_g.verticesValue.reserve(vCount * numOfInitV);
         // tmp_o_g.verticesValue.insert(tmp_o_g.verticesValue.begin(), vValues, vValues + (numOfInitV * vCount));
