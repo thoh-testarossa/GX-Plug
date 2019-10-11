@@ -4,6 +4,8 @@
 
 #include "../UtilServer.cpp"
 
-#include "../../algo/BellmanFord/BellmanFordGPU.h"
+#include "../../algo/BellmanFord/BellmanFordGPU.cpp"
+#include "../../algo/PageRank/PageRankGPU.cpp"
 
-template class UtilServer<BellmanFordGPU<double>, double>;
+template class UtilServer<BellmanFordGPU<double, double>, double, double>;
+template class UtilServer<PageRankGPU<std::pair<double, double>, PRA_MSG>, std::pair<double, double>, PRA_MSG>;

@@ -3,7 +3,9 @@
 //
 
 #include "../Graph.cpp"
+#include "../../algo/LabelPropagation/LabelPropagation.h"
 
 template class Graph<double>;
 template class Graph<int>;
-template class Graph<std::pair<int, int>>;
+template class Graph<std::pair<double, double>>;
+template class Graph<LPA_Value>;

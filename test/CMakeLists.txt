@@ -48,12 +48,32 @@ target_link_libraries(core_GraphAccessTest
         core_MessageSet
         core_GraphUtil)
 
+add_executable(algo_PageRankTest
+        PageRankTest.cpp)
+
+target_link_libraries(algo_PageRankTest
+        algo_PageRank
+        core_Graph
+        core_MessageSet
+        core_GraphUtil)
+
 if(CUDA_FOUND)
+    include_directories("${CUDA_INCLUDE_DIRS}")
+
     add_executable(algo_BellmanFordGPUTest
             BellmanFordGPUTest.cpp)
 
     target_link_libraries(algo_BellmanFordGPUTest
             algo_BellmanFordGPU
+            core_Graph
+            core_MessageSet
+            core_GraphUtil)
+
+    add_executable(algo_PageRankGPUTest
+            PageRankGPUTest.cpp)
+
+    target_link_libraries(algo_PageRankGPUTest
+            algo_PageRankGPU
             core_Graph
             core_MessageSet
             core_GraphUtil)
@@ -87,8 +107,17 @@ if(UNIX)
                 srv_UNIX_msg
                 srv_UtilServer
                 algo_BellmanFord
-                algo_LabelPropagation
                 algo_BellmanFordGPU)
+
+        add_executable(srv_UtilServerTest_PageRankGPU
+                UtilServerTest_PageRankGPU.cpp)
+
+        target_link_libraries(srv_UtilServerTest_PageRankGPU
+                srv_UNIX_shm
+                srv_UNIX_msg
+                srv_UtilServer
+                algo_PageRank
+                algo_PageRankGPU)
     ENDIF(CUDA_FOUND)
 
     add_executable(srv_UtilServerTest_BellmanFord
@@ -98,8 +127,7 @@ if(UNIX)
             srv_UNIX_shm
             srv_UNIX_msg
             srv_UtilServer
-            algo_BellmanFord
-            algo_LabelPropagation)
+            algo_BellmanFord)
 
     add_executable(srv_UtilServerTest_LabelPropagation
             UtilServerTest_LabelPropagation.cpp)
@@ -108,8 +136,16 @@ if(UNIX)
             srv_UNIX_shm
             srv_UNIX_msg
             srv_UtilServer
-            algo_BellmanFord
             algo_LabelPropagation)
+
+    add_executable(srv_UtilServerTest_PageRank
+            UtilServerTest_PageRank.cpp)
+
+    target_link_libraries(srv_UtilServerTest_PageRank
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilServer
+            algo_PageRank)
 
     add_executable(srv_UtilClientTest
             UtilClientTest.cpp)
@@ -118,5 +154,27 @@ if(UNIX)
             pthread
             srv_UNIX_shm
             srv_UNIX_msg
-            srv_UtilClient)
+            srv_UtilClient
+            algo_BellmanFord)
+
+    add_executable(srv_UtilClientTest_LabelPropagation
+            UtilClientTest_LabelPropagation.cpp)
+
+    target_link_libraries(srv_UtilClientTest_LabelPropagation
+            pthread
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilClient
+            algo_LabelPropagation)
+
+    add_executable(srv_UtilClientTest_PageRank
+            UtilClientTest_PageRank.cpp)
+
+    target_link_libraries(srv_UtilClientTest_PageRank
+            pthread
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilClient
+            algo_PageRank)
+
 ENDIF(UNIX)

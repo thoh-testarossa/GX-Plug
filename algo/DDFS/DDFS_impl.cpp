@@ -4,4 +4,4 @@
 
 #include "DDFS.cpp"
 
-template class DDFS<DFSValue>;
+template class DDFS<DFSValue, DFSMSG>;

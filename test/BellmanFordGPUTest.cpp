@@ -33,7 +33,7 @@ int main()
     initVList.push_back(2);
     initVList.push_back(4);
 
-    BellmanFordGPU<double> executor = BellmanFordGPU<double>();
+    BellmanFordGPU<double, double> executor = BellmanFordGPU<double, double>();
     //executor.Apply(test, initVList);
     executor.ApplyD(test, initVList, 4);
 

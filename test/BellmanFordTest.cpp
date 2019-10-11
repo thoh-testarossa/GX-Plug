@@ -33,7 +33,7 @@ int main()
     initVList.push_back(2);
     initVList.push_back(4);
 
-    BellmanFord<double> executor = BellmanFord<double>();
+    BellmanFord<double, double> executor = BellmanFord<double, double>();
     //executor.Apply(test, initVList);
     executor.ApplyD(test, initVList, 4);
 

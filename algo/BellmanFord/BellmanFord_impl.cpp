@@ -4,5 +4,5 @@
 
 #include "BellmanFord.cpp"
 
-template class BellmanFord<double>;
-template class BellmanFord<int>;
+template class BellmanFord<double, double>;
+template class BellmanFord<int, int>;

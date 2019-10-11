@@ -4,4 +4,4 @@
 
 #include "ConnectedComponentGPU.cpp"
 
-template class ConnectedComponentGPU<int>;
+template class ConnectedComponentGPU<int, int>;

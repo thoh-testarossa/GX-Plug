@@ -9,18 +9,38 @@
 
 #include "../../core/GraphUtil.h"
 
+class LPA_Value
+{
+public:
+    LPA_Value():LPA_Value(INVALID_INITV_INDEX, -1, -1)
+    {
+
+    }
+
+    LPA_Value(int destVId, int label, int labelCnt)
+    {
+        this->destVId = destVId;
+        this->label = label;
+        this->labelCnt = labelCnt;
+    }
+
+    int destVId;
+    int label;
+    int labelCnt;
+};
+
 template <typename VertexValueType, typename MessageValueType>
 class LabelPropagation : public GraphUtil<VertexValueType, MessageValueType>
 {
 public:
     LabelPropagation();
 
-    void MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet<MessageValueType> &mSet) override;
-    void MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet) override;
+    int MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet<MessageValueType> &mSet) override;
+    int MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet) override;
 
     //Unified interface but actually algo_BellmanFord didn't use this form
-    void MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues) override;
-    void MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues) override;
+    int MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues) override;
+    int MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues) override;
 
     void MergeGraph(Graph<VertexValueType> &g, const std::vector<Graph<VertexValueType>> &subGSet,
                     std::set<int> &activeVertices, const std::vector<std::set<int>> &activeVerticeSet,
