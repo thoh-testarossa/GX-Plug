@@ -6,10 +6,31 @@
 
 #include <iostream>
 #include <chrono>
+#include <algorithm>
 
 template <typename VertexValueType, typename MessageValueType>
 LabelPropagation<VertexValueType, MessageValueType>::LabelPropagation()
 {
+}
+
+template <typename VertexValueType, typename MessageValueType>
+std::vector<Graph<VertexValueType>> LabelPropagation<VertexValueType, MessageValueType>::DivideGraphByEdge(const Graph<VertexValueType> &g, int partitionCount)
+{
+    std::vector<Graph<VertexValueType>> res = std::vector<Graph<VertexValueType>>();
+    for(int i = 0; i < partitionCount; i++) res.push_back(Graph<VertexValueType>(0));
+    for(int i = 0; i < partitionCount; i++)
+    {
+        //Copy v & vValues info but do not copy e info
+        res.at(i) = Graph<VertexValueType>(g.vList, std::vector<Edge>(), g.verticesValue);
+
+        //Distribute e info
+        for(int k = i * g.eCount / partitionCount; k < (i + 1) * g.eCount / partitionCount; k++)
+        {
+            res.at(i).insertEdge(g.eList.at(k).src, g.eList.at(k).dst, g.eList.at(k).weight);
+            res.at(i).eList.at(res.at(i).eCount - 1).originIndex = g.eList.at(k).originIndex;
+        }
+    }
+    return res;
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -27,7 +48,9 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGApply(Graph<VertexVa
     }
 
     //array form computation
+    std::cout << "msg apply array..." << std::endl;
     this->MSGApply_array(g.vCount, g.eCount, &g.vList[0], 0, &initVSet[0], &g.verticesValue[0], mValues);
+    std::cout << "msg apply array end" << std::endl;
 
     delete[] mValues;
 
@@ -44,7 +67,9 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge(const Graph
     MessageValueType *mValues = new MessageValueType [g.eCount];
 
     //array form computation
+    std::cout << "msg merge array..." << std::endl;
     this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], 0, &initVSet[0], &g.verticesValue[0], mValues);
+    std::cout << "msg merge array... end" << std::endl;
 
     //Generate merged msgs directly
     mSet.mSet.clear();
@@ -63,44 +88,39 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge(const Graph
 template <typename VertexValueType, typename MessageValueType>
 int LabelPropagation<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
 {
-    //store the labels of neighbors for each vertice
-    auto labelsVector = std::vector<std::map<int, int>>();
-
-    labelsVector.reserve(vCount);
-    labelsVector.assign(vCount, std::map<int, int>());
+    //vValues Clear
+    for(int i = 0; i < this->totalMValuesCount; i++)
+    {
+        vValues[i] = VertexValueType(INVALID_INITV_INDEX, -1, 0);
+    }
 
     for(int i = 0; i < eCount; i++)
     {
-        auto &labelCntMap = labelsVector.at(mValues[i].first);
+        auto edgeIndex = mValues[i].edgeOriginIndex;
+        auto destVId = mValues[i].destVId;
+        auto offset = this->offsetInMValuesOfEachV[destVId];
+        auto flag = false;
+        auto label = mValues[i].label;
 
-        if(labelCntMap.find(mValues[i].second) == labelCntMap.end())
-        {
-            labelCntMap[mValues[i].second] = 1;
-        }
-        else
-        {
-            labelCntMap.at(mValues[i].second)++;
-        }
-    }
+        //test
+//        std::cout << offset << std::endl;
+//        std::cout << offset + vSet[destVId].inDegree << std::endl;
+//        std::cout << edgeIndex << std::endl;
 
-    //set vValue
-    auto valueCnt = 0;
-    for(int i = 0; i < vCount; i++)
-    {
-        auto labelMap = labelsVector.at(i);
-        if(!labelMap.empty())
+        for(int j = offset; j < offset + vSet[destVId].inDegree; j++)
         {
-            for(auto &label : labelMap)
+            if(vValues[j].label == label)
             {
-                vValues[valueCnt] = LPA_Value(i, label.first, label.second);
-                valueCnt++;
+                vValues[j].labelCnt++;
+                flag = true;
+                break;
             }
         }
-    }
-    //set the end flag of vValue array
-    if(valueCnt < eCount)
-    {
-        vValues[valueCnt] = LPA_Value(INVALID_INITV_INDEX, -1, -1);
+
+        if(!flag)
+        {
+            vValues[edgeIndex] = VertexValueType(destVId, label, 1);
+        }
     }
 
     return 0;
@@ -109,11 +129,10 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGApply_array(int vCou
 template <typename VertexValueType, typename MessageValueType>
 int LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
 {
+
     for(int i = 0; i < eCount; i++)
     {
-        //msg value -- <destinationID, Label>
-        auto msgValue = std::pair<int, int>(eSet[i].dst, vValues[eSet[i].src].label);
-        mValues[i] = msgValue;
+        mValues[i] = MessageValueType(eSet[i].dst, eSet[i].originIndex, vValues[eSet[i].src].label);
     }
 
     return eCount;
@@ -125,31 +144,74 @@ void LabelPropagation<VertexValueType, MessageValueType>::Init(int vCount, int e
     //vValue size = e in order to store the label info for merging the subgraph
     this->totalVValuesCount = eCount;
     this->totalMValuesCount = eCount;
+
+    this->offsetInMValuesOfEachV = new int [vCount];
 }
 
 template <typename VertexValueType, typename MessageValueType>
 void LabelPropagation<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList)
 {
     //vValues init
-    g.verticesValue.reserve(this->totalVValuesCount);
-    g.verticesValue.assign(this->totalVValuesCount, LPA_Value(INVALID_INITV_INDEX, -1, 0));
+    g.verticesValue.reserve(this->totalMValuesCount);
+    g.verticesValue.assign(this->totalMValuesCount, LPA_Value(INVALID_INITV_INDEX, -1, 0));
 
     for(int i = 0; i < g.vCount; i++)
     {
         g.verticesValue.at(i) = LPA_Value(g.vList.at(i).vertexID, g.vList.at(i).vertexID, 0);
+    }
+
+    //offsetInMValuesOfEachV init
+    this->offsetInMValuesOfEachV[0] = 0;
+    for(int i = 1; i < g.vCount; i++)
+    {
+        this->offsetInMValuesOfEachV[i] = this->offsetInMValuesOfEachV[i - 1] + g.vList.at(i).inDegree;
+    }
+
+    //update the edge info
+    std::sort(g.eList.begin(), g.eList.end(), labelPropagationEdgeCmp);
+    for(int i = 0; i < g.eCount; i++)
+    {
+        g.eList.at(i).originIndex = i;
+    }
+}
+
+template <typename VertexValueType, typename MessageValueType>
+void LabelPropagation<VertexValueType, MessageValueType>::InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount)
+{
+    for(int i = 0; i < this->totalMValuesCount; i++)
+    {
+        vValues[i] = LPA_Value(INVALID_INITV_INDEX, -1, 0);
+    }
+
+    for(int i = 0; i < vCount; i++)
+    {
+        vValues[i] = LPA_Value(i, i, 0);
+    }
+
+    std::sort(eSet, eSet + this->totalMValuesCount, this->labelPropagationEdgeCmp);
+    for(int i = 0; i < this->totalMValuesCount; i++)
+    {
+        vSet[eSet[i].dst].inDegree++;
+        eSet[i].originIndex = i;
+    }
+
+    this->offsetInMValuesOfEachV[0] = 0;
+    for(int i = 1; i < vCount; i++)
+    {
+        this->offsetInMValuesOfEachV[i] = this->offsetInMValuesOfEachV[i - 1] + vSet[i].inDegree;
     }
 }
 
 template <typename VertexValueType, typename MessageValueType>
 void LabelPropagation<VertexValueType, MessageValueType>::Deploy(int vCount, int eCount, int numOfInitV)
 {
-
 }
 
 template <typename VertexValueType, typename MessageValueType>
 void LabelPropagation<VertexValueType, MessageValueType>::Free()
 {
-
+    //do not forget to be called in GPU version
+    delete[] this->offsetInMValuesOfEachV;
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -173,13 +235,13 @@ void LabelPropagation<VertexValueType, MessageValueType>::MergeGraph(Graph<Verte
     for(const auto &subG : subGSet)
     {
         //vValues merge
-        for(int i = 0; i < subG.eCount; i++)
+        for(int i = 0; i < this->totalMValuesCount; i++)
         {
             auto lpaValue = subG.verticesValue.at(i);
 
             if(lpaValue.destVId == INVALID_INITV_INDEX)
             {
-                break;
+                continue;
             }
 
             auto &labelCnt = labelCntPerVertice.at(lpaValue.destVId);
@@ -221,11 +283,13 @@ void LabelPropagation<VertexValueType, MessageValueType>::ApplyStep(Graph<Vertex
     MessageSet<MessageValueType> mMergedSet = MessageSet<MessageValueType>();
 
     mMergedSet.mSet.clear();
-
     auto start = std::chrono::system_clock::now();
+
+    std::cout << "msg merge..." << std::endl;
     MSGGenMerge(g, initVSet, activeVertices, mMergedSet);
     auto mergeEnd = std::chrono::system_clock::now();
 
+    std::cout << "msg apply..." << std::endl;
     MSGApply(g, initVSet, activeVertices, mMergedSet);
     auto applyEnd = std::chrono::system_clock::now();
 }
@@ -276,6 +340,8 @@ void LabelPropagation<VertexValueType, MessageValueType>::ApplyD(Graph<VertexVal
     {
         std::cout << "iterCount: " << iterCount << std::endl;
         auto start = std::chrono::system_clock::now();
+
+        std::cout << "divide graph..." << std::endl;
         auto subGraphSet = this->DivideGraphByEdge(g, partitionCount);
         auto divideGraphFinish = std::chrono::system_clock::now();
         for(int i = 0; i < partitionCount; i++)
@@ -283,6 +349,8 @@ void LabelPropagation<VertexValueType, MessageValueType>::ApplyD(Graph<VertexVal
         activeVertice.clear();
 
         auto mergeGraphStart = std::chrono::system_clock::now();
+
+        std::cout << "merge graph..." << std::endl;
         MergeGraph(g, subGraphSet, activeVertice, AVSet, initVList);
         iterCount++;
         auto end = std::chrono::system_clock::now();

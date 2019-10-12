@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
     std::cout << "Init finished" << std::endl;
     //Test end
 
-    while(iterCount < 10)
+    while(iterCount < 1)
     {
         //Test
         std::cout << "Processing at iter " << ++iterCount << std::endl;

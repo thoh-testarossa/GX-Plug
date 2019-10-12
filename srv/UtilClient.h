@@ -22,9 +22,12 @@ public:
     int connect();
     int transfer(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int *initVSet, bool *filteredV, int filteredVCount);
     int update(VertexValueType *vValues, Vertex *vSet);
+    int update(VertexValueType *vValues);
     void request();
     void disconnect();
     void shutdown();
+    void graphInit();
+    int copyBack(VertexValueType *vValues);
 
     int nodeNo;
 

@@ -10,5 +10,5 @@
 template class GraphUtil<double, double>;
 template class GraphUtil<int, int>;
 template class GraphUtil<std::pair<double, double>, PRA_MSG>;
-template class GraphUtil<LPA_Value, std::pair<int, int>>;
 template class GraphUtil<DFSValue, DFSMSG>;
+template class GraphUtil<LPA_Value, LPA_MSG>;

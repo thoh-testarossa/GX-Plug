@@ -111,6 +111,19 @@ int UtilClient<VertexValueType, MessageValueType>::update(VertexValueType *vValu
 }
 
 template <typename VertexValueType, typename MessageValueType>
+int UtilClient<VertexValueType, MessageValueType>::update(VertexValueType *vValues)
+{
+    if(this->vCount > 0 && this->eCount > 0 && this->numOfInitV > 0)
+    {
+        if(this->vValues == nullptr) return -1;
+
+        memcpy(this->vValues, vValues, this->vCount * this->numOfInitV * sizeof(VertexValueType));
+        return 0;
+    }
+    else return -1;
+}
+
+template <typename VertexValueType, typename MessageValueType>
 void UtilClient<VertexValueType, MessageValueType>::request()
 {
     char tmp[256];
@@ -144,4 +157,27 @@ void UtilClient<VertexValueType, MessageValueType>::shutdown()
 {
     this->client_msq.send("exit", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
     this->disconnect();
+}
+
+template <typename VertexValueType, typename MessageValueType>
+void UtilClient<VertexValueType, MessageValueType>::graphInit()
+{
+    char tmp[256];
+
+    this->client_msq.send("init", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+    this->server_msq.recv(tmp, (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+}
+
+template <typename VertexValueType, typename MessageValueType>
+int UtilClient<VertexValueType, MessageValueType>::copyBack(VertexValueType *vValues)
+{
+    if(this->vCount > 0 && this->eCount > 0 && this->numOfInitV > 0)
+    {
+        if(this->vValues == nullptr || vValues == nullptr) return -1;
+
+        memcpy(vValues, this->vValues, this->vCount * this->numOfInitV * sizeof(VertexValueType));
+
+        return 0;
+    }
+    else return -1;
 }

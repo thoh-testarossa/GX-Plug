@@ -12,6 +12,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <algorithm>
 
 #include <future>
 #include <cstring>
@@ -20,9 +21,14 @@ template <typename VertexValueType, typename MessageValueType>
 void testFut(UtilClient<VertexValueType, MessageValueType> *uc, VertexValueType *vValues, Vertex *vSet)
 {
     uc->connect();
-    uc->update(vValues, vSet);
+    uc->update(vValues);
     uc->request();
     uc->disconnect();
+}
+
+bool edgeCmp(Edge &e1, Edge &e2)
+{
+    return e1.dst < e2.dst;
 }
 
 int main(int argc, char *argv[])
@@ -77,6 +83,7 @@ int main(int argc, char *argv[])
     {
         vValues[i] = LPA_Value(i, i, 0);
     }
+
     for(int i = 0; i < vCount; i++) vSet.emplace_back(i, false, -1);
 
     for(int i = 0; i < eCount; i++)
@@ -86,13 +93,14 @@ int main(int argc, char *argv[])
         Gin >> src >> dst >> weight;
         eSet.emplace_back(src, dst, weight);
     }
-
     Gin.close();
 
+
+
     //Client Init Data Transfer
-    auto clientVec = std::vector<UtilClient<LPA_Value, std::pair<int, int>>>();
+    auto clientVec = std::vector<UtilClient<LPA_Value, LPA_MSG>>();
     for(int i = 0; i < nodeCount; i++)
-        clientVec.push_back(UtilClient<LPA_Value, std::pair<int, int>>(vCount, ((i + 1) * eCount) / nodeCount - (i * eCount) / nodeCount, numOfInitV, i));
+        clientVec.push_back(UtilClient<LPA_Value, LPA_MSG>(vCount, ((i + 1) * eCount) / nodeCount - (i * eCount) / nodeCount, numOfInitV, i));
     int chk = 0;
     for(int i = 0; i < nodeCount && chk != -1; i++)
     {
@@ -104,10 +112,20 @@ int main(int argc, char *argv[])
         }
 
         chk = clientVec.at(i).transfer(vValues, &vSet[0], &eSet[(i * eCount) / nodeCount], initVSet, filteredV, vCount);
-
         if(chk == -1)
         {
             std::cout << "Parameter illegal" << std::endl;
+            return 3;
+        }
+
+        //init the graph info
+        clientVec.at(i).graphInit();
+        //copy back the up-to-date graph info
+        chk = clientVec.at(i).copyBack(vValues);
+
+        if(chk == -1)
+        {
+            std::cout << "copy Back error" << std::endl;
             return 3;
         }
 
@@ -136,12 +154,14 @@ int main(int argc, char *argv[])
         auto futList = new std::future<void> [nodeCount];
         for(int i = 0; i < nodeCount; i++)
         {
-            std::future<void> tmpFut = std::async(testFut<LPA_Value, std::pair<int, int>>, &clientVec.at(i), vValues, &vSet[0]);
+            std::future<void> tmpFut = std::async(testFut<LPA_Value, LPA_MSG>, &clientVec.at(i), vValues, &vSet[0]);
             futList[i] = std::move(tmpFut);
         }
 
         for(int i = 0; i < nodeCount; i++)
             futList[i].get();
+
+        std::cout << "merge the data" << std::endl;
 
         //Retrieve data
         for(int i = 0; i < nodeCount; i++)
@@ -155,7 +175,7 @@ int main(int argc, char *argv[])
 
                 if(value.destVId == INVALID_INITV_INDEX)
                 {
-                    break;
+                    continue;
                 }
 
                 auto &labelCnt = labelCntPerVertice.at(value.destVId);

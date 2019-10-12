@@ -15,6 +15,12 @@ PageRank<VertexValueType, MessageValueType>::PageRank()
 }
 
 template <typename VertexValueType, typename MessageValueType>
+void PageRank<VertexValueType, MessageValueType>::InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount)
+{
+
+}
+
+template <typename VertexValueType, typename MessageValueType>
 int PageRank<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<MessageValueType> &mSet)
 {
     //Availability check
@@ -73,12 +79,13 @@ int PageRank<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int 
     for(int i = 0; i < msgCnt; i++)
     {
         auto destVId = mValues[i].destVId;
-        bool isActive = vSet[destVId].isActive;
 
         if(destVId == -1)
         {
             continue;
         }
+
+        bool isActive = vSet[destVId].isActive;
 
         if(!isActive)
         {
@@ -240,23 +247,6 @@ void PageRank<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueTy
     }
 
     //normalizeGraph(g);
-}
-
-template <typename VertexValueType, typename MessageValueType>
-void PageRank<VertexValueType, MessageValueType>::normalizeGraph(Graph<VertexValueType> &g)
-{
-    double rankSum = 0.0;
-
-    for(auto value : g.verticesValue)
-    {
-        rankSum += value.first;
-    }
-
-    for(auto &value : g.verticesValue)
-    {
-        value.first = value.first / rankSum;
-    }
-
 }
 
 template <typename VertexValueType, typename MessageValueType>

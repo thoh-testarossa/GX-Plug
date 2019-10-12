@@ -13,6 +13,13 @@ ConnectedComponent<VertexValueType, MessageValueType>::ConnectedComponent()
 
 }
 
+template <typename VertexValueType, typename MessageValueType>
+void ConnectedComponent<VertexValueType, MessageValueType>::InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount)
+{
+
+}
+
+
 template<typename VertexValueType, typename MessageValueType>
 int ConnectedComponent<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet,
                                                    std::set<int> &activeVertice,

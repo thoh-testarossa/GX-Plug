@@ -68,12 +68,12 @@ void AbstractGraph::insertEdge(int src, int dst, double weight)
     this->eCount++;
 }
 
-void AbstractGraph::insertEdgeWithVertexInfo(int src, int dst, double weight)
+void AbstractGraph::insertEdgeUpdateInfo(int src, int dst, double weight, int originIndex)
 {
-    this->eList.emplace_back(src, dst, weight);
-    this->eCount++;
+    insertEdge(src, dst, weight);
     this->vList.at(src).outDegree += 1;
     this->vList.at(dst).inDegree += 1;
+    this->eList.at(originIndex).originIndex = originIndex;
 }
 
 

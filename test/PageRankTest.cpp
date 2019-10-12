@@ -23,7 +23,7 @@ int main()
         double weight;
 
         Gin >> src >> dst >> weight;
-        test.insertEdgeWithVertexInfo(src, dst, weight);
+        test.insertEdgeUpdateInfo(src, dst, weight, i);
     }
 
     Gin.close();

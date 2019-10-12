@@ -6,7 +6,7 @@
 
 #include <iostream>
 #include <fstream>
-
+#include <algorithm>
 int main()
 {
     //Read the Graph
@@ -25,12 +25,12 @@ int main()
         double weight;
 
         Gin >> src >> dst >> weight;
-        test.insertEdge(src, dst, weight);
+        test.insertEdgeUpdateInfo(src, dst, weight, i);
     }
 
     Gin.close();
 
-    auto executor = LabelPropagation<LPA_Value, std::pair<int, int>>();
+    auto executor = LabelPropagation<LPA_Value, LPA_MSG>();
     executor.ApplyD(test, initVList, 4);
 }
 
