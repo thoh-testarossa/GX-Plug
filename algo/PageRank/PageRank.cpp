@@ -76,6 +76,11 @@ int PageRank<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int 
     auto msgCnt = eCount;
     int avCount = 0;
 
+    for(int i = 0; i < vCount; i++)
+    {
+        vSet[i].isActive = false;
+    }
+
     for(int i = 0; i < msgCnt; i++)
     {
         auto destVId = mValues[i].destVId;
