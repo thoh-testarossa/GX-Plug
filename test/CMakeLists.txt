@@ -156,10 +156,29 @@ if(UNIX)
             srv_UtilServer
             algo_PageRank)
 
+    add_executable(srv_UtilServerTest_JumpIteration
+            UtilServerTest_JumpIteration.cpp)
+
+    target_link_libraries(srv_UtilServerTest_JumpIteration
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilServer
+            algo_JumpIteration)
+
     add_executable(srv_UtilClientTest
             UtilClientTest.cpp)
 
     target_link_libraries(srv_UtilClientTest
+            pthread
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilClient
+            algo_BellmanFord)
+
+    add_executable(srv_UtilClientTest_BFJ
+            UtilClientTest_BFJump.cpp)
+
+    target_link_libraries(srv_UtilClientTest_BFJ
             pthread
             srv_UNIX_shm
             srv_UNIX_msg
@@ -185,5 +204,15 @@ if(UNIX)
             srv_UNIX_msg
             srv_UtilClient
             algo_PageRank)
+
+    add_executable(srv_UtilClientTest_JumpIteration
+            UtilClientTest_JumpIteration.cpp)
+
+    target_link_libraries(srv_UtilClientTest_JumpIteration
+            pthread
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilClient
+            algo_JumpIteration)
 
 ENDIF(UNIX)

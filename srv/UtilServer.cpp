@@ -40,6 +40,7 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
 
         this->executor = GraphUtilType();
         this->executor.Init(vCount, eCount, numOfInitV);
+        this->executor.partitionId = nodeNo;
         this->vValues_shm = UNIX_shm();
         this->vSet_shm = UNIX_shm();
         this->eSet_shm = UNIX_shm();
