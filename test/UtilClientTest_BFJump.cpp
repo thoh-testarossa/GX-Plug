@@ -57,10 +57,21 @@ int main(int argc, char *argv[])
     for(int i = 0; i < vCount * numOfInitV; i++) vValues[i] = INT32_MAX  >> 1;
 
     //Easy init
+//    initVSet[0] = 1;
+//    initVSet[1] = 200004;
+//    initVSet[2] = 300007;
+//    initVSet[3] = 100002;
+
+//    initVSet[0] = 1;
+//    initVSet[1] = 200002;
+//    initVSet[2] = 400004;
+//    initVSet[3] = 600007;
+
     initVSet[0] = 1;
-    initVSet[1] = 200004;
-    initVSet[2] = 300007;
-    initVSet[3] = 100002;
+    initVSet[1] = 400002;
+    initVSet[2] = 800004;
+    initVSet[3] = 1200007;
+
     for(int i = 0; i < numOfInitV; i++) vValues[initVSet[i] * numOfInitV + i] = 0;
 
     for(int i = 0; i < vCount; i++) filteredV[i] = false;
@@ -76,13 +87,13 @@ int main(int argc, char *argv[])
     int partitionE[nodeCount];
 
     //read test file
-    std::string filePrefix = "../../data/testGraphPid";
+    std::string filePrefix = "../../data/";
     std::string filePostfix = ".txt";
 
     for(int i = 0; i < nodeCount; i++)
     {
         std::stringstream fileName;
-        fileName << filePrefix << i << filePostfix;
+        fileName << filePrefix << "iterationJump" << vCount << "/testGraphPid" << i << filePostfix;
 
         std::ifstream Gin(fileName.str());
 
@@ -102,10 +113,14 @@ int main(int argc, char *argv[])
     }
 
     //read iteration jump file
-    std::ifstream Gin("../../data/iterationJump400000/iterationJump400000.txt");
+    std::stringstream jumpFilePath;
+
+    jumpFilePath << "../../data/iterationJump" << vCount << "/iterationJump" << vCount << ".txt";
+
+    std::ifstream Gin(jumpFilePath.str());
     std::queue<int> iterationJump = std::queue<int>();
 
-    if(!Gin.is_open()) {std::cout << "open jump 400000 error!" << std::endl;}
+    if(!Gin.is_open()) {std::cout << "open " << jumpFilePath.str() << " error " << std::endl;}
 
     while(!Gin.eof())
     {
@@ -198,7 +213,7 @@ int main(int argc, char *argv[])
             if(!jump)
             {
                 std::stringstream outFilePath;
-                outFilePath << "../../data/iterationJump400000/graph400000Pid" << i << "iter" << iterCount << filePostfix;
+                outFilePath << "../../data/iterationJump" << vCount << "/graph" << vCount << "Pid" << i << "iter" << iterCount << filePostfix;
                 std::ofstream Gout(outFilePath.str());
 
                 Gout << "Processing at iter " << iterCount << std::endl;

@@ -58,10 +58,15 @@ int main(int argc, char *argv[])
     for(int i = 0; i < vCount * numOfInitV; i++) vValues[i] = INT32_MAX  >> 1;
 
     //Easy init
+//    initVSet[0] = 1;
+//    initVSet[1] = 200004;
+//    initVSet[2] = 300007;
+//    initVSet[3] = 100002;
+
     initVSet[0] = 1;
-    initVSet[1] = 200004;
-    initVSet[2] = 300007;
-    initVSet[3] = 100002;
+    initVSet[1] = 400002;
+    initVSet[2] = 800004;
+    initVSet[3] = 1200007;
     for(int i = 0; i < numOfInitV; i++) vValues[initVSet[i] * numOfInitV + i] = 0;
 
     for(int i = 0; i < vCount; i++) filteredV[i] = false;

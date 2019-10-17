@@ -74,7 +74,7 @@ int JumpIteration<VertexValueType, MessageValueType>::MSGApply_array(int vCount,
     std::stringstream filePath;
     std::string s;
 
-    filePath << "../../data/iterationJump" << vCount << "/graph400000Pid" << this->partitionId << "iter" << this->iterationCount << ".txt";
+    filePath << "../../data/iterationJump" << vCount << "/graph" << vCount << "Pid" << this->partitionId << "iter" << this->iterationCount << ".txt";
 
     std::ifstream Gin(filePath.str());
 
