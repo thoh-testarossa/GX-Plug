@@ -160,8 +160,9 @@ int main(int argc, char *argv[])
 
     while(isActive)
     {
+        iterCount++;
         //Test
-        std::cout << "Processing at iter " << ++iterCount << std::endl;
+        std::cout << "Processing at iter " << iterCount << std::endl;
         //Test end
 
         for(int i = 0; i < vCount; i++) ret_AVCheckSet[i] = false;
@@ -177,13 +178,13 @@ int main(int argc, char *argv[])
             futList[i].get();
 
         int jumpCnt = 0;
-        bool jump = false;
+        bool jump = true;
         if(!iterationJump.empty())
         {
             jumpCnt = iterationJump.front();
             if(jumpCnt == iterCount)
             {
-                jump = true;
+                jump = false;
                 iterationJump.pop();
             }
         }
@@ -194,7 +195,7 @@ int main(int argc, char *argv[])
             clientVec.at(i).connect();
 
             //print the jump iteration
-            if(jump)
+            if(!jump)
             {
                 std::stringstream outFilePath;
                 outFilePath << "../../data/iterationJump400000/graph400000Pid" << i << "iter" << iterCount << filePostfix;
@@ -202,14 +203,14 @@ int main(int argc, char *argv[])
 
                 Gout << "Processing at iter " << iterCount << std::endl;
 
-                for(int i = 0; i < vCount; i++)
+                for(int j = 0; j < vCount; j++)
                 {
-                    Gout << vSet[i].isActive << std::endl;
+                    Gout << clientVec.at(i).vSet[j].isActive << std::endl;
                 }
 
                 for(int j = 0; j < vCount * numOfInitV; j++)
                 {
-                    Gout << vValues[j] << std::endl;
+                    Gout << clientVec.at(i).vValues[j] << std::endl;
                 }
 
                 Gout.close();
@@ -236,11 +237,4 @@ int main(int argc, char *argv[])
 
     for(int i = 0; i < nodeCount; i++) clientVec.at(i).shutdown();
 
-    //result check
-    for(int i = 0; i < vCount * numOfInitV; i++)
-    {
-        if(i % numOfInitV == 0) std::cout << i / numOfInitV << ": ";
-        std::cout << "(" << initVSet[i % numOfInitV] << " -> " << vValues[i] << ")";
-        if(i % numOfInitV == numOfInitV - 1) std::cout << std::endl;
-    }
 }

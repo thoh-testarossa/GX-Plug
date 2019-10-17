@@ -159,11 +159,9 @@ int main(int argc, char *argv[])
     std::cout << "Init finished" << std::endl;
     //Test end
 
-    while(iterCount < 45)
+    while(isActive)
     {
-        //Test
         std::cout << "Processing at iter " << ++iterCount << std::endl;
-        //Test end
 
         for(int i = 0; i < vCount; i++) ret_AVCheckSet[i] = false;
 
@@ -182,6 +180,15 @@ int main(int argc, char *argv[])
         {
             clientVec.at(i).connect();
 
+            //Collect data
+            for(int j = 0; j < vCount * numOfInitV; j++)
+            {
+                if (clientVec.at(i).vValues[j] < vValues[j])
+                    vValues[j] = clientVec.at(i).vValues[j];
+            }
+
+            for(int j = 0; j < vCount; j++)
+                ret_AVCheckSet[j] |= clientVec.at(i).vSet[j].isActive;
 
             clientVec.at(i).disconnect();
         }
@@ -193,12 +200,4 @@ int main(int argc, char *argv[])
     }
 
     for(int i = 0; i < nodeCount; i++) clientVec.at(i).shutdown();
-
-    //result check
-    for(int i = 0; i < vCount * numOfInitV; i++)
-    {
-        if(i % numOfInitV == 0) std::cout << i / numOfInitV << ": ";
-        std::cout << "(" << initVSet[i % numOfInitV] << " -> " << vValues[i] << ")";
-        if(i % numOfInitV == numOfInitV - 1) std::cout << std::endl;
-    }
 }

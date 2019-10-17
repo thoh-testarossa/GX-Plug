@@ -65,45 +65,36 @@ int JumpIteration<VertexValueType, MessageValueType>::MSGApply_array(int vCount,
 
     this->iterationCount++;
 
-    bool jump = false;
-
     if(!this->jumpIteration.empty())
     {
-        int jumpIter = this->jumpIteration.front();
-        if(jumpIter == this->iterationCount)
-        {
-            jump = true;
-            this->jumpIteration.pop();
-        }
+        this->iterationCount = this->jumpIteration.front();
+        this->jumpIteration.pop();
     }
 
-    if(jump)
+    std::stringstream filePath;
+    std::string s;
+
+    filePath << "../../data/iterationJump" << vCount << "/graph400000Pid" << this->partitionId << "iter" << this->iterationCount << ".txt";
+
+    std::ifstream Gin(filePath.str());
+
+    if(!Gin.is_open()) {std::cout << "open " << filePath.str() << " error " << std::endl;}
+
+    getline(Gin, s);
+    std::cout << "return iteration " << this->iterationCount << std::endl;
+
+    for(int i = 0; i < vCount; i++)
     {
-        std::stringstream filePath;
-        std::string s;
-
-        std::cout << s << std::endl;
-
-        filePath << "../../data/iterationJump" << vCount << "/graph400000Pid" << this->partitionId << "iter" << iterationCount << ".txt";
-
-        std::ifstream Gin(filePath.str());
-
-        if(!Gin.is_open()) {std::cout << "open " << filePath.str() << " error " << std::endl;}
-
-        Gin >> s;
-
-        for(int i = 0; i < vCount; i++)
-        {
-            Gin >> vSet[i].isActive;
-        }
-
-        for(int i = 0; i < vCount * numOfInitV; i++)
-        {
-            Gin >> vValues[i];
-        }
-
-        Gin.close();
+        Gin >> vSet[i].isActive;
     }
+
+    for(int i = 0; i < vCount * numOfInitV; i++)
+    {
+        Gin >> vValues[i];
+    }
+
+    Gin.close();
+
 
     return 0;
 }
