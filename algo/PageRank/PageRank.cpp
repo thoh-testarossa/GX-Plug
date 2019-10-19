@@ -90,20 +90,16 @@ int PageRank<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int 
             continue;
         }
 
-        bool needMerge = vSet[destVId].needMerge;
-
-        if(!needMerge)
+        if(!vSet[destVId].isActive)
         {
             //set needMerge flag for merging subgraphs
-            vSet[destVId].needMerge = true;
+            vSet[destVId].isActive = true;
             vValues[destVId].second = (1.0 - this->resetProb) * mValues[i].rank;
             avCount++;
-            vSet[destVId].isActive = true;
         }
         else
         {
             vValues[destVId].second += (1.0 - this->resetProb) * mValues[i].rank;
-            vSet[destVId].isActive = true;
         }
     }
 
@@ -121,7 +117,7 @@ int PageRank<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, i
         auto srcVId = eSet[i].src;
 
         auto msgValue = MessageValueType(-1, -1);
-        if(vValues[srcVId].second > this->deltaThreshold)
+        if(vSet[srcVId].isActive && vValues[srcVId].second > this->deltaThreshold)
         {
             //msg value -- <destinationID, rank>
             msgValue = MessageValueType(eSet[i].dst, vValues[eSet[i].src].second * eSet[i].weight);
@@ -170,6 +166,7 @@ void PageRank<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueTyp
     for(int i = 0; i < initVList.size(); i++)
     {
         g.vList.at(initVList.at(i)).initVIndex = initVList.at(i);
+        g.vList.at(initVList.at(i)).isActive = true;
     }
 
     //vValues init
@@ -221,11 +218,11 @@ void PageRank<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueTy
     {
         for(int i = 0; i < subG.verticesValue.size(); i++)
         {
-            if(subG.vList.at(i).needMerge)
+            if(subG.vList.at(i).isActive)
             {
-                if(!g.vList.at(i).needMerge)
+                if(!g.vList.at(i).isActive)
                 {
-                    g.vList.at(i).needMerge |= subG.vList.at(i).needMerge;
+                    g.vList.at(i).isActive |= subG.vList.at(i).isActive;
                     g.verticesValue.at(i).first = subG.verticesValue.at(i).first;
                     g.verticesValue.at(i).second = subG.verticesValue.at(i).second;
                 }
@@ -234,7 +231,7 @@ void PageRank<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueTy
                     g.verticesValue.at(i).second += subG.verticesValue.at(i).second;
                 }
             }
-            else if(!g.vList.at(i).needMerge)
+            else if(!g.vList.at(i).isActive)
             {
                 g.verticesValue.at(i) = subG.verticesValue.at(i);
             }
@@ -244,13 +241,12 @@ void PageRank<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueTy
     //calculate delta and newRank
     for(int i = 0; i < g.verticesValue.size(); i++)
     {
-        if(g.vList.at(i).needMerge)
+        if(g.vList.at(i).isActive)
         {
             auto oldRank = g.verticesValue.at(i).first;
             g.verticesValue.at(i).first = oldRank + g.verticesValue.at(i).second;
             g.verticesValue.at(i).second = g.verticesValue.at(i).first - oldRank;
         }
-        g.vList.at(i).needMerge = false;
     }
 
     //normalizeGraph(g);

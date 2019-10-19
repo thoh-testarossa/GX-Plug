@@ -1,5 +1,5 @@
 //
-// Created by Thoh Testarossa on 2019-03-12.
+// Created by cave-g-f on 2019-09-22.
 //
 
 #include "PageRankGPU.h"
@@ -34,11 +34,6 @@ auto PageRankGPU<VertexValueType, MessageValueType>::MSGGenMerge_GPU_MVCopy(Vert
     //     std::cout << i << " " << vValues[i << 1] << " " << vValues[(i << 1) + 1] << std::endl;
     // }
     // std::cout << "=========value end=======" << std::endl << std::endl;
-
-    //mTransformedMergedMSGValueSet copy
-    err = cudaMemcpy(d_mTransformedMergedMSGValueSet, mTransformedMergedMSGValueSet,
-                     eGCount * sizeof(MessageValueType), cudaMemcpyHostToDevice);
-
     return err;
 }
 
@@ -49,15 +44,24 @@ auto PageRankGPU<VertexValueType, MessageValueType>::MSGApply_GPU_VVCopy(Vertex 
 {
     auto err = cudaSuccess;
 
-    //vSet copy_back to update the needMerge flag
-    err = cudaMemcpy(vSet, d_vSet, vGCount * sizeof(Vertex), cudaMemcpyDeviceToHost);
+    err = cudaMemcpy(vSet, this->d_vSet, vGCount * sizeof(Vertex), cudaMemcpyDeviceToHost);
+
     for(int i = 0; i < vGCount; i++)
     {
-        if(vSet[i].needMerge)
+        if(vSet[i].needUpdate)
         {
             vValues[(i << 1) + 1] = 0;
         } 
     }
+
+    for(int i = 0; i < vGCount; i++)
+    {
+        vSet[i].isActive = false;
+        vSet[i].needUpdate = false;
+    }
+
+    //vSet Copy
+    err = cudaMemcpy(d_vSet, vSet, vGCount * sizeof(Vertex), cudaMemcpyHostToDevice);
 
     //vValueSet copy
     err = cudaMemcpy(d_vValues, vValues, vGCount * sizeof(VertexValueType), cudaMemcpyHostToDevice);
@@ -96,8 +100,8 @@ void PageRankGPU<VertexValueType, MessageValueType>::Deploy(int vCount, int eCou
 
     this->vValueSet = new VertexValueType [vCount];
 
-    err = cudaMalloc((void **)&this->d_vValueSet, vertexLimit * sizeof(VertexValueType));
-    err = cudaMalloc((void **)&this->d_vSet, vertexLimit * sizeof(Vertex));
+    err = cudaMalloc((void **)&this->d_vValueSet, vCount * sizeof(VertexValueType));
+    err = cudaMalloc((void **)&this->d_vSet, vCount * sizeof(Vertex));
     err = cudaMalloc((void **)&this->d_eGSet, ePerEdgeSet * sizeof(Edge));
 
     int mSize = std::max(ePerEdgeSet, mPerMSGSet);
@@ -142,10 +146,7 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount, i
     //CUDA init
     cudaError_t err = cudaSuccess;
 
-    bool needReflect = vCount > this->vertexLimit;
-
-    //AVCheck
-    for (int i = 0; i < vCount; i++) vSet[i].needMerge = false;
+    bool needReflect = false;
 
     if(!needReflect)
     {
@@ -169,6 +170,7 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount, i
             mGSet.insertMsg(Message<MessageValueType>(0, mValues[i].destVId, mValues[i]));
             mGCount++;
         }
+
         if(mGCount == this->mPerMSGSet || i == eCount - 1) //A batch of msgs will be transferred into GPU. Don't forget last batch!
         {
             auto reflectIndex = std::vector<int>();
@@ -260,6 +262,8 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount, i
     {
         err = cudaMemcpy((double *)vValues, this->d_vValueSet, vCount * sizeof(VertexValueType),
                          cudaMemcpyDeviceToHost);
+
+        err = cudaMemcpy(vSet, this->d_vSet, vCount * sizeof(Vertex), cudaMemcpyDeviceToHost);
     }
 
     //test
@@ -272,11 +276,13 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount, i
 
     //avCount calculation
     int avCount = 0;
-    for(int i = 0; i < vCount; i++)
-    {
-        if(vSet[i].needMerge)
+    for(int i = 0; i < vCount; i++) {
+        if (vSet[i].isActive)
             avCount++;
     }
+
+    //test
+    std::cout << "gpu avCount " << avCount << std::endl;
 
     return avCount;
 }
@@ -293,7 +299,7 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount
     cudaError_t err = cudaSuccess;
 
     //Graph scale check
-    bool needReflect = vCount > this->vertexLimit;
+    bool needReflect = false;
 
     if(!needReflect)
         err = MSGGenMerge_GPU_MVCopy(this->d_vSet, vSet,
@@ -322,12 +328,22 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount
     std::vector<Edge> eGSet = std::vector<Edge>();
     eGSet.reserve(this->ePerEdgeSet);
 
+    //mValues init
+    for(int i = 0; i < eCount; i++)
+    {
+        mValues[i].destVId = -1;
+        mValues[i].rank = -1;
+    }
+
     int batchCnt = 0;
     for(int i = 0; i < eCount; i++)
     {
-        eGSet.emplace_back(eSet[i]);
-        eGCount++;
-        
+        if(vSet[eSet[i].src].isActive && vValues[eSet[i].src].second > this->deltaThreshold)
+        {
+            eGSet.emplace_back(eSet[i]);
+            eGCount++;
+        }
+
         //Only dst receives message
         //isDst[eSet[i].dst] = true;
 
@@ -355,13 +371,14 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount
                 err = cudaMemcpy(this->d_eGSet, &eGSet[0], eGCount * sizeof(Edge), cudaMemcpyHostToDevice);
 
             //Kernel Execution (no matter whether g is reflected or not)
+            int kernelBatchCnt = 0;
             for(int j = 0; j < eGCount; j += NUMOFGPUCORE)
             {
                 int edgeNumUsedForExec = (eGCount - j > NUMOFGPUCORE) ? NUMOFGPUCORE : (eGCount - j);
 
                 err = MSGGenMerge_kernel_exec(this->d_mTransformedMergedMSGValueSet, this->d_vSet,
-                                                this->d_vValueSet, edgeNumUsedForExec, &this->d_eGSet[j],  batchCnt, this->deltaThreshold);
-                batchCnt++;
+                                                this->d_vValueSet, edgeNumUsedForExec, &this->d_eGSet[j],  kernelBatchCnt, this->deltaThreshold);
+                kernelBatchCnt++;
             }
 
             //Deflection
@@ -387,6 +404,20 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount
             }
             else;
 
+            //copy back
+            err = cudaMemcpy(&mValues[batchCnt * this->ePerEdgeSet], this->d_mTransformedMergedMSGValueSet, eGCount * sizeof(MessageValueType), cudaMemcpyDeviceToHost);
+
+            //test
+//            for(int j = 0; j < eGCount; j++)
+//            {
+//                if(mValues[(batchCnt * this->ePerEdgeSet) + j].destVId != -1)
+//                {
+//                    std::cout << mValues[(batchCnt * this->ePerEdgeSet) + j].destVId << std::endl;
+//                }
+//            }
+
+            batchCnt++;
+
             //Checkpoint reset
             eGCount = 0;
             eGSet.clear();
@@ -394,21 +425,6 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount
         }
     }
 
-    if(!needReflect)
-    {
-        //Re-package the data
-        //Memory copy back
-        err = cudaMemcpy(mValues, this->d_mTransformedMergedMSGValueSet,
-                         eCount * sizeof(MessageValueType), cudaMemcpyDeviceToHost);
-
-        //test
-        // std::cout << "=============msg  info==============" << std::endl;
-        // for(int i = 0; i < eCount; i++)
-        // {
-        //     std::cout << "dst : " << this->mTransformedMergedMSGValueSet[i].destVId << " -> " << this->mTransformedMergedMSGValueSet[i].rank << std::endl;
-        // }
-        // std::cout << "=============msg  ebd==============" << std::endl;
-    }
 
     return eCount;
 }

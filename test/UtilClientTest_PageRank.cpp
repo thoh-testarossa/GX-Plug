@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     std::vector<Vertex> vSet = std::vector<Vertex>();
     std::vector<Edge> eSet = std::vector<Edge>();
 
-    std::ifstream Gin("testGraph.txt");
+    std::ifstream Gin("../../data/testGraph4000000.txt");
     if(!Gin.is_open())
     {
         std::cout << "Error! File testGraph.txt not found!" << std::endl;
@@ -75,10 +75,6 @@ int main(int argc, char *argv[])
 
     //init v index
     std::cout << "init initVSet ..." << std::endl;
-    for(int i = 0; i < numOfInitV; i++)
-    {
-        initVSet[i] = i;
-    }
 
     std::cout << "init vSet ..." << std::endl;
     for(int i = 0; i < vCount; i++)
@@ -86,10 +82,8 @@ int main(int argc, char *argv[])
         vSet.emplace_back(i, false, INVALID_INITV_INDEX);
     }
 
-    for(int i = 0; i < numOfInitV; i++)
-    {
-        vSet.at(initVSet[i]).initVIndex = initVSet[i];
-    }
+    vSet.at(1).initVIndex = 1;
+    vSet.at(1).isActive = true;
 
     std::cout << "init vValues ..." << std::endl;
     for(int i = 0; i < vCount; i++)
@@ -153,11 +147,16 @@ int main(int argc, char *argv[])
     std::cout << "Init finished" << std::endl;
     //Test end
 
-    while(iterCount < 1)
+    bool isActive = true;
+
+    while(isActive)
     {
+        int avCount = 0;
         //Test
         std::cout << "Processing at iter " << ++iterCount << std::endl;
         //Test end
+
+        isActive = false;
 
         auto futList = new std::future<void> [nodeCount];
         for(int i = 0; i < nodeCount; i++)
@@ -169,20 +168,28 @@ int main(int argc, char *argv[])
         for(int i = 0; i < nodeCount; i++)
             futList[i].get();
 
+        auto start = std::chrono::system_clock::now();
+
         //Retrieve data
         for(int i = 0; i < nodeCount; i++)
         {
             clientVec.at(i).connect();
 
+            //clear active info
+            for(int j = 0; j < vCount; j++)
+            {
+                vSet[j].isActive = false;
+            }
+
             //Collect data
             for(int j = 0; j < vCount; j++)
             {
                 auto &value = clientVec.at(i).vValues[j];
-                if(clientVec.at(i).vSet[j].needMerge)
+                if(clientVec.at(i).vSet[j].isActive)
                 {
-                    if(!vSet.at(j).needMerge)
+                    if(!vSet.at(j).isActive)
                     {
-                        vSet.at(j).needMerge |= clientVec.at(i).vSet[j].needMerge;
+                        vSet.at(j).isActive |= clientVec.at(i).vSet[j].isActive;
                         vValues[j].first = value.first;
                         vValues[j].second = value.second;
                     }
@@ -191,11 +198,11 @@ int main(int argc, char *argv[])
                         vValues[j].second += value.second;
                     }
                 }
-                else if(!vSet.at(j).needMerge)
+                else if(!vSet.at(j).isActive)
                 {
                     vValues[j] = value;
                 }
-                clientVec.at(i).vSet[j].needMerge = false;
+                clientVec.at(i).vSet[j].isActive = false;
             }
 
             clientVec.at(i).disconnect();
@@ -203,13 +210,33 @@ int main(int argc, char *argv[])
 
         for(int i = 0; i < vCount; i++)
         {
-            if(vSet.at(i).needMerge)
+            if(vSet.at(i).isActive)
             {
                 auto oldRank = vValues[i].first;
                 vValues[i].first = vValues[i].second + oldRank;
                 vValues[i].second = vValues[i].first - oldRank;
             }
-            vSet.at(i).needMerge = false;
+        }
+
+        auto mergeEnd = std::chrono::system_clock::now();
+
+        std::cout << "graph merge time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count() << std::endl;
+
+        for(int i = 0; i < vCount; i++)
+        {
+            if(vSet[i].isActive)
+            {
+                avCount++;
+                isActive = true;
+            }
+        }
+
+        std::cout << "avCount : " << avCount << std::endl;
+
+        //test
+        for(int i = 0; i < vCount; i++)
+        {
+            std::cout << i << ":" << vValues[i].first << " " << vValues[i].second << std::endl ;
         }
     }
 

@@ -6,6 +6,7 @@
 #include "../util/TIsExtended.hpp"
 #include <string>
 #include <iostream>
+#include <chrono>
 
 template <typename GraphUtilType, typename VertexValueType, typename MessageValueType>
 UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
@@ -174,13 +175,15 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
         cmd = msgp;
         if(std::string("execute") == cmd)
         {
+            auto start = std::chrono::system_clock::now();
             int msgCount = this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
-
-            //std::cout << "apply array" << std::endl;
-
+            auto mergeEnd = std::chrono::system_clock::now();
             int avCount = this->executor.MSGApply_array(this->vCount, msgCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+            auto applyEnd = std::chrono::system_clock::now();
 
-            //std::cout << "apply end" << std::endl;
+            //test
+            std::cout << "msg gen time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count() << std::endl;
+            std::cout << "apply time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(applyEnd - mergeEnd).count() << std::endl;
 
             this->server_msq.send("finished", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
         }
