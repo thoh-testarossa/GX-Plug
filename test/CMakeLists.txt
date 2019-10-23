@@ -95,6 +95,15 @@ if(CUDA_FOUND)
             core_Graph
             core_MessageSet
             core_GraphUtil)
+        
+    add_executable(algo_ConnectedComponentGPUTest
+            ConnectedComponentGPUTest.cpp)
+
+    target_link_libraries(algo_PageRankGPUTest
+            algo_ConnectedComponentGPU
+            core_Graph
+            core_MessageSet
+            core_GraphUtil)
 endif(CUDA_FOUND)
 
 if(UNIX)
@@ -146,6 +155,16 @@ if(UNIX)
                 srv_UtilServer
                 algo_LabelPropagation
                 algo_LabelPropagationGPU)
+
+        add_executable(srv_UtilServerTest_ConnectedComponentGPU
+                UtilServerTest_ConnectedComponentGPU.cpp)
+
+        target_link_libraries(srv_UtilServerTest_ConnectedComponentGPU
+                srv_UNIX_shm
+                srv_UNIX_msg
+                srv_UtilServer
+                algo_ConnectedComponent
+                algo_ConnectedComponentGPU)
     ENDIF(CUDA_FOUND)
 
     add_executable(srv_UtilServerTest_BellmanFord
@@ -174,6 +193,15 @@ if(UNIX)
             srv_UNIX_msg
             srv_UtilServer
             algo_PageRank)
+
+    add_executable(srv_UtilServerTest_ConnectedComponent
+            UtilServerTest_ConnectedComponent.cpp)
+
+    target_link_libraries(srv_UtilServerTest_ConnectedComponent
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilServer
+            algo_ConnectedComponent)
 
     add_executable(srv_UtilServerTest_JumpIteration
             UtilServerTest_JumpIteration.cpp)
