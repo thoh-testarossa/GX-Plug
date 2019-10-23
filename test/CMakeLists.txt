@@ -86,6 +86,15 @@ if(CUDA_FOUND)
             core_Graph
             core_MessageSet
             core_GraphUtil)
+
+    add_executable(algo_LabelPropagationGPUTest
+            LabelPropagationGPUTest.cpp)
+
+    target_link_libraries(algo_LabelPropagationGPUTest
+            algo_LabelPropagationGPU
+            core_Graph
+            core_MessageSet
+            core_GraphUtil)
 endif(CUDA_FOUND)
 
 if(UNIX)
@@ -127,6 +136,16 @@ if(UNIX)
                 srv_UtilServer
                 algo_PageRank
                 algo_PageRankGPU)
+
+        add_executable(srv_UtilServerTest_LabelPropagationGPU
+                UtilServerTest_LabelPropagationGPU.cpp)
+
+        target_link_libraries(srv_UtilServerTest_LabelPropagationGPU
+                srv_UNIX_shm
+                srv_UNIX_msg
+                srv_UtilServer
+                algo_LabelPropagation
+                algo_LabelPropagationGPU)
     ENDIF(CUDA_FOUND)
 
     add_executable(srv_UtilServerTest_BellmanFord

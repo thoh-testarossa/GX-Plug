@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     std::vector<Vertex> vSet = std::vector<Vertex>();
     std::vector<Edge> eSet = std::vector<Edge>();
 
-    std::ifstream Gin("../../data/testGraph4000000.txt");
+    std::ifstream Gin("../../data/testGraph100000.txt");
     if(!Gin.is_open())
     {
         std::cout << "Error! File testGraph.txt not found!" << std::endl;
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    std::cout << "result" << std::endl;
+    std::cout << "===========result===========" << std::endl;
     //result check
     for(int i = 0; i < vCount; i++)
     {

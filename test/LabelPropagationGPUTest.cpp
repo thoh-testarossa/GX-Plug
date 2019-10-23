@@ -1,8 +1,7 @@
 //
-// Created by cave-g-f on 2019-05-24.
+// Created by cave-g-f on 10/19/19.
 //
-
-#include "../algo/LabelPropagation/LabelPropagation.h"
+#include "../algo/LabelPropagation/LabelPropagationGPU.h"
 
 #include <iostream>
 #include <fstream>
@@ -10,7 +9,7 @@
 int main()
 {
     //Read the Graph
-    std::ifstream Gin("../../data/testGraph2000000.txt");
+    std::ifstream Gin("../../data/testGraph100000.txt");
     if(!Gin.is_open()) {std::cout << "Error! File testGraph.txt not found!" << std::endl; return 1; }
 
     int vCount, eCount;
@@ -30,7 +29,6 @@ int main()
 
     Gin.close();
 
-    auto executor = LabelPropagation<LPA_Value, LPA_MSG>();
+    auto executor = LabelPropagationGPU<LPA_Value, LPA_MSG>();
     executor.ApplyD(test, initVList, 1);
 }
-

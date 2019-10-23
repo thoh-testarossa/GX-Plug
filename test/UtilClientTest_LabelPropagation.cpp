@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
     std::vector<Vertex> vSet = std::vector<Vertex>();
     std::vector<Edge> eSet = std::vector<Edge>();
 
-    std::ifstream Gin("testGraph.txt");
+    std::ifstream Gin("../../data/testGraph4000000.txt");
     if(!Gin.is_open())
     {
         std::cout << "Error! File testGraph.txt not found!" << std::endl;
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
     std::cout << "Init finished" << std::endl;
     //Test end
 
-    while(iterCount < 100)
+    while(iterCount < 50)
     {
         //Test
         std::cout << "Processing at iter " << ++iterCount << std::endl;
@@ -162,6 +162,8 @@ int main(int argc, char *argv[])
             futList[i].get();
 
         std::cout << "merge the data" << std::endl;
+
+        auto start = std::chrono::system_clock::now();
 
         //Retrieve data
         for(int i = 0; i < nodeCount; i++)
@@ -200,6 +202,11 @@ int main(int argc, char *argv[])
             clientVec.at(i).disconnect();
         }
 
+        auto mergeEnd = std::chrono::system_clock::now();
+
+        std::cout << "graph merge time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count() << std::endl;
+
+
         for(int i = 0; i < vCount; i++)
         {
             if(maxLabelCnt.at(i).second != 0)
@@ -217,7 +224,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    std::cout << "result" << std::endl;
+    std::cout << "=========result=======" << std::endl;
     //result check
     for(int i = 0; i < vCount; i++)
     {

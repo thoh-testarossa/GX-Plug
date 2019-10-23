@@ -1,20 +1,21 @@
 //
-// Created by Thoh Testarossa on 2019-03-12
+// Created by cave-g-f on 2019-10-22
 //
 
 #pragma once
 
-#ifndef GRAPH_ALGO_BELLMANFORDGPU_H
-#define GRAPH_ALGO_BELLMANFORDGPU_H
+#ifndef GRAPH_ALGO_LABELPROPAGATIONGPU_H
+#define GRAPH_ALGO_LABELPROPAGATIONGPU_H
 
-#include "BellmanFord.h"
+#include "LabelPropagation.h"
 #include "../../include/GPUconfig.h"
+#include "kernel_src/LabelPropagationGPU_kernel.h"
 
 template <typename VertexValueType, typename MessageValueType>
-class BellmanFordGPU : public BellmanFord<VertexValueType, MessageValueType>
+class LabelPropagationGPU : public LabelPropagation<VertexValueType, MessageValueType>
 {
 public:
-    BellmanFordGPU();
+    LabelPropagationGPU();
 
     void Init(int vCount, int eCount, int numOfInitV) override;
     void GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) override;
@@ -24,43 +25,34 @@ public:
     int MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues) override;
     int MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues) override;
 
+    void InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount) override ;
+
 protected:
     int vertexLimit;
     int mPerMSGSet;
     int ePerEdgeSet;
 
-    int *initVSet;
-    int *d_initVSet;
+    LPA_Value *d_vValueSet;        //limit size = vertexLimit
 
-    VertexValueType *vValueSet;
-    double *d_vValueSet;
+    LPA_MSG *mValueSet;
+    LPA_MSG *d_mValueSet; //limist size = max(mPerMSGSet, ePerEdgeSet)
 
-    MessageValueType *mValueTable;
+    Vertex *d_vSet; //limit size = vertexLimit
+    Edge *d_eGSet;  //limit size = ePerEdgeSet
 
-    int *mInitVIndexSet;
-    int *d_mInitVIndexSet;
-    int *mDstSet;
-    int *d_mDstSet;
-    MessageValueType *mValueSet;
-    double *d_mValueSet;
+    LPA_MSG *d_mTransformedMergedMSGValueSet; //limist size = max(mPerMSGSet, ePerEdgeSet)
 
-    Vertex *d_vSet;
-    Edge *d_eGSet;
+    int *d_offsetInValues; //limist size = vertexLimist
 
-    MessageValueType *mMergedMSGValueSet;
-    unsigned long long int *mTransformedMergedMSGValueSet;
-    unsigned long long int *d_mTransformedMergedMSGValueSet;
 
 private:
     auto MSGGenMerge_GPU_MVCopy(Vertex *d_vSet, const Vertex *vSet,
-                                double *d_vValues, const double *vValues,
-                                unsigned long long int *d_mTransformedMergedMSGValueSet,
-                                unsigned long long int *mTransformedMergedMSGValueSet,
-                                int vGCount, int numOfInitV);
+                                LPA_Value *d_vValues, const LPA_Value *vValues,
+                                LPA_MSG *d_mTransformedMergedMSGValueSet,
+                                LPA_MSG *mTransformedMergedMSGValueSet,
+                                int vGCount, int eGCount);
 
-    auto MSGApply_GPU_VVCopy(Vertex *d_vSet, const Vertex *vSet,
-                             double *d_vValues, const double *vValues,
-                             int vGCount, int numOfInitV);
+    auto MSGApply_GPU_VVCopy(LPA_Value *d_vValues, LPA_Value *vValues, int *d_offsetInValues, int vGCount, int eGCount);
 };
 
-#endif //GRAPH_ALGO_BELLMANFORDGPU_H
+#endif //GRAPH_ALGO_LabelPropagationGPU_H
