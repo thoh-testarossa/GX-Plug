@@ -99,7 +99,7 @@ if(CUDA_FOUND)
     add_executable(algo_ConnectedComponentGPUTest
             ConnectedComponentGPUTest.cpp)
 
-    target_link_libraries(algo_PageRankGPUTest
+    target_link_libraries(algo_ConnectedComponentGPUTest
             algo_ConnectedComponentGPU
             core_Graph
             core_MessageSet
