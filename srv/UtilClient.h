@@ -10,7 +10,7 @@
 #include "../core/GraphUtil.h"
 #include "../srv/UNIX_shm.h"
 #include "../srv/UNIX_msg.h"
-#include "UNIX_macro.h"
+#include "../include/UNIX_macro.h"
 
 template <typename VertexValueType, typename MessageValueType>
 class UtilClient

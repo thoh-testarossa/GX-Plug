@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
     int *initVSet = new int [numOfInitV];
     double *vValues = new double [vCount * numOfInitV];
     bool *filteredV = new bool [vCount];
+    int *timestamp = new int [vCount];
 
     std::vector<Vertex> vSet = std::vector<Vertex>();
     std::vector<Edge> eSet = std::vector<Edge>();
@@ -75,6 +76,8 @@ int main(int argc, char *argv[])
     for(int i = 0; i < numOfInitV; i++) vValues[initVSet[i] * numOfInitV + i] = 0;
 
     for(int i = 0; i < vCount; i++) filteredV[i] = false;
+
+    for(int i = 0; i < vCount; i++) timestamp[i] = -1;
 
     for(int i = 0; i < vCount; i++) vSet.emplace_back(i, false, -1);
     for(int i = 0; i < numOfInitV; i++)
@@ -152,7 +155,7 @@ int main(int argc, char *argv[])
             eSetOffset += partitionE[j];
         }
 
-        chk = clientVec.at(i).transfer(vValues, &vSet[0], &eSet[eSetOffset], initVSet, filteredV, vCount);
+        chk = clientVec.at(i).transfer(vValues, &vSet[0], &eSet[eSetOffset], initVSet, filteredV, timestamp);
 
         if(chk == -1)
         {

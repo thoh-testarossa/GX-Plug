@@ -89,7 +89,7 @@ int UtilClient<VertexValueType, MessageValueType>::transfer(VertexValueType *vVa
         memcpy(this->eSet, eSet, this->eCount * sizeof(Edge));
         memcpy(this->initVSet, initVSet, this->numOfInitV * sizeof(int));
         memcpy(this->filteredV, filteredV, this->vCount * sizeof(bool));
-        memcpy(this->timestamp, &timestamp, this->vCount * sizeof(int));
+        memcpy(this->timestamp, timestamp, this->vCount * sizeof(int));
         return 0;
     }
     else return -1;
