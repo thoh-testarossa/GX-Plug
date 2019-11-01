@@ -10,7 +10,7 @@
 #include "../core/GraphUtil.h"
 #include "../srv/UNIX_shm.h"
 #include "../srv/UNIX_msg.h"
-#include "../include/UNIX_marco.h"
+#include "UNIX_macro.h"
 
 template <typename GraphUtilType, typename VertexValueType, typename MessageValueType>
 class UtilServer
@@ -31,7 +31,7 @@ public:
 
     int *initVSet;
     bool *filteredV;
-    int *filteredVCount;
+    int *timestamp;
     VertexValueType *vValues;
     MessageValueType *mValues;
     Vertex *vSet;
@@ -40,7 +40,7 @@ public:
 private:
     UNIX_shm initVSet_shm;
     UNIX_shm filteredV_shm;
-    UNIX_shm filteredVCount_shm;
+    UNIX_shm timestamp_shm;
     UNIX_shm vValues_shm;
     UNIX_shm mValues_shm;
     UNIX_shm vSet_shm;
