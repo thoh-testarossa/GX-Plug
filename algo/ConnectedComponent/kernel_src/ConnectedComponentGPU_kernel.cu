@@ -44,18 +44,13 @@ __global__ void MSGGenMerge_kernel(int *mValues,
 		if(vSet[eSet[tid].src].isActive) vID = eSet[tid].dst;
 
 		if(vID != -1)
-		{
-			for(int i = 0; i < numOfInitV; i++)
-				atomicMin(&mValues[vID], vValues[eSet[tid].src] + eSet[tid].weight);
-		}
-
-        if(vSet[eSet[tid].dst].isActive) vID = eSet[tid].src;
-
-        if(vID != -1)
-        {
-            for(int i = 0; i < numOfInitV; i++)
-                atomicMin(&mValues[vID], vValues[eSet[tid].dst] + eSet[tid].weight);
-        }
+			atomicMin(&mValues[vID], vValues[eSet[tid].src]);
+		
+		vID = -1;
+		if(vSet[eSet[tid].dst].isActive) vID = eSet[tid].src;
+		
+		if(vID != -1)
+			atomicMin(&mValues[vID], vValues[eSet[tid].dst]);
 	}
 }
 
