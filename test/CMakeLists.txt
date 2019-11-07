@@ -86,6 +86,15 @@ if(CUDA_FOUND)
             core_Graph
             core_MessageSet
             core_GraphUtil)
+
+    add_executable(algo_ConnectedComponentGPUTest
+            ConnectedComponentGPUTest.cpp)
+
+    target_link_libraries(algo_ConnectedComponentGPUTest
+            algo_ConnectedComponentGPU
+            core_Graph
+            core_MessageSet
+            core_GraphUtil)
 endif(CUDA_FOUND)
 
 if(UNIX)

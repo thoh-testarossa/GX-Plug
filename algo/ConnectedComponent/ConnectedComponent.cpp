@@ -101,6 +101,12 @@ ConnectedComponent<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCo
             if(mValues[eSet[i].dst] > vValues[eSet[i].src])
                 mValues[eSet[i].dst] = vValues[eSet[i].src];
         }
+
+        if(vSet[eSet[i].dst].isActive)
+        {
+            if(mValues[eSet[i].src] > vValues[eSet[i].dst])
+                mValues[eSet[i].src] = vValues[eSet[i].dst];
+        }
     }
 
     return vCount;
