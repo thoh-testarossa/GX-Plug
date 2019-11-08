@@ -50,7 +50,8 @@ __global__ void MSGGenMerge_kernel(PRA_MSG *mTransformdMergedMSGValueSet,
 			mTransformdMergedMSGValueSet[mValueIndex].destVId = eSet[tid].dst;
 			mTransformdMergedMSGValueSet[mValueIndex].rank = vValues[(srcVid << 1) + 1] * eSet[tid].weight;
 			
-			//set the Active flag to clear the delta in vValue before array_apply op
+			//set the needMerge flag to clear the delta in vValue before array_apply op
+			vSet[eSet[tid].dst].needMerge = true;
 			vSet[eSet[tid].dst].isActive = true;
 		}
 		else
