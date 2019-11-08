@@ -29,7 +29,7 @@ int main()
     Gin.close();
 
     std::vector<int> initVList = std::vector<int>();
-    initVList.push_back(1);
+    initVList.push_back(-1);
 
     PageRank<std::pair<double, double>, PRA_MSG> executor = PageRank<std::pair<double, double>, PRA_MSG>();
     //executor.Apply(test, initVList);

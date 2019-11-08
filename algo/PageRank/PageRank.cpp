@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <algorithm>
 
 template <typename VertexValueType, typename MessageValueType>
 PageRank<VertexValueType, MessageValueType>::PageRank()
@@ -163,24 +164,54 @@ void PageRank<VertexValueType, MessageValueType>::Init(int vCount, int eCount, i
 template <typename VertexValueType, typename MessageValueType>
 void PageRank<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList)
 {
-    for(int i = 0; i < initVList.size(); i++)
+    bool personalized = true;
+
+    if(initVList.at(0) == INVALID_INITV_INDEX)
     {
-        g.vList.at(initVList.at(i)).initVIndex = initVList.at(i);
-        g.vList.at(initVList.at(i)).isActive = true;
+        personalized = false;
+    }
+
+    if(personalized)
+    {
+        for(int i = 0; i < initVList.size(); i++)
+        {
+            g.vList.at(initVList.at(i)).initVIndex = initVList.at(i);
+            g.vList.at(initVList.at(i)).isActive = true;
+        }
+    }
+    else
+    {
+        for(int i = 0; i < g.vCount; i++)
+        {
+            g.vList.at(i).isActive = true;
+        }
     }
 
     //vValues init
     g.verticesValue.reserve(g.vCount);
     g.verticesValue.assign(g.vCount, VertexValueType(0.0, 0.0));
-    for(int i = 0; i < g.vList.size(); i++)
+
+    if(personalized)
     {
-        if(g.vList.at(i).initVIndex == INVALID_INITV_INDEX)
+        for(int i = 0; i < g.vList.size(); i++)
         {
-            g.verticesValue.at(i) = VertexValueType(0.0, 0.0);
+            if(g.vList.at(i).initVIndex == INVALID_INITV_INDEX)
+            {
+                g.verticesValue.at(i) = VertexValueType(0.0, 0.0);
+            }
+            else
+            {
+                g.verticesValue.at(i) = VertexValueType(1.0, 1.0);
+            }
         }
-        else
+
+    }
+    else
+    {
+        for(int i = 0; i < g.vCount; i++)
         {
-            g.verticesValue.at(i) = VertexValueType(1.0, 1.0);
+            auto newRank = (this->resetProb);
+            g.verticesValue.at(i) = VertexValueType(newRank, newRank);
         }
     }
 
@@ -211,6 +242,11 @@ void PageRank<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueTy
     //init
     g.verticesValue.assign(g.vCount, VertexValueType(0.0, 0.0));
 
+    for(int i = 0; i < g.vCount; i++)
+    {
+        g.vList.at(i).isActive = false;
+    }
+
     double rankSum = 0.0;
 
     //Merge graphs
@@ -222,7 +258,7 @@ void PageRank<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueTy
             {
                 if(!g.vList.at(i).isActive)
                 {
-                    g.vList.at(i).isActive |= subG.vList.at(i).isActive;
+                    g.vList.at(i).isActive = subG.vList.at(i).isActive;
                     g.verticesValue.at(i).first = subG.verticesValue.at(i).first;
                     g.verticesValue.at(i).second = subG.verticesValue.at(i).second;
                 }
@@ -235,6 +271,9 @@ void PageRank<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueTy
             {
                 g.verticesValue.at(i) = subG.verticesValue.at(i);
             }
+
+//            std::cout << i << " " << subG.verticesValue.at(i).first << " " << subG.verticesValue.at(i).second << std::endl;
+//            std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
         }
     }
 
@@ -243,13 +282,9 @@ void PageRank<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueTy
     {
         if(g.vList.at(i).isActive)
         {
-            auto oldRank = g.verticesValue.at(i).first;
-            g.verticesValue.at(i).first = oldRank + g.verticesValue.at(i).second;
-            g.verticesValue.at(i).second = g.verticesValue.at(i).first - oldRank;
+            g.verticesValue.at(i).first += g.verticesValue.at(i).second;
         }
     }
-
-    //normalizeGraph(g);
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -313,8 +348,12 @@ void PageRank<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> 
 
     int iterCount = 0;
 
-    while(iterCount < 10)
+    bool isActive = true;
+
+    while(isActive)
     {
+        isActive = false;
+
         std::cout << "iterCount: " << iterCount << std::endl;
         auto start = std::chrono::system_clock::now();
         auto subGraphSet = this->DivideGraphByEdge(g, partitionCount);
@@ -330,16 +369,35 @@ void PageRank<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> 
         iterCount++;
         auto end = std::chrono::system_clock::now();
 
+        for(int i = 0; i < g.vCount; i++)
+        {
+            if(g.vList.at(i).isActive)
+            {
+                isActive = true;
+                break;
+            }
+        }
+
         //test
-        // for(int i = 0; i < g.vCount; i++)
-        // {
-        //     //std::cout << "outdegree: " << g.vList.at(i).outDegree << std::endl;
-        //     std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
-        // }
+//        for(int i = 0; i < g.vCount; i++)
+//        {
+//            //std::cout << "outdegree: " << g.vList.at(i).outDegree << std::endl;
+//            std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
+//        }
 
         //time test
         std::cout << "merge time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - mergeGraphStart).count() << std::endl;
     }
+
+    //test
+//    std::vector<sortValue> sortedArray;
+//    sortedArray.reserve(g.vCount);
+//    for(int i = 0; i < g.vCount; i++)
+//    {
+//        sortedArray.emplace_back(sortValue(i, g.verticesValue.at(i).first));
+//    }
+//
+//    std::sort(sortedArray.begin(), sortedArray.end(), cmp);
 
     for(int i = 0; i < g.vCount; i++)
     {
@@ -347,7 +405,18 @@ void PageRank<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> 
         std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
     }
 
+    //test
+//    for(int i = 0; i < g.vCount; i++)
+//    {
+//        std::cout << sortedArray.at(i).id << " " << sortedArray.at(i).rank << std::endl;
+//    }
+
 
     Free();
 }
+
+//template<typename VertexValueType, typename MessageValueType>
+//bool PageRank<VertexValueType, MessageValueType>::cmp(sortValue &v1, sortValue &v2) {
+//    return v1.rank < v2.rank;
+//}
 
