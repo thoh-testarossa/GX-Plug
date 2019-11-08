@@ -83,7 +83,6 @@ public:
 protected:
     int *offsetInMValuesOfEachV;
 
-private:
     static bool labelPropagationEdgeCmp(Edge &e1, Edge &e2)
     {
         return e1.dst < e2.dst;

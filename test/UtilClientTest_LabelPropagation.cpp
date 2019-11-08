@@ -54,11 +54,12 @@ int main(int argc, char *argv[])
     int *initVSet = new int [numOfInitV];
     LPA_Value *vValues = new LPA_Value [eCount];
     bool *filteredV = new bool [vCount];
+    int *timestamp = new int [vCount];
 
     std::vector<Vertex> vSet = std::vector<Vertex>();
     std::vector<Edge> eSet = std::vector<Edge>();
 
-    std::ifstream Gin("testGraph.txt");
+    std::ifstream Gin("../../data/testGraph4000000.txt");
     if(!Gin.is_open())
     {
         std::cout << "Error! File testGraph.txt not found!" << std::endl;
@@ -86,6 +87,10 @@ int main(int argc, char *argv[])
 
     for(int i = 0; i < vCount; i++) vSet.emplace_back(i, false, -1);
 
+    for(int i = 0; i < vCount; i++) filteredV[i] = false;
+
+    for(int i = 0; i < vCount; i++) timestamp[i] = -1;
+
     for(int i = 0; i < eCount; i++)
     {
         int src, dst;
@@ -111,7 +116,7 @@ int main(int argc, char *argv[])
             return 2;
         }
 
-        chk = clientVec.at(i).transfer(vValues, &vSet[0], &eSet[(i * eCount) / nodeCount], initVSet, filteredV, vCount);
+        chk = clientVec.at(i).transfer(vValues, &vSet[0], &eSet[(i * eCount) / nodeCount], initVSet, filteredV, timestamp);
         if(chk == -1)
         {
             std::cout << "Parameter illegal" << std::endl;
@@ -137,7 +142,7 @@ int main(int argc, char *argv[])
     std::cout << "Init finished" << std::endl;
     //Test end
 
-    while(iterCount < 100)
+    while(iterCount < 50)
     {
         //Test
         std::cout << "Processing at iter " << ++iterCount << std::endl;
@@ -162,6 +167,8 @@ int main(int argc, char *argv[])
             futList[i].get();
 
         std::cout << "merge the data" << std::endl;
+
+        auto start = std::chrono::system_clock::now();
 
         //Retrieve data
         for(int i = 0; i < nodeCount; i++)
@@ -200,6 +207,11 @@ int main(int argc, char *argv[])
             clientVec.at(i).disconnect();
         }
 
+        auto mergeEnd = std::chrono::system_clock::now();
+
+        std::cout << "graph merge time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count() << std::endl;
+
+
         for(int i = 0; i < vCount; i++)
         {
             if(maxLabelCnt.at(i).second != 0)
@@ -217,7 +229,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    std::cout << "result" << std::endl;
+    std::cout << "=========result=======" << std::endl;
     //result check
     for(int i = 0; i < vCount; i++)
     {

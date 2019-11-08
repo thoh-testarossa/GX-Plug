@@ -1,51 +1,22 @@
 //
-// Created by cave-g-f on 2019-9-21
+// Created by cave-g-f on 10/15/19.
 //
 
-#ifndef GRAPH_ALGO_PAGERANK_H
-#define GRAPH_ALGO_PAGERANK_H
+#pragma once
 
-#include "../../core/GraphUtil.h"
+#ifndef GRAPH_ALGO_JUMPITERATION_H
+#define GRAPH_ALGO_JUMPITERATION_H
 
-class PRA_MSG
-{
-public:
-    PRA_MSG():PRA_MSG(-1, -1)
-    {
-
-    }
-
-    PRA_MSG(int destVId, double rank)
-    {
-        this->destVId = destVId;
-        this->rank = rank;
-    }
-
-    int destVId;
-    double rank;
-};
-
-//test
-//struct sortValue
-//{
-//    sortValue()
-//    {
-//
-//    }
-//    sortValue(int id , double rank)
-//    {
-//        this->id = id;
-//        this->rank = rank;
-//    }
-//    int id;
-//    double rank;
-//};
+#include <queue>
+#include "../core/Graph.h"
+#include "../core/GraphUtil.h"
 
 template <typename VertexValueType, typename MessageValueType>
-class PageRank : public GraphUtil<VertexValueType, MessageValueType>
+class JumpIteration : public GraphUtil<VertexValueType, MessageValueType>
 {
 public:
-    PageRank();
+
+    JumpIteration();
 
     int MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertice, const MessageSet<MessageValueType> &mSet) override;
     int MSGGenMerge(const Graph<VertexValueType> &g, const std::vector<int> &initVSet, const std::set<int> &activeVertice, MessageSet<MessageValueType> &mSet) override;
@@ -58,27 +29,20 @@ public:
                     std::set<int> &activeVertices, const std::vector<std::set<int>> &activeVerticeSet,
                     const std::vector<int> &initVList) override;
 
-    std::vector<Graph<VertexValueType>> DivideGraphByEdge(const Graph<VertexValueType> &g, int partitionCount);
-
     void Init(int vCount, int eCount, int numOfInitV) override;
     void GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) override;
     void Deploy(int vCount, int eCount, int numOfInitV) override;
     void Free() override;
 
-    void ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices);
-    void Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList);
+    void InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount) override;
 
-    void ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList, int partitionCount);
+    int loadIterationInfoFile(int vCount);
 
-    void InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount);
-
-    //test
-//    static bool cmp(sortValue &v1, sortValue &v2);
+    int iterationCount;
+    std::queue<int> jumpIteration;
 
 protected:
     int numOfInitV;
-    double resetProb;
-    double deltaThreshold;
 };
 
-#endif //GRAPH_ALGO_PAGERANK_H
+#endif //GRAPH_ALGO_JUMPITERATION_H

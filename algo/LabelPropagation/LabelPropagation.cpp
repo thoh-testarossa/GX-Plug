@@ -285,11 +285,9 @@ void LabelPropagation<VertexValueType, MessageValueType>::ApplyStep(Graph<Vertex
     mMergedSet.mSet.clear();
     auto start = std::chrono::system_clock::now();
 
-    std::cout << "msg merge..." << std::endl;
     MSGGenMerge(g, initVSet, activeVertices, mMergedSet);
     auto mergeEnd = std::chrono::system_clock::now();
 
-    std::cout << "msg apply..." << std::endl;
     MSGApply(g, initVSet, activeVertices, mMergedSet);
     auto applyEnd = std::chrono::system_clock::now();
 }
@@ -336,7 +334,7 @@ void LabelPropagation<VertexValueType, MessageValueType>::ApplyD(Graph<VertexVal
 
     int iterCount = 0;
 
-    while(iterCount < 100)
+    while(iterCount < 60)
     {
         std::cout << "iterCount: " << iterCount << std::endl;
         auto start = std::chrono::system_clock::now();

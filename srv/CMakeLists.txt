@@ -29,7 +29,9 @@ if(UNIX)
                 core_Graph
                 core_GraphUtil
                 algo_PageRankGPU_kernel
-                algo_BellmanFordGPU_kernel)        
+                algo_ConnectedComponentGPU_kernel
+                algo_BellmanFordGPU_kernel
+                algo_LabelPropagationGPU_kernel)
     else()
         add_library(srv_UtilServer
                 UtilServer.h

@@ -10,7 +10,7 @@
 int main()
 {
     //Read the Graph
-    std::ifstream Gin("testGraph.txt");
+    std::ifstream Gin("../../data/testGraph100000.txt");
     if(!Gin.is_open()) {std::cout << "Error! File testGraph.txt not found!" << std::endl; return 1; }
 
     int vCount, eCount;
@@ -29,13 +29,10 @@ int main()
     Gin.close();
 
     std::vector<int> initVList = std::vector<int>();
-    for(int i = 0; i < vCount; i++)
-    {
-        initVList.push_back(i);
-    }
+    initVList.push_back(-1);
 
     PageRank<std::pair<double, double>, PRA_MSG> executor = PageRank<std::pair<double, double>, PRA_MSG>();
     //executor.Apply(test, initVList);
-    executor.ApplyD(test, initVList, 4);
+    executor.ApplyD(test, initVList, 1);
 }
 

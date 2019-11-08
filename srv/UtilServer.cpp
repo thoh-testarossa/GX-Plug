@@ -6,6 +6,7 @@
 #include "../util/TIsExtended.hpp"
 #include <string>
 #include <iostream>
+#include <chrono>
 
 template <typename GraphUtilType, typename VertexValueType, typename MessageValueType>
 UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
@@ -32,7 +33,7 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
     this->eSet = nullptr;
     this->initVSet = nullptr;
     this->filteredV = nullptr;
-    this->filteredVCount = nullptr;
+    this->timestamp = nullptr;
 
     if(this->isLegal)
     {
@@ -40,12 +41,13 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
 
         this->executor = GraphUtilType();
         this->executor.Init(vCount, eCount, numOfInitV);
+        this->executor.partitionId = nodeNo;
         this->vValues_shm = UNIX_shm();
         this->vSet_shm = UNIX_shm();
         this->eSet_shm = UNIX_shm();
         this->initVSet_shm = UNIX_shm();
         this->filteredV_shm = UNIX_shm();
-        this->filteredVCount_shm = UNIX_shm();
+        this->timestamp_shm = UNIX_shm();
 
         this->server_msq = UNIX_msg();
         this->init_msq = UNIX_msg();
@@ -76,8 +78,8 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
                 this->vCount * sizeof(bool),
                 0666);
         if(chk != -1)
-            chk = this->filteredVCount_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (FILTEREDVCOUNT_SHM << SHM_OFFSET)),
-                sizeof(int),
+            chk = this->timestamp_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (TIMESTAMP_SHM << SHM_OFFSET)),
+                this->vCount * sizeof(int),
                 0666);
 
         if(chk != -1)
@@ -98,7 +100,7 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
             this->eSet_shm.attach(0666);
             this->initVSet_shm.attach(0666);
             this->filteredV_shm.attach(0666);
-            this->filteredVCount_shm.attach(0666);
+            this->timestamp_shm.attach(0666);
 
             this->vValues = (VertexValueType *) this->vValues_shm.shmaddr;
             this->mValues = (MessageValueType *) this->mValues_shm.shmaddr;
@@ -106,7 +108,7 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
             this->eSet = (Edge *) this->eSet_shm.shmaddr;
             this->initVSet = (int *) this->initVSet_shm.shmaddr;
             this->filteredV = (bool *) this->filteredV_shm.shmaddr;
-            this->filteredVCount = (int *) this->filteredVCount_shm.shmaddr;
+            this->timestamp = (int *) this->timestamp_shm.shmaddr;
 
             this->init_msq.send("initiated", (INIT_MSG_TYPE << MSG_TYPE_OFFSET), 256);
 
@@ -138,7 +140,7 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::~UtilServer()
     this->eSet = nullptr;
     this->initVSet = nullptr;
     this->filteredV = nullptr;
-    this->filteredVCount = nullptr;
+    this->timestamp = nullptr;
 
     this->vValues_shm.control(IPC_RMID);
     this->mValues_shm.control(IPC_RMID);
@@ -146,7 +148,7 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::~UtilServer()
     this->eSet_shm.control(IPC_RMID);
     this->initVSet_shm.control(IPC_RMID);
     this->filteredV_shm.control(IPC_RMID);
-    this->filteredVCount_shm.control(IPC_RMID);
+    this->timestamp_shm.control(IPC_RMID);
 
     this->server_msq.control(IPC_RMID);
     this->init_msq.control(IPC_RMID);
@@ -173,13 +175,15 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
         cmd = msgp;
         if(std::string("execute") == cmd)
         {
+            auto start = std::chrono::system_clock::now();
             int msgCount = this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
-
-            //std::cout << "apply array" << std::endl;
-
+            auto mergeEnd = std::chrono::system_clock::now();
             int avCount = this->executor.MSGApply_array(this->vCount, msgCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+            auto applyEnd = std::chrono::system_clock::now();
 
-            //std::cout << "apply end" << std::endl;
+            //test
+            std::cout << "msg gen time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count() << std::endl;
+            std::cout << "apply time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(applyEnd - mergeEnd).count() << std::endl;
 
             this->server_msq.send("finished", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
         }

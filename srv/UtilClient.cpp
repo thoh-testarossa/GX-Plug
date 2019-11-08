@@ -20,7 +20,7 @@ UtilClient<VertexValueType, MessageValueType>::UtilClient(int vCount, int eCount
     this->eSet_shm = UNIX_shm();
     this->initVSet_shm = UNIX_shm();
     this->filteredV_shm = UNIX_shm();
-    this->filteredVCount_shm = UNIX_shm();
+    this->timestamp_shm = UNIX_shm();
 
     this->server_msq = UNIX_msg();
     this->client_msq = UNIX_msg();
@@ -31,7 +31,7 @@ UtilClient<VertexValueType, MessageValueType>::UtilClient(int vCount, int eCount
     this->eSet = nullptr;
     this->initVSet = nullptr;
     this->filteredV = nullptr;
-    this->filteredVCount = nullptr;
+    this->timestamp = nullptr;
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -45,7 +45,7 @@ int UtilClient<VertexValueType, MessageValueType>::connect()
     if(ret != -1) ret = this->eSet_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (ESET_SHM << SHM_OFFSET)));
     if(ret != -1) ret = this->initVSet_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (INITVSET_SHM << SHM_OFFSET)));
     if(ret != -1) ret = this->filteredV_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (FILTEREDV_SHM << SHM_OFFSET)));
-    if(ret != -1) ret = this->filteredVCount_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (FILTEREDVCOUNT_SHM << SHM_OFFSET)));
+    if(ret != -1) ret = this->timestamp_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (TIMESTAMP_SHM << SHM_OFFSET)));
 
     if(ret != -1) ret = this->server_msq.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (SRV_MSG_TYPE << MSG_TYPE_OFFSET)));
     if(ret != -1) ret = this->client_msq.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (CLI_MSG_TYPE << MSG_TYPE_OFFSET)));
@@ -58,7 +58,7 @@ int UtilClient<VertexValueType, MessageValueType>::connect()
         this->eSet_shm.attach(0666);
         this->initVSet_shm.attach(0666);
         this->filteredV_shm.attach(0666);
-        this->filteredVCount_shm.attach(0666);
+        this->timestamp_shm.attach(0666);
 
         this->vValues = (VertexValueType *)this->vValues_shm.shmaddr;
         this->mValues = (MessageValueType *)this->mValues_shm.shmaddr;
@@ -66,14 +66,14 @@ int UtilClient<VertexValueType, MessageValueType>::connect()
         this->eSet = (Edge *)this->eSet_shm.shmaddr;
         this->initVSet = (int *)this->initVSet_shm.shmaddr;
         this->filteredV = (bool *)this->filteredV_shm.shmaddr;
-        this->filteredVCount = (int *)this->filteredVCount_shm.shmaddr;
+        this->timestamp = (int *)this->timestamp_shm.shmaddr;
     }
 
     return ret;
 }
 
 template <typename VertexValueType, typename MessageValueType>
-int UtilClient<VertexValueType, MessageValueType>::transfer(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int *initVSet, bool *filteredV, int filteredVCount)
+int UtilClient<VertexValueType, MessageValueType>::transfer(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int *initVSet, bool *filteredV, int *timestamp)
 {
     if(this->vCount > 0 && this->eCount > 0 && this->numOfInitV > 0)
     {
@@ -82,14 +82,14 @@ int UtilClient<VertexValueType, MessageValueType>::transfer(VertexValueType *vVa
         if(this->eSet == nullptr) return -1;
         if(this->initVSet == nullptr) return -1;
         if(this->filteredV == nullptr) return -1;
-        if(this->filteredVCount == nullptr) return -1;
+        if(this->timestamp == nullptr) return -1;
 
         memcpy(this->vValues, vValues, this->vCount * this->numOfInitV * sizeof(VertexValueType));
         memcpy(this->vSet, vSet, this->vCount * sizeof(Vertex));
         memcpy(this->eSet, eSet, this->eCount * sizeof(Edge));
         memcpy(this->initVSet, initVSet, this->numOfInitV * sizeof(int));
         memcpy(this->filteredV, filteredV, this->vCount * sizeof(bool));
-        memcpy(this->filteredVCount, &filteredVCount, sizeof(int));
+        memcpy(this->timestamp, timestamp, this->vCount * sizeof(int));
         return 0;
     }
     else return -1;
@@ -141,7 +141,7 @@ void UtilClient<VertexValueType, MessageValueType>::disconnect()
     this->eSet_shm.detach();
     this->initVSet_shm.detach();
     this->filteredV_shm.detach();
-    this->filteredVCount_shm.detach();
+    this->timestamp_shm.detach();
 
     this->vValues = nullptr;
     this->mValues = nullptr;
@@ -149,7 +149,7 @@ void UtilClient<VertexValueType, MessageValueType>::disconnect()
     this->eSet = nullptr;
     this->initVSet = nullptr;
     this->filteredV = nullptr;
-    this->filteredVCount = nullptr;
+    this->timestamp = nullptr;
 }
 
 template <typename VertexValueType, typename MessageValueType>

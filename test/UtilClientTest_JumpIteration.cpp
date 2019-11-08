@@ -1,6 +1,7 @@
 //
-// Created by Thoh Testarossa on 2019-04-06.
+// Created by cave-g-f on 10/16/19.
 //
+
 
 #include "../core/Graph.h"
 #include "../core/GraphUtil.h"
@@ -11,7 +12,9 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-
+#include <sstream>
+#include <string>
+#include <queue>
 #include <future>
 #include <cstring>
 
@@ -53,35 +56,18 @@ int main(int argc, char *argv[])
     std::vector<Vertex> vSet = std::vector<Vertex>();
     std::vector<Edge> eSet = std::vector<Edge>();
 
-    std::ifstream Gin("testGraph.txt");
-    if(!Gin.is_open())
-    {
-        std::cout << "Error! File testGraph.txt not found!" << std::endl;
-        return 4;
-    }
-
-    int tmp;
-    Gin >> tmp;
-    if(vCount != tmp)
-    {
-        std::cout << "Graph file doesn't match up UtilClient's parameter" << std::endl;
-        return 5;
-    }
-    Gin >> tmp;
-    if(eCount != tmp)
-    {
-        std::cout << "Graph file doesn't match up UtilClient's parameter" << std::endl;
-        return 5;
-    }
-
     for(int i = 0; i < vCount * numOfInitV; i++) vValues[i] = INT32_MAX  >> 1;
 
     //Easy init
+//    initVSet[0] = 1;
+//    initVSet[1] = 200004;
+//    initVSet[2] = 300007;
+//    initVSet[3] = 100002;
+
     initVSet[0] = 1;
-    initVSet[1] = 2;
-    initVSet[2] = 3;
-    initVSet[3] = 5;
-    initVSet[4] = 8;
+    initVSet[1] = 400002;
+    initVSet[2] = 800004;
+    initVSet[3] = 1200007;
     for(int i = 0; i < numOfInitV; i++) vValues[initVSet[i] * numOfInitV + i] = 0;
 
     for(int i = 0; i < vCount; i++) filteredV[i] = false;
@@ -95,12 +81,46 @@ int main(int argc, char *argv[])
         vSet.at(initVSet[i]).isActive = true;
     }
 
-    for(int i = 0; i < eCount; i++)
+    int partitionV[nodeCount];
+    int partitionE[nodeCount];
+
+    //read test file
+    std::string filePrefix = "../../data/testGraphPid";
+    std::string filePostfix = ".txt";
+
+    for(int i = 0; i < nodeCount; i++)
     {
-        int src, dst;
-        double weight;
-        Gin >> src >> dst >> weight;
-        eSet.emplace_back(src, dst, weight);
+        std::stringstream fileName;
+        fileName << filePrefix << i << filePostfix;
+
+        std::ifstream Gin(fileName.str());
+
+        if(!Gin.is_open()) {std::cout << "open file " << fileName.str() << "error!" << std::endl;}
+
+        Gin >> partitionV[i] >> partitionE[i];
+
+        for(int j = 0; j < partitionE[i]; j++)
+        {
+            int src, dst;
+            double weight;
+            Gin >> src >> dst >> weight;
+            eSet.emplace_back(src, dst, weight);
+        }
+
+        Gin.close();
+    }
+
+    //read iteration jump file
+    std::ifstream Gin("../../data/iterationJump400000/iterationJump400000.txt");
+    std::queue<int> iterationJump = std::queue<int>();
+
+    if(!Gin.is_open()) {std::cout << "open jump 400000 error!" << std::endl;}
+
+    while(!Gin.eof())
+    {
+        int iterationNum = 0;
+        Gin >> iterationNum;
+        iterationJump.push(iterationNum);
     }
 
     Gin.close();
@@ -108,7 +128,7 @@ int main(int argc, char *argv[])
     //Client Init Data Transfer
     auto clientVec = std::vector<UtilClient<double, double>>();
     for(int i = 0; i < nodeCount; i++)
-        clientVec.push_back(UtilClient<double, double>(vCount, ((i + 1) * eCount) / nodeCount - (i * eCount) / nodeCount, numOfInitV, i));
+        clientVec.push_back(UtilClient<double, double>(vCount, partitionE[i], numOfInitV, i));
     int chk = 0;
     for(int i = 0; i < nodeCount && chk != -1; i++)
     {
@@ -119,7 +139,14 @@ int main(int argc, char *argv[])
             return 2;
         }
 
-        chk = clientVec.at(i).transfer(vValues, &vSet[0], &eSet[(i * eCount) / nodeCount], initVSet, filteredV, timestamp);
+        int eSetOffset = 0;
+
+        for(int j = 0; j < i; j++)
+        {
+            eSetOffset += partitionE[j];
+        }
+
+        chk = clientVec.at(i).transfer(vValues, &vSet[0], &eSet[eSetOffset], initVSet, filteredV, timestamp);
 
         if(chk == -1)
         {
@@ -142,9 +169,7 @@ int main(int argc, char *argv[])
 
     while(isActive)
     {
-        //Test
         std::cout << "Processing at iter " << ++iterCount << std::endl;
-        //Test end
 
         for(int i = 0; i < vCount; i++) ret_AVCheckSet[i] = false;
 
@@ -183,12 +208,4 @@ int main(int argc, char *argv[])
     }
 
     for(int i = 0; i < nodeCount; i++) clientVec.at(i).shutdown();
-
-    //result check
-    for(int i = 0; i < vCount * numOfInitV; i++)
-    {
-        if(i % numOfInitV == 0) std::cout << i / numOfInitV << ": ";
-        std::cout << "(" << initVSet[i % numOfInitV] << " -> " << vValues[i] << ")";
-        if(i % numOfInitV == numOfInitV - 1) std::cout << std::endl;
-    }
 }
