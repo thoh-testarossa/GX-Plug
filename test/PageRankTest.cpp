@@ -33,6 +33,6 @@ int main()
 
     PageRank<std::pair<double, double>, PRA_MSG> executor = PageRank<std::pair<double, double>, PRA_MSG>();
     //executor.Apply(test, initVList);
-    executor.ApplyD(test, initVList, 1);
+    executor.ApplyD(test, initVList, 4);
 }
 

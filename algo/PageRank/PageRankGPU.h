@@ -33,16 +33,12 @@ protected:
     VertexValueType *vValueSet; //all value size = vCount
     double *d_vValueSet;        //limit size = vertexLimit
 
-    int *mDstSet;  //limist size = max(mPerMSGSet, ePerEdgeSet)
-    int *d_mDstSet;//limist size = max(mPerMSGSet, ePerEdgeSet)
     PRA_MSG *mValueSet;
     PRA_MSG *d_mValueSet; //limist size = max(mPerMSGSet, ePerEdgeSet)
 
     Vertex *d_vSet; //limit size = vertexLimit
     Edge *d_eGSet;  //limit size = ePerEdgeSet
 
-    PRA_MSG *mMergedMSGValueSet; //eCount
-    PRA_MSG *mTransformedMergedMSGValueSet; //limist size = max(mPerMSGSet, ePerEdgeSet)
     PRA_MSG *d_mTransformedMergedMSGValueSet; //limist size = max(mPerMSGSet, ePerEdgeSet)
 
 private:

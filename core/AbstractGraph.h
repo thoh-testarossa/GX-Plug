@@ -16,7 +16,6 @@ public:
 
     int vertexID;
     bool isActive;
-    bool needUpdate;
     int initVIndex;
     int outDegree;
     int inDegree;

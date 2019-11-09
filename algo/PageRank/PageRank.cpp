@@ -40,6 +40,17 @@ int PageRank<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType>
     //array form computation
     auto avCount = this->MSGApply_array(g.vCount, msgSize, &g.vList[0], 0, &initVSet[0], &g.verticesValue[0], mValues);
 
+    //test
+//    std::cout << "=============apply info================" << std::endl;
+//    for(int i = 0; i < g.vCount; i++)
+//    {
+//        std::cout << g.vList[i].isActive << " " << g.verticesValue[i].first << " " << g.verticesValue[i].second << std::endl;
+//    }
+//    std::cout << "================end====================" << std::endl;
+
+    //test
+//    std::cout << avCount << std::endl;
+
     delete[] mValues;
 
     return avCount;
@@ -66,6 +77,14 @@ int PageRank<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexV
         mSet.insertMsg(Message<MessageValueType>(0, mValues[i].destVId, mValues[i]));
     }
 
+    //test
+//    std::cout << "=============msg info============" << std::endl;
+//    for(int i = 0; i < msgCnt; i++)
+//    {
+//        std::cout << mValues[i].destVId << " " << mValues[i].rank << std::endl;
+//    }
+//    std::cout << "===============end===============" << std::endl;
+
     delete[] mValues;
 
     return msgCnt;
@@ -74,7 +93,7 @@ int PageRank<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexV
 template <typename VertexValueType, typename MessageValueType>
 int PageRank<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
 {
-    auto msgCnt = eCount;
+    auto msgCnt = vCount;
     int avCount = 0;
 
     for(int i = 0; i < vCount; i++)
@@ -91,17 +110,9 @@ int PageRank<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int 
             continue;
         }
 
-        if(!vSet[destVId].isActive)
-        {
-            //set needMerge flag for merging subgraphs
-            vSet[destVId].isActive = true;
-            vValues[destVId].second = (1.0 - this->resetProb) * mValues[i].rank;
-            avCount++;
-        }
-        else
-        {
-            vValues[destVId].second += (1.0 - this->resetProb) * mValues[i].rank;
-        }
+        vSet[destVId].isActive = true;
+        vValues[destVId].second = (1.0 - this->resetProb) * mValues[i].rank;
+        avCount++;
     }
 
     return avCount;
@@ -113,6 +124,11 @@ int PageRank<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, i
     //test
     //std::cout << " =========== msg info =============" << std::endl;
 
+    for(int i = 0; i < vCount; i++)
+    {
+        mValues[i] = MessageValueType(-1, 0);
+    }
+
     for(int i = 0; i < eCount; i++)
     {
         auto srcVId = eSet[i].src;
@@ -123,16 +139,15 @@ int PageRank<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, i
             //msg value -- <destinationID, rank>
             msgValue = MessageValueType(eSet[i].dst, vValues[eSet[i].src].second * eSet[i].weight);
 
-            //test
-            //std::cout << srcVId << " -> " << eSet[i].dst << " : " << mValues[i].rank << std::endl;
+            mValues[msgValue.destVId].destVId = msgValue.destVId;
+            mValues[msgValue.destVId].rank += msgValue.rank;
         }
-        mValues[i] = msgValue;
     }
 
     //test
     //std::cout << " ==================================" << std::endl;
 
-    return eCount;
+    return vCount;
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -204,7 +219,6 @@ void PageRank<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueTyp
                 g.verticesValue.at(i) = VertexValueType(1.0, 1.0);
             }
         }
-
     }
     else
     {
@@ -330,6 +344,7 @@ void PageRank<VertexValueType, MessageValueType>::Apply(Graph<VertexValueType> &
 template <typename VertexValueType, typename MessageValueType>
 void PageRank<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList, int partitionCount)
 {
+
     //Init the Graph
     std::set<int> activeVertice = std::set<int>();
 
@@ -390,33 +405,34 @@ void PageRank<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> 
     }
 
     //test
-//    std::vector<sortValue> sortedArray;
-//    sortedArray.reserve(g.vCount);
-//    for(int i = 0; i < g.vCount; i++)
-//    {
-//        sortedArray.emplace_back(sortValue(i, g.verticesValue.at(i).first));
-//    }
-//
-//    std::sort(sortedArray.begin(), sortedArray.end(), cmp);
-
+    std::vector<sortValue> sortedArray;
+    sortedArray.reserve(g.vCount);
     for(int i = 0; i < g.vCount; i++)
     {
-        //std::cout << "outdegree: " << g.vList.at(i).outDegree << std::endl;
-        std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
+        sortedArray.emplace_back(sortValue(i, g.verticesValue.at(i).first));
     }
 
-    //test
+    std::sort(sortedArray.begin(), sortedArray.end(), cmp);
+
 //    for(int i = 0; i < g.vCount; i++)
 //    {
-//        std::cout << sortedArray.at(i).id << " " << sortedArray.at(i).rank << std::endl;
+//        //std::cout << "outdegree: " << g.vList.at(i).outDegree << std::endl;
+//        std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
 //    }
+
+    //test
+    for(int i = 0; i < g.vCount; i++)
+    {
+        std::cout << sortedArray.at(i).id << " " << sortedArray.at(i).rank << std::endl;
+    }
 
 
     Free();
 }
 
-//template<typename VertexValueType, typename MessageValueType>
-//bool PageRank<VertexValueType, MessageValueType>::cmp(sortValue &v1, sortValue &v2) {
-//    return v1.rank < v2.rank;
-//}
+//test
+template<typename VertexValueType, typename MessageValueType>
+bool PageRank<VertexValueType, MessageValueType>::cmp(sortValue &v1, sortValue &v2) {
+    return v1.rank < v2.rank;
+}
 
