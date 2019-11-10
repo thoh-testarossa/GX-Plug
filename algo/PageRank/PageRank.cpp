@@ -63,7 +63,7 @@ int PageRank<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexV
     if(g.eCount <= 0 || g.vCount <= 0) return 0;
 
     //mValues init
-    MessageValueType *mValues = new MessageValueType [g.eCount];
+    MessageValueType *mValues = new MessageValueType [g.vCount];
 
     //array form computation
     auto msgCnt = this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], 0, &initVSet[0], &g.verticesValue[0], mValues);
@@ -172,7 +172,7 @@ template <typename VertexValueType, typename MessageValueType>
 void PageRank<VertexValueType, MessageValueType>::Init(int vCount, int eCount, int numOfInitV)
 {
     this->totalVValuesCount = vCount;
-    this->totalMValuesCount = eCount;
+    this->totalMValuesCount = vCount;
     this->numOfInitV = numOfInitV;
 }
 
