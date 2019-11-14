@@ -1,12 +1,12 @@
 #include "PageRankGPU_kernel.h"
 
-__global__ void MSGApply_kernel(Vertex *vSet, double *vValues, int numOfMsg, PRA_MSG *mValueSet, double resetProb)
+__global__ void MSGApply_kernel(Vertex *vSet, double *vValues, int numOfMsg, int *mDstSet, PRA_MSG *mValueSet, double resetProb)
 {
 	int tid = threadIdx.x;
 
 	if(tid < numOfMsg)
 	{
-		int vID = mValueSet[tid].destVId;
+        int vID = mDstSet[tid];
 
 		//test
 //		printf("vId : %d value : %f\n", vID, mValueSet[tid].rank);
@@ -16,11 +16,11 @@ __global__ void MSGApply_kernel(Vertex *vSet, double *vValues, int numOfMsg, PRA
 	}
 }
 
-cudaError_t MSGApply_kernel_exec(Vertex *vSet, double *vValues, int numOfMsg, PRA_MSG *mValueSet, double resetProb)
+cudaError_t MSGApply_kernel_exec(Vertex *vSet, double *vValues, int numOfMsg, int *mDstSet, PRA_MSG *mValueSet, double resetProb)
 {
 	cudaError_t err = cudaSuccess;
 	
-	MSGApply_kernel<<<1, NUMOFGPUCORE>>>(vSet, vValues, numOfMsg, mValueSet, resetProb);
+	MSGApply_kernel<<<1, NUMOFGPUCORE>>>(vSet, vValues, numOfMsg, mDstSet, mValueSet, resetProb);
     err = cudaGetLastError();
 
 	cudaDeviceSynchronize();
@@ -36,7 +36,6 @@ __global__ void MSGGenMerge_kernel(PRA_MSG *mTransformdMergedMSGValueSet,
 	if(tid < numOfEdge)
 	{
 		int srcVid = eSet[tid].src;
-
 		int mValueIndex = eSet[tid].dst;
 
         //test

@@ -25,6 +25,13 @@ public:
     int MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues) override;
     int MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues) override;
 
+    //Subgraph reflection-based compression
+    int reflect(const std::vector<int> &originalIntList, int originalIntRange, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex);
+
+    Graph<VertexValueType> reflectG(const Graph<VertexValueType> &o_g, const std::vector<Edge> &eSet, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex);
+    MessageSet<MessageValueType> reflectM(const MessageSet<MessageValueType> &o_mSet, int vCount, std::vector<int> &reflectIndex, std::vector<int> &reversedIndex);
+
+
 protected:
     int vertexLimit;
     int mPerMSGSet;
@@ -40,6 +47,10 @@ protected:
     Edge *d_eGSet;  //limit size = ePerEdgeSet
 
     PRA_MSG *d_mTransformedMergedMSGValueSet; //limist size = max(mPerMSGSet, ePerEdgeSet)
+    PRA_MSG *mTransformedMergedMSGValueSet;
+
+    int *mDstSet;
+    int *d_mDstSet;
 
 private:
     auto MSGGenMerge_GPU_MVCopy(Vertex *d_vSet, const Vertex *vSet,
