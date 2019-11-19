@@ -21,6 +21,9 @@ public:
 
     void run();
 
+    void graphInit();
+    void getEdgesFromAvSet();
+
     int nodeNo;
     GraphUtilType executor;
     bool isLegal;
@@ -37,6 +40,10 @@ public:
     Vertex *vSet;
     Edge *eSet;
 
+    std::vector<std::vector<Edge>> adjacencyTable;
+    int *avSet;
+    int *avCount;
+
 private:
     UNIX_shm initVSet_shm;
     UNIX_shm filteredV_shm;
@@ -45,6 +52,8 @@ private:
     UNIX_shm mValues_shm;
     UNIX_shm vSet_shm;
     UNIX_shm eSet_shm;
+    UNIX_shm avSet_shm;
+    UNIX_shm avCount_shm;
 
     UNIX_msg server_msq;
     UNIX_msg init_msq;

@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     std::vector<Vertex> vSet = std::vector<Vertex>();
     std::vector<Edge> eSet = std::vector<Edge>();
 
-    std::ifstream Gin("../../data/testGraph4000000.txt");
+    std::ifstream Gin("../../data/testGraph400.txt");
     if(!Gin.is_open())
     {
         std::cout << "Error! File testGraph.txt not found!" << std::endl;
@@ -123,8 +123,6 @@ int main(int argc, char *argv[])
             return 3;
         }
 
-        //init the graph info
-        clientVec.at(i).graphInit();
         //copy back the up-to-date graph info
         chk = clientVec.at(i).copyBack(vValues);
 

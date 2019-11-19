@@ -17,6 +17,8 @@
 #define TIMESTAMP_SHM 5
 #define VSET_SHM 6
 #define ESET_SHM 7
+#define AVSET_SHM 8
+#define AVCOUNT_SHM 9
 
 #define SRV_MSG_TYPE 1
 #define CLI_MSG_TYPE 2

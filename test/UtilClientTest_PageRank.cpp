@@ -17,10 +17,10 @@
 #include <cstring>
 
 template <typename VertexValueType, typename MessageValueType>
-void testFut(UtilClient<VertexValueType, MessageValueType> *uc, VertexValueType *vValues, Vertex *vSet)
+void testFut(UtilClient<VertexValueType, MessageValueType> *uc, VertexValueType *vValues, Vertex *vSet, int *avSet, int avCount)
 {
     uc->connect();
-    uc->update(vValues, vSet);
+    uc->update(vValues, vSet, avSet, avCount);
     uc->request();
     uc->disconnect();
 }
@@ -80,25 +80,37 @@ int main(int argc, char *argv[])
     std::cout << "init vSet ..." << std::endl;
     for(int i = 0; i < vCount; i++)
     {
-        vSet.emplace_back(i, false, INVALID_INITV_INDEX);
+        vSet.emplace_back(i, true, i);
         filteredV[i] = false;
         timestamp[i] = -1;
     }
 
-    vSet.at(1).initVIndex = 1;
-    vSet.at(1).isActive = true;
+    initVSet[0] = -1;
 
     std::cout << "init vValues ..." << std::endl;
-    for(int i = 0; i < vCount; i++)
+
+    if(initVSet[0] == -1)
     {
-        if(vSet[i].initVIndex == INVALID_INITV_INDEX)
+        for(int i = 0; i < vCount; i++)
         {
-            vValues[i] = std::pair<double, double>(0.0, 0.0);
+            auto newRank = 0.15;
+            vValues[i] = std::pair<double, double>(newRank, newRank);
         }
-        else
+    }
+    else
+    {
+        for(int i = 0; i < vCount; i++)
         {
-            vValues[i] = std::pair<double, double>(1.0, 1.0);
+            if(vSet[i].initVIndex == INVALID_INITV_INDEX)
+            {
+                vValues[i] = std::pair<double, double>(0.0, 0.0);
+            }
+            else
+            {
+                vValues[i] = std::pair<double, double>(1.0, 1.0);
+            }
         }
+
     }
 
     for(int i = 0; i < eCount; i++)
@@ -152,9 +164,13 @@ int main(int argc, char *argv[])
 
     bool isActive = true;
 
+    int avCount = 0;
+    std::vector<int> avSet;
+    avSet.reserve(vCount);
+    avSet.assign(vCount, 0);
+
     while(isActive)
     {
-        int avCount = 0;
         //Test
         std::cout << "Processing at iter " << ++iterCount << std::endl;
         //Test end
@@ -164,7 +180,7 @@ int main(int argc, char *argv[])
         auto futList = new std::future<void> [nodeCount];
         for(int i = 0; i < nodeCount; i++)
         {
-            std::future<void> tmpFut = std::async(testFut<std::pair<double, double>, PRA_MSG>, &clientVec.at(i), vValues, &vSet[0]);
+            std::future<void> tmpFut = std::async(testFut<std::pair<double, double>, PRA_MSG>, &clientVec.at(i), vValues, &vSet[0], &avSet[0], avCount);
             futList[i] = std::move(tmpFut);
         }
 
@@ -225,10 +241,12 @@ int main(int argc, char *argv[])
 
         std::cout << "graph merge time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count() << std::endl;
 
+        avCount = 0;
         for(int i = 0; i < vCount; i++)
         {
             if(vSet[i].isActive)
             {
+                avSet.at(avCount) = i;
                 avCount++;
                 isActive = true;
             }

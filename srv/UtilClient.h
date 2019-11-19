@@ -21,8 +21,8 @@ public:
 
     int connect();
     int transfer(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int *initVSet, bool *filteredV, int *timestamp);
-    int update(VertexValueType *vValues, Vertex *vSet);
-    int update(VertexValueType *vValues);
+    int update(VertexValueType *vValues, Vertex *vSet, int *avSet = nullptr, int avCount = -1);
+    int update(VertexValueType *vValues, int *avSet = nullptr, int avCount = -1);
     void request();
     void disconnect();
     void shutdown();
@@ -43,6 +43,9 @@ public:
     Vertex *vSet;
     Edge *eSet;
 
+    int *avSet;
+    int *avCount;
+
 private:
     UNIX_shm initVSet_shm;
     UNIX_shm filteredV_shm;
@@ -51,6 +54,8 @@ private:
     UNIX_shm mValues_shm;
     UNIX_shm vSet_shm;
     UNIX_shm eSet_shm;
+    UNIX_shm avSet_shm;
+    UNIX_shm avCount_shm;
 
     UNIX_msg server_msq;
     UNIX_msg client_msq;

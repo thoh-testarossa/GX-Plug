@@ -48,6 +48,8 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
         this->initVSet_shm = UNIX_shm();
         this->filteredV_shm = UNIX_shm();
         this->timestamp_shm = UNIX_shm();
+        this->avCount_shm = UNIX_shm();
+        this->avSet_shm = UNIX_shm();
 
         this->server_msq = UNIX_msg();
         this->init_msq = UNIX_msg();
@@ -81,6 +83,15 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
             chk = this->timestamp_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (TIMESTAMP_SHM << SHM_OFFSET)),
                 this->vCount * sizeof(int),
                 0666);
+        if(chk != -1)
+            chk = this->avSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (AVSET_SHM << SHM_OFFSET)),
+                this->vCount * sizeof(int),
+                0666);
+        if(chk != -1)
+            chk = this->avCount_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (AVCOUNT_SHM << SHM_OFFSET)),
+                sizeof(int),
+                0666);
+
 
         if(chk != -1)
             chk = this->server_msq.create(((this->nodeNo << NODE_NUM_OFFSET) | (SRV_MSG_TYPE << MSG_TYPE_OFFSET)),
@@ -101,6 +112,8 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
             this->initVSet_shm.attach(0666);
             this->filteredV_shm.attach(0666);
             this->timestamp_shm.attach(0666);
+            this->avSet_shm.attach(0666);
+            this->avCount_shm.attach(0666);
 
             this->vValues = (VertexValueType *) this->vValues_shm.shmaddr;
             this->mValues = (MessageValueType *) this->mValues_shm.shmaddr;
@@ -109,6 +122,8 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
             this->initVSet = (int *) this->initVSet_shm.shmaddr;
             this->filteredV = (bool *) this->filteredV_shm.shmaddr;
             this->timestamp = (int *) this->timestamp_shm.shmaddr;
+            this->avSet = (int *) this->avSet_shm.shmaddr;
+            this->avCount = (int *) this->avCount_shm.shmaddr;
 
             this->init_msq.send("initiated", (INIT_MSG_TYPE << MSG_TYPE_OFFSET), 256);
 
@@ -149,6 +164,8 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::~UtilServer()
     this->initVSet_shm.control(IPC_RMID);
     this->filteredV_shm.control(IPC_RMID);
     this->timestamp_shm.control(IPC_RMID);
+    this->avSet_shm.control(IPC_RMID);
+    this->avCount_shm.control(IPC_RMID);
 
     this->server_msq.control(IPC_RMID);
     this->init_msq.control(IPC_RMID);
@@ -175,6 +192,8 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
         cmd = msgp;
         if(std::string("execute") == cmd)
         {
+            this->getEdgesFromAvSet();
+
             auto start = std::chrono::system_clock::now();
             int msgCount = this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
             auto mergeEnd = std::chrono::system_clock::now();
@@ -191,6 +210,7 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
             break;
         else if(std::string("init") == cmd)
         {
+            this->graphInit();
             this->executor.InitGraph_array(this->vValues, this->vSet, this->eSet, this->vCount);
             this->server_msq.send("finished", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
         }
@@ -203,5 +223,49 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
     //Test
     std::cout << "Shutdown properly" << std::endl;
     //Test end
+}
+
+template<typename GraphUtilType, typename VertexValueType, typename MessageValueType>
+void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::graphInit()
+{
+    this->adjacencyTable.reserve(this->vCount);
+    this->adjacencyTable.assign(this->vCount, std::vector<Edge>());
+
+    for(int i = 0; i < vCount; i++)
+    {
+        this->adjacencyTable.at(i).reserve(this->vSet[i].outDegree);
+    }
+
+    for(int i = 0; i < eCount; i++)
+    {
+        auto edge = this->eSet[i];
+        this->adjacencyTable.at(edge.src).emplace_back(edge.src, edge.dst, edge.weight);
+    }
+}
+
+template<typename GraphUtilType, typename VertexValueType, typename MessageValueType>
+void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::getEdgesFromAvSet()
+{
+    if(*(this->avCount) <= 0 || *(this->avCount) > (this->vCount >> 1))
+    {
+        return;
+    }
+
+    int acECount = 0;
+
+    for(int i = 0; i < *(this->avCount); i++)
+    {
+        int avID = this->avSet[i];
+
+        for(auto edge : this->adjacencyTable.at(avID))
+        {
+            this->eSet[acECount] = edge;
+            acECount++;
+        }
+    }
+
+    this->eCount = acECount;
+
+    return;
 }
 
