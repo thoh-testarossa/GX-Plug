@@ -12,6 +12,7 @@
 class Vertex
 {
 public:
+    Vertex();
     Vertex(int vertexID, bool activeness, int initVIndex);
 
     int vertexID;

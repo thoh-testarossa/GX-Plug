@@ -13,6 +13,15 @@ Vertex::Vertex(int vertexID, bool activeness, int initVIndex)
     this->inDegree = 0;
 }
 
+Vertex::Vertex()
+{
+    this->vertexID = -1;
+    this->isActive = false;
+    this->initVIndex = INVALID_INITV_INDEX;
+    this->outDegree = 0;
+    this->inDegree = 0;
+}
+
 Edge::Edge(int src, int dst, double weight)
 {
     this->src = src;
