@@ -25,6 +25,7 @@ public:
 class Edge
 {
 public:
+    Edge();
     Edge(int src, int dst, double weight);
 
     int src;

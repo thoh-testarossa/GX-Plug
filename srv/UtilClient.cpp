@@ -3,6 +3,7 @@
 //
 
 #include <cstring>
+#include <iostream>
 #include "UtilClient.h"
 
 template <typename VertexValueType, typename MessageValueType>

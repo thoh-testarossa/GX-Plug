@@ -45,7 +45,8 @@ __global__ void MSGGenMerge_kernel(unsigned long long int *mTransformdMergedMSGV
 	if(tid < numOfEdge)
 	{
 		int vID = -1;
-		if(vSet[eSet[tid].src].isActive) vID = eSet[tid].dst;
+		//if(vSet[eSet[tid].src].isActive) vID = eSet[tid].dst;
+        vID = eSet[tid].dst;
 
 		if(vID != -1)
 		{

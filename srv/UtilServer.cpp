@@ -35,6 +35,8 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
     this->filteredV = nullptr;
     this->timestamp = nullptr;
 
+    this->avESet = new Edge[this->eCount];
+
     if(this->isLegal)
     {
         int chk = 0;
@@ -149,6 +151,8 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::~UtilServer()
 {
     this->executor.Free();
 
+    delete this->avESet;
+
     this->vValues = nullptr;
     this->mValues = nullptr;
     this->vSet = nullptr;
@@ -192,13 +196,26 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
         cmd = msgp;
         if(std::string("execute") == cmd)
         {
-            this->getEdgesFromAvSet();
-
             auto start = std::chrono::system_clock::now();
-            int msgCount = this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
             auto mergeEnd = std::chrono::system_clock::now();
-            int avCount = this->executor.MSGApply_array(this->vCount, msgCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
             auto applyEnd = std::chrono::system_clock::now();
+
+            if(this->getEdgesFromAvSet())
+            {
+                start = std::chrono::system_clock::now();
+                int msgCount = this->executor.MSGGenMerge_array(this->vCount, this->avECount, this->vSet, this->avESet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+                mergeEnd = std::chrono::system_clock::now();
+                int avCount = this->executor.MSGApply_array(this->vCount, msgCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+                applyEnd = std::chrono::system_clock::now();
+            }
+            else
+            {
+                start = std::chrono::system_clock::now();
+                int msgCount = this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+                mergeEnd = std::chrono::system_clock::now();
+                int avCount = this->executor.MSGApply_array(this->vCount, msgCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+                applyEnd = std::chrono::system_clock::now();
+            }
 
             //test
             std::cout << "msg gen time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count() << std::endl;
@@ -244,14 +261,14 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::graphInit()
 }
 
 template<typename GraphUtilType, typename VertexValueType, typename MessageValueType>
-void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::getEdgesFromAvSet()
+bool UtilServer<GraphUtilType, VertexValueType, MessageValueType>::getEdgesFromAvSet()
 {
     if(*(this->avCount) <= 0 || *(this->avCount) > (this->vCount >> 1))
     {
-        return;
+        return false;
     }
 
-    int acECount = 0;
+    this->avECount = 0;
 
     for(int i = 0; i < *(this->avCount); i++)
     {
@@ -259,13 +276,11 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::getEdgesFromA
 
         for(auto edge : this->adjacencyTable.at(avID))
         {
-            this->eSet[acECount] = edge;
-            acECount++;
+            this->avESet[this->avECount] = edge;
+            this->avECount++;
         }
     }
 
-    this->eCount = acECount;
-
-    return;
+    return true;
 }
 

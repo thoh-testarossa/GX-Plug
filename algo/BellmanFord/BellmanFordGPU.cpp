@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <chrono>
 
 #define NULLMSG -1
 
@@ -30,26 +31,73 @@ double longLongIntAsDouble(unsigned long long int a)
 template <typename VertexValueType, typename MessageValueType>
 auto BellmanFordGPU<VertexValueType, MessageValueType>::MSGGenMerge_GPU_MVCopy(Vertex *d_vSet, const Vertex *vSet,
                                    double *d_vValues, const double *vValues,
+                                   int eGCount, const Edge *eSet,
                                    unsigned long long int *d_mTransformedMergedMSGValueSet,
                                    unsigned long long int *mTransformedMergedMSGValueSet,
                                    int vGCount, int numOfInitV)
 {
+    auto start = std::chrono::system_clock::now();
+
     auto err = cudaSuccess;
 
     //vSet copy
+#if OPTIMIZE
+    if(!this->isInited)
+    {
+        err = cudaMemcpy(d_vSet, vSet, vGCount * sizeof(Vertex), cudaMemcpyHostToDevice);
+    }
+#else
     err = cudaMemcpy(d_vSet, vSet, vGCount * sizeof(Vertex), cudaMemcpyHostToDevice);
+#endif
 
     //vValueSet copy
+#if OPTIMIZE
+    if(!this->isInited)
+    {
+        err = cudaMemcpy(d_vValues, vValues, vGCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+    }
+    else
+    {
+        for(int i = 0; i < eGCount; i++)
+        {
+            auto srcVID = eSet[i].src;
+            auto dstVID = eSet[i].dst;
+            err = cudaMemcpy(&d_vValues[srcVID * numOfInitV], &vValues[srcVID * numOfInitV], numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+            err = cudaMemcpy(&d_vValues[dstVID * numOfInitV], &vValues[dstVID * numOfInitV], numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+        }
+    }
+#else
     err = cudaMemcpy(d_vValues, vValues, vGCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+#endif
 
     //Transform to the long long int form which CUDA can do atomic ops
     //unsigned long long int *mTransformedMergedMSGValueSet = new unsigned long long int [g.vCount * numOfInitV];
-    for (int i = 0; i < vGCount * numOfInitV; i++)
-        mTransformedMergedMSGValueSet[i] = doubleAsLongLongInt((double) INVALID_MASSAGE);
+    for(int i = 0; i < eGCount; i++)
+    {
+        for(int j = 0; j < numOfInitV; j++)
+        {
+            auto vID = eSet[i].dst;
+            mTransformedMergedMSGValueSet[vID * numOfInitV + j] = doubleAsLongLongInt((double) INVALID_MASSAGE);
+#if OPTIMIZE
+            err = cudaMemcpy(&d_mTransformedMergedMSGValueSet[vID * numOfInitV + j],
+                             &mTransformedMergedMSGValueSet[vID * numOfInitV + j],
+                             sizeof(unsigned long long int), cudaMemcpyHostToDevice);
+#endif
+        }
+    }
+
+//    for (int i = 0; i < vGCount * numOfInitV; i++)
+//        mTransformedMergedMSGValueSet[i] = doubleAsLongLongInt((double) INVALID_MASSAGE);
 
     //mTransformedMergedMSGValueSet copy
+#if OPTIMIZE
+#else
     err = cudaMemcpy(d_mTransformedMergedMSGValueSet, mTransformedMergedMSGValueSet,
                      vGCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyHostToDevice);
+#endif
+
+    auto end = std::chrono::system_clock::now();
+    std::cout << "MSGGenMerge_GPU_MVCopy time : " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
 
     return err;
 }
@@ -59,13 +107,29 @@ auto BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_GPU_VVCopy(Vert
                                 double *d_vValues, const double *vValues,
                                 int vGCount, int numOfInitV)
 {
+
+    auto start = std::chrono::system_clock::now();
+
     auto err = cudaSuccess;
 
     //vSet copy
+#if OPTIMIZE
+    if(!this->isInited)
+    {
+        err = cudaMemcpy(d_vSet, vSet, vGCount * sizeof(Vertex), cudaMemcpyHostToDevice);
+    }
+#else
     err = cudaMemcpy(d_vSet, vSet, vGCount * sizeof(Vertex), cudaMemcpyHostToDevice);
+#endif
 
     //vValueSet copy
+#if OPTIMIZE
+#else
     err = cudaMemcpy(d_vValues, vValues, vGCount * numOfInitV * sizeof(double), cudaMemcpyHostToDevice);
+#endif
+
+    auto end = std::chrono::system_clock::now();
+    std::cout << "MSGApply_GPU_VVCopy time : " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
 
     return err;
 }
@@ -73,7 +137,9 @@ auto BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_GPU_VVCopy(Vert
 template <typename VertexValueType, typename MessageValueType>
 BellmanFordGPU<VertexValueType, MessageValueType>::BellmanFordGPU()
 {
-
+#if OPTIMIZE
+    this->isInited = false;
+#endif
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -119,6 +185,10 @@ void BellmanFordGPU<VertexValueType, MessageValueType>::Deploy(int vCount, int e
     this->mValueSet = new MessageValueType [mSize];
     err = cudaMalloc((void **)&this->d_mValueSet, mSize * sizeof(double));
 
+#if OPTIMIZE
+    this->avSet = new int [vertexLimit];
+#endif
+
     this->mMergedMSGValueSet = new MessageValueType [vCount * numOfInitV];
     this->mTransformedMergedMSGValueSet = new unsigned long long int [vertexLimit * numOfInitV];
     err = cudaMalloc((void **)&d_mTransformedMergedMSGValueSet, numOfInitV * vertexLimit * sizeof(unsigned long long int));
@@ -150,31 +220,63 @@ void BellmanFordGPU<VertexValueType, MessageValueType>::Free()
     free(this->mMergedMSGValueSet);
     free(this->mTransformedMergedMSGValueSet);
     cudaFree(this->d_mTransformedMergedMSGValueSet);
+
+#if OPTIMIZE
+    free(this->isDst);
+    free(this->avSet);
+#endif
 }
 
 template <typename VertexValueType, typename MessageValueType>
 int BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
 {
+    std::cout << "=============MSGApply_array time=============" << std::endl;
+
     //Availability check
     if(vCount == 0) return 0;
+
+    auto start = std::chrono::system_clock::now();
 
     //CUDA init
     cudaError_t err = cudaSuccess;
 
     //initVSet Init
+#if OPTIMIZE
+    if(!this->isInited)
+        err = cudaMemcpy(this->d_initVSet, initVSet, numOfInitV * sizeof(int), cudaMemcpyHostToDevice);
+#else
     err = cudaMemcpy(this->d_initVSet, initVSet, numOfInitV * sizeof(int), cudaMemcpyHostToDevice);
+#endif
 
     bool needReflect = vCount > this->vertexLimit;
 
     //AVCheck
+#if OPTIMIZE
+    if(!this->isInited)
+    {
+        for (int i = 0; i < vCount; i++) vSet[i].isActive = false;
+    }
+    else
+    {
+        for(int i = 0; i < this->avCount; i++)
+        {
+            auto vID = this->avSet[i];
+            vSet[vID].isActive = false;
+            err = cudaMemcpy(&this->d_vSet[vID], &vSet[vID], sizeof(Vertex), cudaMemcpyHostToDevice);
+        }
+    }
+#else
     for (int i = 0; i < vCount; i++) vSet[i].isActive = false;
+#endif
+
+    auto end = std::chrono::system_clock::now();
+    std::cout << "MSGApply_array init time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
 
     if(!needReflect)
     {
         err = MSGApply_GPU_VVCopy(this->d_vSet, vSet,
                             this->d_vValueSet, (double *)vValues,
                             vCount, numOfInitV);
-
     }
 
     //Apply msgs to v
@@ -185,15 +287,26 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount
     auto r_vSet = std::vector<Vertex>();
     auto r_vValueSet = std::vector<VertexValueType>();
 
-    for(int i = 0; i < vCount * numOfInitV; i++)
+    start = std::chrono::system_clock::now();
+
+    //for(int i = 0; i < vCount * numOfInitV; i++)
+    for(int i = 0; i < eCount; i++)
     {
-        if(mValues[i] != (MessageValueType)INVALID_MASSAGE) //Adding msgs to batchs
+//        if(mValues[i] != (MessageValueType)INVALID_MASSAGE) //Adding msgs to batches
+//        {
+//            mGSet.insertMsg(Message<MessageValueType>(initVSet[i % numOfInitV], i / numOfInitV, mValues[i]));
+//            mGCount++;
+//        }
+        mGSet.insertMsg(Message<MessageValueType>(initVSet[this->mInitVIndexSet[i]], this->mDstSet[i], mValues[i]));
+        mGCount++;
+//        if(mGCount == this->mPerMSGSet || i == vCount * numOfInitV - 1) //A batch of msgs will be transferred into GPU. Don't forget last batch!
+        if(mGCount == this->mPerMSGSet || i == eCount - 1)
         {
-            mGSet.insertMsg(Message<MessageValueType>(initVSet[i % numOfInitV], i / numOfInitV, mValues[i]));
-            mGCount++;
-        }
-        if(mGCount == this->mPerMSGSet || i == vCount * numOfInitV - 1) //A batch of msgs will be transferred into GPU. Don't forget last batch!
-        {
+
+            end = std::chrono::system_clock::now();
+            std::cout << "Adding msgs to batches time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+            start = std::chrono::system_clock::now();
+
             auto reflectIndex = std::vector<int>();
             auto reversedIndex = std::vector<int>();
 
@@ -246,6 +359,10 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount
             err = cudaMemcpy(this->d_mDstSet, this->mDstSet, mGCount * sizeof(int), cudaMemcpyHostToDevice);
             err = cudaMemcpy(this->d_mValueSet, (double *)this->mValueSet, mGCount * sizeof(double), cudaMemcpyHostToDevice);
 
+            end = std::chrono::system_clock::now();
+            std::cout << "batch pre-processing time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+
+            start = std::chrono::system_clock::now();
             //Kernel Execution
             for(int j = 0; j < mGCount; j += NUMOFGPUCORE)
             {
@@ -254,6 +371,8 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount
                 err = MSGApply_kernel_exec(this->d_vSet, numOfInitV, this->d_initVSet, this->d_vValueSet, msgNumUsedForExec,
                                            &this->d_mDstSet[j], &this->d_mInitVIndexSet[j], &this->d_mValueSet[j]);
             }
+            end = std::chrono::system_clock::now();
+            std::cout << "kernel Execution time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
 
             //Deflection
             if(needReflect)
@@ -274,10 +393,51 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount
 
             mGSet.mSet.clear();
             mGCount = 0;
+            start = std::chrono::system_clock::now();
         }
     }
 
     //Re-package the data
+
+
+    start = std::chrono::system_clock::now();
+
+    int avCount = 0;
+
+#if OPTIMIZE
+    this->isInited = true;
+
+    std::set<int> activeVertex;
+
+    this->avCount = 0;
+    if(!needReflect)
+    {
+        for(int i = 0; i < eCount; i++)
+        {
+            auto vID = this->mDstSet[i];
+
+            err = cudaMemcpy(&vSet[vID], &this->d_vSet[vID], sizeof(Vertex), cudaMemcpyDeviceToHost);
+            err = cudaMemcpy(&vValues[vID * numOfInitV], &this->d_vValueSet[vID * numOfInitV],
+                              numOfInitV * sizeof(double), cudaMemcpyDeviceToHost);
+
+            if(vSet[vID].isActive)
+            {
+                activeVertex.insert(vID);
+            }
+        }
+    }
+
+    for(auto vID : activeVertex)
+    {
+        this->avSet[this->avCount] = vID;
+        this->avCount++;
+    }
+    avCount = this->avCount;
+
+    end = std::chrono::system_clock::now();
+    std::cout << "copyback time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+
+#else
 
     //Memory copy back
     if(!needReflect)
@@ -286,7 +446,10 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount
         err = cudaMemcpy((double *)vValues, this->d_vValueSet, vCount * numOfInitV * sizeof(double),
                          cudaMemcpyDeviceToHost);
     }
+    end = std::chrono::system_clock::now();
+    std::cout << "copyback time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
 
+    start = std::chrono::system_clock::now();
     //avCount calculation
     int avCount = 0;
     for(int i = 0; i < vCount; i++)
@@ -294,20 +457,35 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount
         if(vSet[i].isActive)
             avCount++;
     }
-
+    end = std::chrono::system_clock::now();
+    std::cout << "avCount calculation time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+#endif
+    std::cout << "avCount : " << avCount << std::endl << std::endl;
     return avCount;
 }
 
 template <typename VertexValueType, typename MessageValueType>
 int BellmanFordGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
 {
+    std::cout << "=============MSGGenMerge_array time=============" << std::endl;
     //Generate merged msgs directly
 
     //Availability check
     if(vCount == 0) return 0;
 
+    auto start = std::chrono::system_clock::now();
+
     //Invalid message init
-    for(int i = 0; i < vCount * numOfInitV; i++) mValues[i] = (MessageValueType)INVALID_MASSAGE;
+    for(int i = 0; i < eCount; i++)
+    {
+        for(int j = 0; j < numOfInitV; j++)
+        {
+            auto vID = eSet[i].dst;
+            mValues[vID * numOfInitV + j] = MessageValueType(INVALID_MASSAGE);
+        }
+    }
+
+    //for(int i = 0; i < vCount * numOfInitV; i++) mValues[i] = (MessageValueType)INVALID_MASSAGE;
 
     //Memory allocation
     cudaError_t err = cudaSuccess;
@@ -318,9 +496,13 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCo
     //Graph scale check
     bool needReflect = vCount > this->vertexLimit;
 
+    auto end = std::chrono::system_clock::now();
+    std::cout << "init time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+
     if(!needReflect)
         err = MSGGenMerge_GPU_MVCopy(this->d_vSet, vSet,
                                this->d_vValueSet, (double *)vValues,
+                               eCount, eSet,
                                this->d_mTransformedMergedMSGValueSet,
                                this->mTransformedMergedMSGValueSet,
                                vCount, numOfInitV);
@@ -337,14 +519,24 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCo
         tmp_o_g.verticesValue.insert(tmp_o_g.verticesValue.begin(), vValues, vValues + (numOfInitV * vCount));
     }
     //This checkpoint is to used to prevent from mistaking mValues gathering in deflection
+#if OPTIMIZE
+    if(!this->isInited)
+    {
+        this->isDst = new bool[vCount];
+        for(int i = 0; i < vCount; i++) isDst[i] = false;
+    }
+#else
     bool *isDst = new bool [vCount];
     for(int i = 0; i < vCount; i++) isDst[i] = false;
+#endif
 
     //e batch processing
     int eGCount = 0;
 
     std::vector<Edge> eGSet = std::vector<Edge>();
     eGSet.reserve(this->ePerEdgeSet);
+
+    start = std::chrono::system_clock::now();
 
     for(int i = 0; i < eCount; i++)
     {
@@ -365,10 +557,14 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCo
         }
         if(eGCount == this->ePerEdgeSet || i == eCount - 1) //A batch of es will be transferred into GPU. Don't forget last batch!
         {
+            end = std::chrono::system_clock::now();
+            std::cout << "add eSet to batches time : " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
             auto reflectIndex = std::vector<int>();
             auto reversedIndex = std::vector<int>();
 
             auto r_g = Graph<VertexValueType>(0);
+
+            start = std::chrono::system_clock::now();
 
             //Reflection
             if(needReflect)
@@ -377,6 +573,7 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCo
 
                 err = MSGGenMerge_GPU_MVCopy(this->d_vSet, &r_g.vList[0],
                                              this->d_vValueSet, (double *)&r_g.verticesValue[0],
+                                             eGCount, this->d_eGSet,
                                              this->d_mTransformedMergedMSGValueSet,
                                              this->mTransformedMergedMSGValueSet,
                                              r_g.vCount, numOfInitV);
@@ -386,6 +583,10 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCo
             else
                 err = cudaMemcpy(this->d_eGSet, &eGSet[0], eGCount * sizeof(Edge), cudaMemcpyHostToDevice);
 
+            end = std::chrono::system_clock::now();
+            std::cout << "batch pre-processing time : " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+
+            start = std::chrono::system_clock::now();
             //Kernel Execution (no matter whether g is reflected or not)
             for(int j = 0; j < eGCount; j += NUMOFGPUCORE)
             {
@@ -394,6 +595,8 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCo
                 err = MSGGenMerge_kernel_exec(this->d_mTransformedMergedMSGValueSet, this->d_vSet, numOfInitV,
                                               this->d_initVSet, this->d_vValueSet, edgeNumUsedForExec, &this->d_eGSet[j]);
             }
+            end = std::chrono::system_clock::now();
+            std::cout << "kernel exec time : " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
 
             //Deflection
             if(needReflect)
@@ -418,24 +621,79 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCo
             }
             else;
 
+            start = std::chrono::system_clock::now();
             //Checkpoint reset
+
+#if OPTIMIZE
+            for(int j = 0; j < eGCount; j++)
+            {
+                isDst[eGSet.at(j).dst] = false;
+            }
+#else
+            for(int j = 0; j < vCount; j++) isDst[j] = false;
+#endif
+
             eGCount = 0;
             eGSet.clear();
-            for(int j = 0; j < vCount; j++) isDst[j] = false;
+
+            end = std::chrono::system_clock::now();
+            std::cout << "batch post-processing time : " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+
+            start = std::chrono::system_clock::now();
         }
     }
 
+    start = std::chrono::system_clock::now();
+    int msgCnt = 0;
     if(!needReflect)
     {
         //Re-package the data
         //Memory copy back
+
+#if OPTIMIZE
+        for(int i = 0; i < eCount; i++)
+        {
+            for(int j = 0; j < numOfInitV; j++)
+            {
+                auto vID = eSet[i].dst;
+
+                err = cudaMemcpy(&mTransformedMergedMSGValueSet[vID * numOfInitV + j],
+                                 &d_mTransformedMergedMSGValueSet[vID * numOfInitV + j],
+                                 sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
+
+                mValues[msgCnt] = (MessageValueType)(longLongIntAsDouble(this->mTransformedMergedMSGValueSet[vID * numOfInitV + j]));
+                this->mInitVIndexSet[msgCnt] = j;
+                this->mDstSet[msgCnt] = vID;
+                msgCnt++;
+            }
+        }
+#else
+
         err = cudaMemcpy(this->mTransformedMergedMSGValueSet, this->d_mTransformedMergedMSGValueSet,
                          vCount * numOfInitV * sizeof(unsigned long long int), cudaMemcpyDeviceToHost);
 
         //Transform back to original double form
-        for (int i = 0; i < vCount * numOfInitV; i++)
-            mValues[i] = (MessageValueType) (longLongIntAsDouble(this->mTransformedMergedMSGValueSet[i]));
-    }
+        for(int i = 0; i < eCount; i++)
+        {
+            for(int j = 0; j < numOfInitV; j++)
+            {
+                auto vID = eSet[i].dst;
+                mValues[msgCnt] = (MessageValueType)(longLongIntAsDouble(this->mTransformedMergedMSGValueSet[vID * numOfInitV + j]));
+                this->mInitVIndexSet[msgCnt] = j;
+                this->mDstSet[msgCnt] = vID;
+                msgCnt++;
+            }
+        }
+#endif
 
-    return vCount * numOfInitV;
+//        for (int i = 0; i < vCount * numOfInitV; i++)
+//            mValues[i] = (MessageValueType) (longLongIntAsDouble(this->mTransformedMergedMSGValueSet[i]));
+    }
+    end = std::chrono::system_clock::now();
+    std::cout << "copy-back time : " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+
+    std::cout << std::endl;
+
+    return msgCnt;
+    //return vCount * numOfInitV;
 }

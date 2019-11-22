@@ -29,6 +29,11 @@ Edge::Edge(int src, int dst, double weight)
     this->weight = weight;
 }
 
+Edge::Edge()
+{
+
+}
+
 AbstractGraph::AbstractGraph(int vCount)
 {
     this->vList = std::vector<Vertex>();

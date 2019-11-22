@@ -22,7 +22,7 @@ public:
     void run();
 
     void graphInit();
-    void getEdgesFromAvSet();
+    bool getEdgesFromAvSet();
 
     int nodeNo;
     GraphUtilType executor;
@@ -43,6 +43,9 @@ public:
     std::vector<std::vector<Edge>> adjacencyTable;
     int *avSet;
     int *avCount;
+
+    Edge *avESet;
+    int avECount;
 
 private:
     UNIX_shm initVSet_shm;
