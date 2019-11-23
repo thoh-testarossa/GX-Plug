@@ -18,8 +18,6 @@ __global__ void MSGApply_kernel(Vertex *vSet, int numOfInitV, int *initVSet, dou
 				vSet[vID].isActive = true;
 			}
 		}
-
-		else;
 	}
 }
 

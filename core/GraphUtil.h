@@ -48,8 +48,8 @@ public:
     //This two parameter is used to initialize memory blocks the program will use
     int totalVValuesCount;
     int totalMValuesCount;
-
     int partitionId;
+    bool optimize = false;
 };
 
 #endif //GRAPH_ALGO_GRAPHUTIL_H

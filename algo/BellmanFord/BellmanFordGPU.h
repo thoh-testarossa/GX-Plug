@@ -54,14 +54,12 @@ protected:
     unsigned long long int *d_mTransformedMergedMSGValueSet;
 
 private:
-#if OPTIMIZE
     //optimize
     //skip the unnecessary copy between host and device -- after the first iteration
     int isInited;
     bool *isDst;
     int *avSet;
     int avCount;
-#endif
 
     auto MSGGenMerge_GPU_MVCopy(Vertex *d_vSet, const Vertex *vSet,
                                 double *d_vValues, const double *vValues,

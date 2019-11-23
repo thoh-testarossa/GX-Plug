@@ -187,6 +187,9 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
 
     int iterCount = 0;
 
+    //test
+    int total = 0;
+
     while(this->client_msq.recv(msgp, (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256) != -1)
     {
         //Test
@@ -200,7 +203,15 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
             auto mergeEnd = std::chrono::system_clock::now();
             auto applyEnd = std::chrono::system_clock::now();
 
-            if(this->getEdgesFromAvSet())
+            this->executor.optimize = this->getEdgesFromAvSet();
+
+            auto end = std::chrono::system_clock::now();
+            std::cout << "construct edges time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+            total += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+            std::cout << "optimize: " << this->executor.optimize << std::endl;
+
+            if(this->executor.optimize)
             {
                 start = std::chrono::system_clock::now();
                 int msgCount = this->executor.MSGGenMerge_array(this->vCount, this->avECount, this->vSet, this->avESet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
@@ -220,6 +231,8 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
             //test
             std::cout << "msg gen time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count() << std::endl;
             std::cout << "apply time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(applyEnd - mergeEnd).count() << std::endl;
+            total += std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count();
+            total += std::chrono::duration_cast<std::chrono::microseconds>(applyEnd - mergeEnd).count();
 
             this->server_msq.send("finished", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
         }
@@ -227,9 +240,18 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
             break;
         else if(std::string("init") == cmd)
         {
-            this->graphInit();
+            auto start = std::chrono::system_clock::now();
+
+            if(this->executor.optimize)
+                this->graphInit();
             this->executor.InitGraph_array(this->vValues, this->vSet, this->eSet, this->vCount);
             this->server_msq.send("finished", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+
+            auto end = std::chrono::system_clock::now();
+
+            std::cout << "server init time : " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+
+            total += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
         }
         else
         {
@@ -238,6 +260,7 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
     }
 
     //Test
+    std::cout << "total time: " << total << std::endl;
     std::cout << "Shutdown properly" << std::endl;
     //Test end
 }
