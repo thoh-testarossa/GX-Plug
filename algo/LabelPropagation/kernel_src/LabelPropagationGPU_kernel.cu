@@ -12,29 +12,13 @@ __global__ void MSGApply_kernel(Vertex *vSet, LPA_Value *vValues, int numOfMsg, 
 		int label = msg.label;
 		int offset = offsetInValues[destVId];
 
-		int flag = 0;
-
-		int end = offset + vSet[destVId].inDegree;
-//
-//		for(int i = offset; i < end; i++)
-//        {
-//		    if(vValues[i].label == label)
-//            {
-//		        atomicAdd(&vValues[i].labelCnt, 1);
-//		        flag = 1;
-//		        break;
-//            }
-//
-//        }
-
-        //__syncthreads();
+        //test
+//        printf("edgeIndex: %d destVId: %d label: %d \n", edgeIndex, destVId, label);
 
 		vValues[edgeIndex].destVId = destVId;
 		vValues[edgeIndex].labelCnt = 1;
 		vValues[edgeIndex].label = label;
 
-        //test
-//        printf("edgeIndex: %d destVId: %d label: %d \n", edgeIndex, destVId, label);
 	}
 }
 
@@ -63,6 +47,7 @@ __global__ void MSGGenMerge_kernel(LPA_MSG *mTransformdMergedMSGValueSet, Vertex
 		//test
 //		printf("destvid %d srcvid %d label %d index %d\n", destVId, srcVId, vValues[srcVId].label, mValueIndex);
 
+        if()
 		mTransformdMergedMSGValueSet[mValueIndex].destVId = destVId;
 		mTransformdMergedMSGValueSet[mValueIndex].edgeOriginIndex = eSet[tid].originIndex;
 		mTransformdMergedMSGValueSet[mValueIndex].label = vValues[srcVId].label;

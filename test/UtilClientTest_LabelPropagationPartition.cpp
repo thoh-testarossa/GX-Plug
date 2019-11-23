@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 
     for(int i = 0; i < vCount; i++) filteredV[i] = false;
     for(int i = 0; i < vCount; i++) timestamp[i] = -1;
-    for(int i = 0; i < vCount; i++) vSet.emplace_back(i, false, -1);
+    for(int i = 0; i < vCount; i++) vSet.emplace_back(i, true, -1);
 
     LPA_Value *vValues = new LPA_Value [eCount];
 
@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
     std::cout << "Init finished" << std::endl;
     //Test end
 
-    while(iterCount < 50)
+    while(iterCount < 10)
     {
         //Test
         std::cout << "Processing at iter " << ++iterCount << std::endl;
@@ -287,6 +287,18 @@ int main(int argc, char *argv[])
 
         auto mergeEnd = std::chrono::system_clock::now();
 
+        int msgCnt = 0;
+
+        for(auto &labelCnt : labelCntPerVertice)
+        {
+            if(labelCnt.empty())
+                continue;
+
+            msgCnt += 1;
+        }
+
+        std::cout << "msgCnt" << msgCnt << std::endl;
+
         std::cout << "graph merge time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count() << std::endl;
 
 
@@ -295,6 +307,10 @@ int main(int argc, char *argv[])
             if(maxLabelCnt.at(i).second != 0)
             {
                 vValues[i].destVId = i;
+                if(vValues[i].label == maxLabelCnt.at(i).first)
+                {
+                    vSet[i].isActive = false;
+                }
                 vValues[i].label = maxLabelCnt.at(i).first;
                 vValues[i].labelCnt = maxLabelCnt.at(i).second;
             }

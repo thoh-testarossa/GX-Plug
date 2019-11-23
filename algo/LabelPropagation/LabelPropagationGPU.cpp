@@ -25,7 +25,7 @@ auto LabelPropagationGPU<VertexValueType, MessageValueType>::MSGGenMerge_GPU_MVC
     err = cudaMemcpy(d_vSet, vSet, vGCount * sizeof(Vertex), cudaMemcpyHostToDevice);
 
     //vValueSet copy
-    err = cudaMemcpy(d_vValues, vValues, eGCount * sizeof(VertexValueType), cudaMemcpyHostToDevice);
+    err = cudaMemcpy(d_vValues, vValues, vGCount * sizeof(VertexValueType), cudaMemcpyHostToDevice);
 
     //test
     // std::cout << "========value info========" << std::endl;
@@ -43,7 +43,9 @@ auto LabelPropagationGPU<VertexValueType, MessageValueType>::MSGApply_GPU_VVCopy
 {
     auto err = cudaSuccess;
 
-    for(int i = 0; i < eGCount; i++)
+    int vValueSize = vGCount > eGCount ? vGCount : eGCount;
+
+    for(int i = 0; i < vValueSize; i++)
     {
         vValues[i].destVId = -1;
         vValues[i].label = -1;
@@ -51,7 +53,7 @@ auto LabelPropagationGPU<VertexValueType, MessageValueType>::MSGApply_GPU_VVCopy
     }
 
     //vValueSet copy
-    err = cudaMemcpy(d_vValues, vValues, eGCount * sizeof(VertexValueType), cudaMemcpyHostToDevice);
+    err = cudaMemcpy(d_vValues, vValues, vValueSize * sizeof(VertexValueType), cudaMemcpyHostToDevice);
 
     return err;
 }
@@ -85,7 +87,9 @@ void LabelPropagationGPU<VertexValueType, MessageValueType>::Deploy(int vCount, 
 
     cudaError_t err = cudaSuccess;
 
-    err = cudaMalloc((void **)&this->d_vValueSet, eCount * sizeof(VertexValueType));
+    int vValueSize = vCount > eCount ? vCount : eCount;
+
+    err = cudaMalloc((void **)&this->d_vValueSet, vValueSize * sizeof(VertexValueType));
     err = cudaMalloc((void **)&this->d_vSet, vCount * sizeof(Vertex));
     err = cudaMalloc((void **)&this->d_eGSet, ePerEdgeSet * sizeof(Edge));
 
@@ -128,6 +132,13 @@ int LabelPropagationGPU<VertexValueType, MessageValueType>::MSGApply_array(int v
 
     bool needReflect = false;
 
+    int vValueSize = vCount > eCount ? vCount : eCount;
+
+    for(int i = 0; i < vCount; i++)
+    {
+        vSet[i].isActive = false;
+    }
+
     if(!needReflect)
     {
         err = MSGApply_GPU_VVCopy(this->d_vValueSet, vValues, this->d_offsetInValues, vCount, eCount);
@@ -143,11 +154,16 @@ int LabelPropagationGPU<VertexValueType, MessageValueType>::MSGApply_array(int v
 
     for(int i = 0; i < eCount; i++)
     {
-        mGSet.insertMsg(Message<MessageValueType>(0, mValues[i].destVId, mValues[i]));
-        mGCount++;
+        if(mValues[i].destVId != -1)
+        {
+            mGSet.insertMsg(Message<MessageValueType>(0, mValues[i].destVId, mValues[i]));
+            mGCount++;
+        }
 
         if(mGCount == this->mPerMSGSet || i == eCount - 1) //A batch of msgs will be transferred into GPU. Don't forget last batch!
         {
+            std::cout << "size: " << mGSet.mSet.size() << std::endl;
+
             auto reflectIndex = std::vector<int>();
             auto reversedIndex = std::vector<int>();
 
@@ -232,14 +248,15 @@ int LabelPropagationGPU<VertexValueType, MessageValueType>::MSGApply_array(int v
     //Memory copy back
     if(!needReflect)
     {
-        err = cudaMemcpy(vValues, this->d_vValueSet, eCount * sizeof(VertexValueType), cudaMemcpyDeviceToHost);
+        err = cudaMemcpy(vValues, this->d_vValueSet, vValueSize * sizeof(VertexValueType), cudaMemcpyDeviceToHost);
     }
 
     //test
 //     std::cout << "========value info========" << std::endl;
-//     for(int i = 0; i < eCount; i++)
+//     for(int i = 0; i < vValueSize; i++)
 //     {
-//         std::cout << vValues[i].destVId << " " << vValues[i].label << " " << vValues[i].labelCnt  << std::endl;
+//         if(vValues[i].destVId != -1)
+//            std::cout << vValues[i].destVId << " " << vValues[i].label << " " << vValues[i].labelCnt  << std::endl;
 //     }
 //     std::cout << "=========value end=======" << std::endl << std::endl;
 
@@ -290,8 +307,11 @@ int LabelPropagationGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(in
     int batchCnt = 0;
     for(int i = 0; i < eCount; i++)
     {
-        eGSet.emplace_back(eSet[i]);
-        eGCount++;
+        if(vSet[eSet[i].src].isActive)
+        {
+            eGSet.emplace_back(eSet[i]);
+            eGCount++;
+        }
 
         //Only dst receives message
         //isDst[eSet[i].dst] = true;
