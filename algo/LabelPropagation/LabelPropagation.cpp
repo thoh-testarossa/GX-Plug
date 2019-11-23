@@ -142,7 +142,9 @@ template <typename VertexValueType, typename MessageValueType>
 void LabelPropagation<VertexValueType, MessageValueType>::Init(int vCount, int eCount, int numOfInitV)
 {
     //vValue size = e in order to store the label info for merging the subgraph
-    this->totalVValuesCount = eCount;
+    int max = vCount > eCount ? vCount : eCount;
+
+    this->totalVValuesCount = max;
     this->totalMValuesCount = eCount;
 
     this->offsetInMValuesOfEachV = new int [vCount];

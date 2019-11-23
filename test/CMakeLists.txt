@@ -252,6 +252,16 @@ if(UNIX)
             srv_UtilClient
             algo_LabelPropagation)
 
+    add_executable(srv_UtilClientTest_LabelPropagationPartition
+            UtilClientTest_LabelPropagationPartition.cpp)
+
+    target_link_libraries(srv_UtilClientTest_LabelPropagationPartition
+            pthread
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilClient
+            algo_LabelPropagation)
+
     add_executable(srv_UtilClientTest_PageRank
             UtilClientTest_PageRank.cpp)
 
