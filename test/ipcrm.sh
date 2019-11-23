@@ -5,6 +5,8 @@ ipcrm -M 0x00040000
 ipcrm -M 0x00050000
 ipcrm -M 0x00060000
 ipcrm -M 0x00070000
+ipcrm -M 0x00080000
+ipcrm -M 0x00090000
 ipcrm -M 0x01010000
 ipcrm -M 0x01020000
 ipcrm -M 0x01030000
@@ -12,6 +14,8 @@ ipcrm -M 0x01040000
 ipcrm -M 0x01050000
 ipcrm -M 0x01060000
 ipcrm -M 0x01070000
+ipcrm -M 0x01080000
+ipcrm -M 0x01090000
 ipcrm -M 0x02010000
 ipcrm -M 0x02020000
 ipcrm -M 0x02030000
@@ -19,6 +23,8 @@ ipcrm -M 0x02040000
 ipcrm -M 0x02050000
 ipcrm -M 0x02060000
 ipcrm -M 0x02070000
+ipcrm -M 0x02080000
+ipcrm -M 0x02090000
 ipcrm -M 0x03010000
 ipcrm -M 0x03020000
 ipcrm -M 0x03030000
@@ -26,6 +32,8 @@ ipcrm -M 0x03040000
 ipcrm -M 0x03050000
 ipcrm -M 0x03060000
 ipcrm -M 0x03070000
+ipcrm -M 0x03080000
+ipcrm -M 0x03090000
 
 ipcrm -Q 0x00000100
 ipcrm -Q 0x00000200
