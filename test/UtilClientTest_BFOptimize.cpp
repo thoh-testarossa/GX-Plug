@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 
     for(int i = 0; i < vCount; i++) timestamp[i] = -1;
 
-    for(int i = 0; i < vCount; i++) vSet.emplace_back(i, false, -1);
+    for(int i = 0; i < vCount; i++) vSet.emplace_back(i, true, -1);
     for(int i = 0; i < numOfInitV; i++)
     {
         vSet.at(initVSet[i]).initVIndex = i;

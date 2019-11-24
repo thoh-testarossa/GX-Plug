@@ -51,16 +51,41 @@ int main(int argc, char *argv[])
         return 3;
     }
 
-    //Init the Graph
     int *initVSet = new int [numOfInitV];
-    double *vValues = new double [vCount * numOfInitV];
     bool *filteredV = new bool [vCount];
     int *timestamp = new int [vCount];
+    double *vValues = new double [vCount * numOfInitV];
 
     std::vector<Vertex> vSet = std::vector<Vertex>();
-    std::vector<Edge> eSet = std::vector<Edge>();
 
-    std::ifstream Gin("../../data/testGraph_road-road-usa.mtx.txt");
+    for(int i = 0; i < vCount; i++) filteredV[i] = false;
+    for(int i = 0; i < vCount; i++) timestamp[i] = -1;
+    for(int i = 0; i < vCount; i++) vSet.emplace_back(i, true, -1);
+
+    for(int i = 0; i < vCount * numOfInitV; i++) vValues[i] = INT32_MAX  >> 1;
+
+    //Easy init
+    initVSet[0] = 377335;
+    initVSet[1] = 584383;
+    initVSet[2] = 1101295;
+    initVSet[3] = 1400923;
+    for(int i = 0; i < numOfInitV; i++) vValues[initVSet[i] * numOfInitV + i] = 0;
+
+    for(int i = 0; i < numOfInitV; i++)
+    {
+        vSet.at(initVSet[i]).initVIndex = i;
+        vSet.at(initVSet[i]).isActive = true;
+    }
+
+    std::vector<std::vector<Edge>> eSets;
+    eSets.reserve(4);
+    eSets.assign(4, std::vector<Edge>());
+
+    int eCounts[4];
+
+    //pid0
+    std::cout << "../../data/wiki/pid0.txt" << std::endl;
+    std::ifstream Gin("../../data/wiki/pid0.txt");
     if(!Gin.is_open())
     {
         std::cout << "Error! File testGraph.txt not found!" << std::endl;
@@ -74,47 +99,104 @@ int main(int argc, char *argv[])
         std::cout << "Graph file doesn't match up UtilClient's parameter" << std::endl;
         return 5;
     }
-    Gin >> tmp;
-    if(eCount != tmp)
+
+    Gin >> eCounts[0];
+
+    for(int i = 0; i < eCounts[0]; i++)
+    {
+        int src, dst;
+        double weight;
+        Gin >> src >> dst >> weight;
+        eSets.at(0).emplace_back(src, dst, weight);
+    }
+    Gin.close();
+
+    //pid1
+    std::cout << "../../data/wiki/pid1.txt" << std::endl;
+    std::ifstream Gin1("../../data/wiki/pid1.txt");
+    if(!Gin1.is_open())
+    {
+        std::cout << "Error! File testGraph.txt not found!" << std::endl;
+        return 4;
+    }
+
+    Gin1 >> tmp;
+    if(vCount != tmp)
     {
         std::cout << "Graph file doesn't match up UtilClient's parameter" << std::endl;
         return 5;
     }
 
-    for(int i = 0; i < vCount * numOfInitV; i++) vValues[i] = INT32_MAX  >> 1;
+    Gin1 >> eCounts[1];
 
-    //Easy init
-    initVSet[0] = 828192;
-    initVSet[1] = 9808777;
-    initVSet[2] = 13425140;
-    initVSet[3] = 22675645;
-    for(int i = 0; i < numOfInitV; i++) vValues[initVSet[i] * numOfInitV + i] = 0;
-
-    for(int i = 0; i < vCount; i++) filteredV[i] = false;
-
-    for(int i = 0; i < vCount; i++) timestamp[i] = -1;
-
-    for(int i = 0; i < vCount; i++) vSet.emplace_back(i, false, -1);
-    for(int i = 0; i < numOfInitV; i++)
-    {
-        vSet.at(initVSet[i]).initVIndex = i;
-        vSet.at(initVSet[i]).isActive = true;
-    }
-
-    for(int i = 0; i < eCount; i++)
+    for(int i = 0; i < eCounts[1]; i++)
     {
         int src, dst;
         double weight;
-        Gin >> src >> dst >> weight;
-        eSet.emplace_back(src, dst, weight);
+        Gin1 >> src >> dst >> weight;
+        eSets.at(1).emplace_back(src, dst, weight);
+    }
+    Gin1.close();
+
+    //pid2
+    std::cout << "../../data/wiki/pid2.txt" << std::endl;
+    std::ifstream Gin2("../../data/wiki/pid2.txt");
+    if(!Gin2.is_open())
+    {
+        std::cout << "Error! File testGraph.txt not found!" << std::endl;
+        return 4;
     }
 
-    Gin.close();
+    Gin2 >> tmp;
+    if(vCount != tmp)
+    {
+        std::cout << "Graph file doesn't match up UtilClient's parameter" << std::endl;
+        return 5;
+    }
+
+    Gin2 >> eCounts[2];
+
+    for(int i = 0; i < eCounts[2]; i++)
+    {
+        int src, dst;
+        double weight;
+        Gin2 >> src >> dst >> weight;
+        eSets.at(2).emplace_back(src, dst, weight);
+    }
+    Gin2.close();
+
+    //pid3
+    std::cout << "../../data/wiki/pid3.txt" << std::endl;
+    std::ifstream Gin3("../../data/wiki/pid3.txt");
+    if(!Gin3.is_open())
+    {
+        std::cout << "Error! File testGraph.txt not found!" << std::endl;
+        return 4;
+    }
+
+    Gin3 >> tmp;
+    if(vCount != tmp)
+    {
+        std::cout << "Graph file doesn't match up UtilClient's parameter" << std::endl;
+        return 5;
+    }
+
+    Gin3 >> eCounts[3];
+
+    for(int i = 0; i < eCounts[3]; i++)
+    {
+        int src, dst;
+        double weight;
+        Gin3 >> src >> dst >> weight;
+        eSets.at(3).emplace_back(src, dst, weight);
+    }
+    Gin3.close();
+
 
     //Client Init Data Transfer
     auto clientVec = std::vector<UtilClient<double, double>>();
     for(int i = 0; i < nodeCount; i++)
-        clientVec.push_back(UtilClient<double, double>(vCount, ((i + 1) * eCount) / nodeCount - (i * eCount) / nodeCount, numOfInitV, i));
+        clientVec.push_back(UtilClient<double, double>(vCount, eCount[i], numOfInitV, i));
     int chk = 0;
     for(int i = 0; i < nodeCount && chk != -1; i++)
     {
@@ -125,7 +207,7 @@ int main(int argc, char *argv[])
             return 2;
         }
 
-        chk = clientVec.at(i).transfer(vValues, &vSet[0], &eSet[(i * eCount) / nodeCount], initVSet, filteredV, timestamp);
+        chk = clientVec.at(i).transfer(vValues, &vSet[0], &eSets.at(i)[0], initVSet, filteredV, timestamp);
 
         if(chk == -1)
         {

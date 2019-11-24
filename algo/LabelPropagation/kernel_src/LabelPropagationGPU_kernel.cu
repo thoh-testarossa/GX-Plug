@@ -47,7 +47,6 @@ __global__ void MSGGenMerge_kernel(LPA_MSG *mTransformdMergedMSGValueSet, Vertex
 		//test
 //		printf("destvid %d srcvid %d label %d index %d\n", destVId, srcVId, vValues[srcVId].label, mValueIndex);
 
-        if()
 		mTransformdMergedMSGValueSet[mValueIndex].destVId = destVId;
 		mTransformdMergedMSGValueSet[mValueIndex].edgeOriginIndex = eSet[tid].originIndex;
 		mTransformdMergedMSGValueSet[mValueIndex].label = vValues[srcVId].label;

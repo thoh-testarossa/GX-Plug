@@ -181,12 +181,12 @@ void BellmanFordGPU<VertexValueType, MessageValueType>::Deploy(int vCount, int e
 
     int mSize = std::max(this->numOfInitV * ePerEdgeSet, mPerMSGSet);
 
-    this->mInitVIndexSet = new int [mSize];
+    this->mInitVIndexSet = new int [vertexLimit * this->numOfInitV];
     err = cudaMalloc((void **)&this->d_mInitVIndexSet, mSize * sizeof(int));
-    this->mDstSet = new int [mSize];
-    err = cudaMalloc((void **)&this->d_mDstSet, mSize * sizeof(int));
+    this->mDstSet = new int [vertexLimit * this->numOfInitV];
+    err = cudaMalloc((void **)&this->d_mDstSet, eCount * sizeof(int));
     this->mValueSet = new MessageValueType [mSize];
-    err = cudaMalloc((void **)&this->d_mValueSet, mSize * sizeof(double));
+    err = cudaMalloc((void **)&this->d_mValueSet, eCount * sizeof(double));
 
     this->avSet = new int [vertexLimit];
     this->isDst = new bool[vertexLimit];
