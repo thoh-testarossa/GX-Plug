@@ -134,11 +134,6 @@ int LabelPropagationGPU<VertexValueType, MessageValueType>::MSGApply_array(int v
 
     int vValueSize = vCount > eCount ? vCount : eCount;
 
-    for(int i = 0; i < vCount; i++)
-    {
-        vSet[i].isActive = false;
-    }
-
     if(!needReflect)
     {
         err = MSGApply_GPU_VVCopy(this->d_vValueSet, vValues, this->d_offsetInValues, vCount, eCount);
@@ -307,11 +302,8 @@ int LabelPropagationGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(in
     int batchCnt = 0;
     for(int i = 0; i < eCount; i++)
     {
-        if(vSet[eSet[i].src].isActive)
-        {
             eGSet.emplace_back(eSet[i]);
             eGCount++;
-        }
 
         //Only dst receives message
         //isDst[eSet[i].dst] = true;
