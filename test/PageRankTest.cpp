@@ -10,7 +10,7 @@
 int main()
 {
     //Read the Graph
-    std::ifstream Gin("../../data/testGraph100000.txt");
+    std::ifstream Gin("../../data/testGraph_road-road-usa.mtx.txt");
     if(!Gin.is_open()) {std::cout << "Error! File testGraph.txt not found!" << std::endl; return 1; }
 
     int vCount, eCount;

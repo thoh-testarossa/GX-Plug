@@ -16,20 +16,25 @@
 #include <future>
 #include <cstring>
 
+int optimize = 0;
+
 template <typename VertexValueType, typename MessageValueType>
 void testFut(UtilClient<VertexValueType, MessageValueType> *uc, VertexValueType *vValues, Vertex *vSet, int *avSet, int avCount)
 {
     uc->connect();
-    uc->update(vValues, vSet, avSet, avCount);
+    if(optimize)
+        uc->update(vValues, vSet, avSet, avCount);
+    else
+        uc->update(vValues, vSet);
     uc->request();
     uc->disconnect();
 }
 
 int main(int argc, char *argv[])
 {
-    if(argc != 4 && argc != 5)
+    if(argc != 4 && argc != 5 && argc != 6)
     {
-        std::cout << "Usage:" << std::endl << "./UtilClientTest_PageRank vCount eCount numOfInitV [nodeCount]" << std::endl;
+        std::cout << "Usage:" << std::endl << "./UtilClientTest_PageRank vCount eCount numOfInitV [nodeCount] [optimize]" << std::endl;
         return 1;
     }
 
@@ -37,6 +42,7 @@ int main(int argc, char *argv[])
     int eCount = atoi(argv[2]);
     int numOfInitV = atoi(argv[3]);
     int nodeCount = atoi(argv[4]);
+    optimize = atoi(argv[5]);
 
     //Parameter check
     if(vCount <= 0 || eCount <= 0 || numOfInitV <= 0 || nodeCount <= 0)
@@ -53,7 +59,7 @@ int main(int argc, char *argv[])
     std::vector<Vertex> vSet = std::vector<Vertex>();
     std::vector<Edge> eSet = std::vector<Edge>();
 
-    std::ifstream Gin("../../data/testGraph100000.txt");
+    std::ifstream Gin("../../data/testGraph4000000.txt");
     if(!Gin.is_open())
     {
         std::cout << "Error! File testGraph.txt not found!" << std::endl;
@@ -113,6 +119,8 @@ int main(int argc, char *argv[])
 
     }
 
+    std::cout << "init edge ..." << std::endl;
+
     for(int i = 0; i < eCount; i++)
     {
         int src, dst;
@@ -131,6 +139,8 @@ int main(int argc, char *argv[])
 
     numOfInitV = 1;
 
+    std::cout << "start transfer" << std::endl;
+
     //Client Init Data Transfer
     auto clientVec = std::vector<UtilClient<std::pair<double, double>, PRA_MSG>>();
     for(int i = 0; i < nodeCount; i++)
@@ -139,7 +149,9 @@ int main(int argc, char *argv[])
 
     for(int i = 0; i < nodeCount && chk != -1; i++)
     {
+        std::cout << "connect" << std::endl;
         chk = clientVec.at(i).connect();
+        std::cout << "connect end" << std::endl;
         if (chk == -1)
         {
             std::cout << "Cannot establish the connection with server correctly" << std::endl;
@@ -255,10 +267,10 @@ int main(int argc, char *argv[])
         std::cout << "avCount : " << avCount << std::endl;
 
         //test
-        for(int i = 0; i < vCount; i++)
-        {
-            std::cout << i << ":" << vValues[i].first << " " << vValues[i].second << std::endl ;
-        }
+//        for(int i = 0; i < vCount; i++)
+//        {
+//            std::cout << i << ":" << vValues[i].first << " " << vValues[i].second << std::endl ;
+//        }
     }
 
     std::cout << "===========result===========" << std::endl;

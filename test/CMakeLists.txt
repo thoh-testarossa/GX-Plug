@@ -232,6 +232,16 @@ if(UNIX)
             srv_UtilClient
             algo_BellmanFord)
 
+    add_executable(srv_UtilClientTest_BFOptimizePartition
+            UtilClientTest_BFOptimizePartition.cpp)
+
+    target_link_libraries(srv_UtilClientTest_BFOptimizePartition
+            pthread
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilClient
+            algo_BellmanFord)
+
     add_executable(srv_UtilClientTest_BFJ
             UtilClientTest_BFJump.cpp)
 

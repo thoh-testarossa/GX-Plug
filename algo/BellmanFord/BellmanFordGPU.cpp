@@ -184,9 +184,9 @@ void BellmanFordGPU<VertexValueType, MessageValueType>::Deploy(int vCount, int e
     this->mInitVIndexSet = new int [vertexLimit * this->numOfInitV];
     err = cudaMalloc((void **)&this->d_mInitVIndexSet, mSize * sizeof(int));
     this->mDstSet = new int [vertexLimit * this->numOfInitV];
-    err = cudaMalloc((void **)&this->d_mDstSet, eCount * sizeof(int));
+    err = cudaMalloc((void **)&this->d_mDstSet, mSize * sizeof(int));
     this->mValueSet = new MessageValueType [mSize];
-    err = cudaMalloc((void **)&this->d_mValueSet, eCount * sizeof(double));
+    err = cudaMalloc((void **)&this->d_mValueSet, mSize * sizeof(double));
 
     this->avSet = new int [vertexLimit];
     this->isDst = new bool[vertexLimit];
@@ -448,14 +448,6 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount
         std::cout << "avCount calculation time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
     }
 
-//    //test
-//    for(int i = 0; i < vCount; i++)
-//    {
-//        if(vSet[i].isActive)
-//        {
-//            std::cout << "id : " << i << " active" << std::endl;
-//        }
-//    }
 
     return this->avCount;
 }

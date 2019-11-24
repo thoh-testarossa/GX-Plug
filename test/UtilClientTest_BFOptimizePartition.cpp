@@ -65,10 +65,10 @@ int main(int argc, char *argv[])
     for(int i = 0; i < vCount * numOfInitV; i++) vValues[i] = INT32_MAX  >> 1;
 
     //Easy init
-    initVSet[0] = 377335;
-    initVSet[1] = 584383;
-    initVSet[2] = 1101295;
-    initVSet[3] = 1400923;
+    initVSet[0] = 828192;
+    initVSet[1] = 9808777;
+    initVSet[2] = 13425140;
+    initVSet[3] = 22675645;
     for(int i = 0; i < numOfInitV; i++) vValues[initVSet[i] * numOfInitV + i] = 0;
 
     for(int i = 0; i < numOfInitV; i++)
@@ -84,8 +84,8 @@ int main(int argc, char *argv[])
     int eCounts[4];
 
     //pid0
-    std::cout << "../../data/wiki/pid0.txt" << std::endl;
-    std::ifstream Gin("../../data/wiki/pid0.txt");
+    std::cout << "../../data/wrn/pid0.txt" << std::endl;
+    std::ifstream Gin("../../data/wrn/pid0.txt");
     if(!Gin.is_open())
     {
         std::cout << "Error! File testGraph.txt not found!" << std::endl;
@@ -112,8 +112,8 @@ int main(int argc, char *argv[])
     Gin.close();
 
     //pid1
-    std::cout << "../../data/wiki/pid1.txt" << std::endl;
-    std::ifstream Gin1("../../data/wiki/pid1.txt");
+    std::cout << "../../data/wrn/pid1.txt" << std::endl;
+    std::ifstream Gin1("../../data/wrn/pid1.txt");
     if(!Gin1.is_open())
     {
         std::cout << "Error! File testGraph.txt not found!" << std::endl;
@@ -139,8 +139,8 @@ int main(int argc, char *argv[])
     Gin1.close();
 
     //pid2
-    std::cout << "../../data/wiki/pid2.txt" << std::endl;
-    std::ifstream Gin2("../../data/wiki/pid2.txt");
+    std::cout << "../../data/wrn/pid2.txt" << std::endl;
+    std::ifstream Gin2("../../data/wrn/pid2.txt");
     if(!Gin2.is_open())
     {
         std::cout << "Error! File testGraph.txt not found!" << std::endl;
@@ -166,8 +166,8 @@ int main(int argc, char *argv[])
     Gin2.close();
 
     //pid3
-    std::cout << "../../data/wiki/pid3.txt" << std::endl;
-    std::ifstream Gin3("../../data/wiki/pid3.txt");
+    std::cout << "../../data/wrn/pid3.txt" << std::endl;
+    std::ifstream Gin3("../../data/wrn/pid3.txt");
     if(!Gin3.is_open())
     {
         std::cout << "Error! File testGraph.txt not found!" << std::endl;
@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
     //Client Init Data Transfer
     auto clientVec = std::vector<UtilClient<double, double>>();
     for(int i = 0; i < nodeCount; i++)
-        clientVec.push_back(UtilClient<double, double>(vCount, eCount[i], numOfInitV, i));
+        clientVec.push_back(UtilClient<double, double>(vCount, eCounts[i], numOfInitV, i));
     int chk = 0;
     for(int i = 0; i < nodeCount && chk != -1; i++)
     {

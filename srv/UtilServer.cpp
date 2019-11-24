@@ -271,12 +271,12 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::graphInit()
     this->adjacencyTable.reserve(this->vCount);
     this->adjacencyTable.assign(this->vCount, std::vector<Edge>());
 
-    for(int i = 0; i < vCount; i++)
+    for(int i = 0; i < this->vCount; i++)
     {
         this->adjacencyTable.at(i).reserve(this->vSet[i].outDegree);
     }
 
-    for(int i = 0; i < eCount; i++)
+    for(int i = 0; i < this->eCount; i++)
     {
         auto edge = this->eSet[i];
         this->adjacencyTable.at(edge.src).emplace_back(edge.src, edge.dst, edge.weight);
