@@ -10,8 +10,6 @@
 #include "BellmanFord.h"
 #include "../../include/GPUconfig.h"
 
-#define OPTIMIZE 1
-
 template <typename VertexValueType, typename MessageValueType>
 class BellmanFordGPU : public BellmanFord<VertexValueType, MessageValueType>
 {
@@ -37,8 +35,6 @@ protected:
     VertexValueType *vValueSet;
     double *d_vValueSet;
 
-    MessageValueType *mValueTable;
-
     int *mInitVIndexSet;
     int *d_mInitVIndexSet;
     int *mDstSet;
@@ -49,7 +45,6 @@ protected:
     Vertex *d_vSet;
     Edge *d_eGSet;
 
-    MessageValueType *mMergedMSGValueSet;
     unsigned long long int *mTransformedMergedMSGValueSet;
     unsigned long long int *d_mTransformedMergedMSGValueSet;
 
@@ -60,6 +55,8 @@ private:
     bool *isDst;
     int *avSet;
     int avCount;
+    MessageValueType *mValueSetOpt;
+    //optimize --end
 
     auto MSGGenMerge_GPU_MVCopy(Vertex *d_vSet, const Vertex *vSet,
                                 double *d_vValues, const double *vValues,
