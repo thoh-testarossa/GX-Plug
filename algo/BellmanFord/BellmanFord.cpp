@@ -135,7 +135,7 @@ void BellmanFord<VertexValueType, MessageValueType>::Init(int vCount, int eCount
     this->totalVValuesCount = vCount * numOfInitV;
     this->totalMValuesCount = vCount * numOfInitV;
 
-    this->optimize = true;
+    this->optimize = false;
 }
 
 template <typename VertexValueType, typename MessageValueType>

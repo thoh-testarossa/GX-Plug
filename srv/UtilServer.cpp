@@ -286,7 +286,7 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::graphInit()
 template<typename GraphUtilType, typename VertexValueType, typename MessageValueType>
 bool UtilServer<GraphUtilType, VertexValueType, MessageValueType>::getEdgesFromAvSet()
 {
-    if(*(this->avCount) <= 0 || *(this->avCount) > (this->vCount >> 1))
+    if(this->adjacencyTable.empty() || *(this->avCount) <= 0 || *(this->avCount) > (this->vCount >> 1))
     {
         return false;
     }
