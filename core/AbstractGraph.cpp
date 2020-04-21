@@ -11,12 +11,14 @@ Vertex::Vertex(int vertexID, bool activeness, int initVIndex)
     this->initVIndex = initVIndex;
     this->outDegree = 0;
     this->inDegree = 0;
+    this->isMaster = false;
 }
 
 Vertex::Vertex()
 {
     this->vertexID = -1;
     this->isActive = false;
+    this->isMaster = false;
     this->initVIndex = INVALID_INITV_INDEX;
     this->outDegree = 0;
     this->inDegree = 0;

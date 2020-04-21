@@ -18,6 +18,7 @@ public:
     int vertexID;
     bool isActive;
     int initVIndex;
+    bool isMaster;
     int outDegree;
     int inDegree;
 };
