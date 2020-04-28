@@ -187,6 +187,9 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
 
     int iterCount = 0;
 
+    int msgCount = 0;
+    int avCount = 0;
+
     //test
     int total = 0;
 
@@ -214,17 +217,17 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
             if(this->executor.optimize)
             {
                 start = std::chrono::system_clock::now();
-                int msgCount = this->executor.MSGGenMerge_array(this->vCount, this->avECount, this->vSet, this->avESet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+                msgCount = this->executor.MSGGenMerge_array(this->vCount, this->avECount, this->vSet, this->avESet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
                 mergeEnd = std::chrono::system_clock::now();
-                int avCount = this->executor.MSGApply_array(this->vCount, msgCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+                avCount = this->executor.MSGApply_array(this->vCount, msgCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
                 applyEnd = std::chrono::system_clock::now();
             }
             else
             {
                 start = std::chrono::system_clock::now();
-                int msgCount = this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+                msgCount = this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
                 mergeEnd = std::chrono::system_clock::now();
-                int avCount = this->executor.MSGApply_array(this->vCount, msgCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+                avCount = this->executor.MSGApply_array(this->vCount, msgCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
                 applyEnd = std::chrono::system_clock::now();
             }
 
@@ -256,12 +259,12 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
         else if(std::string("execute_msg_apply") == cmd)
         {
             std::cout << "apply message" << std::endl;
-            int avCount = this->executor.MSGApply_array(this->vCount, this->eCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+            avCount = this->executor.MSGApply_array(this->vCount, msgCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
         }
         else if(std::string("execute_msg_merge") == cmd)
         {
             std::cout << "merge message" << std::endl;
-            int msgCount = this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+            msgCount = this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
         }
         else
         {

@@ -292,6 +292,11 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount
 
     start = std::chrono::system_clock::now();
 
+    if(!this->optimize)
+    {
+        eCount = numOfInitV * vCount;
+    }
+
     for(int i = 0; i < eCount; i++)
     {
         if(this->optimize)
@@ -301,7 +306,7 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount
         }
         else
         {
-            if(mValues[i] != (MessageValueType)INVALID_MASSAGE)
+            if(mValues[i] != (MessageValueType)INVALID_MASSAGE && vSet[i / numOfInitV].isMaster)
             {
                 mGSet.insertMsg(Message<MessageValueType>(initVSet[i % numOfInitV], i / numOfInitV, mValues[i]));
                 mGCount++;
@@ -309,7 +314,6 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount
         }
         if(mGCount == this->mPerMSGSet || i == eCount - 1)
         {
-
             end = std::chrono::system_clock::now();
             std::cout << "Adding msgs to batches time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
             start = std::chrono::system_clock::now();
@@ -452,7 +456,6 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount
             if(vSet[i].isActive)
                 this->avCount++;
         }
-        std::cout << vCount << std::endl;
         std::cout << "gpu avcount " << this->avCount << std::endl;
 
         end = std::chrono::system_clock::now();

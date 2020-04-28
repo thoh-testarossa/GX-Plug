@@ -92,7 +92,7 @@ int BellmanFord<VertexValueType, MessageValueType>::MSGApply_array(int vCount, i
 
     for(int i = 0; i < vCount * numOfInitV; i++)
     {
-        if(!vSet->isMaster) continue;
+        if(!vSet[i].isMaster) continue;
 
         if(vValues[i] > (VertexValueType)mValues[i])
         {
@@ -132,10 +132,6 @@ int BellmanFord<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount
             }
         }
     }
-
-//    std::cout << "--------------------" << std::endl;
-//    for(int i = 0; i < eCount; i++)
-//        std::cout << " src: " << eSet[i].src << " dest: " << eSet[i].dst << " mvalue: " << mValues[i] << std::endl;
 
     return vCount * numOfInitV;
 }
