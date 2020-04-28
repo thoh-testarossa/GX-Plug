@@ -92,6 +92,8 @@ int BellmanFord<VertexValueType, MessageValueType>::MSGApply_array(int vCount, i
 
     for(int i = 0; i < vCount * numOfInitV; i++)
     {
+        if(!vSet->isMaster) continue;
+
         if(vValues[i] > (VertexValueType)mValues[i])
         {
             vValues[i] = (VertexValueType)mValues[i];
@@ -102,6 +104,12 @@ int BellmanFord<VertexValueType, MessageValueType>::MSGApply_array(int vCount, i
             }
         }
     }
+
+//    std::cout << "--------------------" << std::endl;
+//    for(int i = 0; i < vCount; i++)
+//        std::cout << i << " is master :" << vSet[i].isMaster << " value: " << vValues[i] << std::endl;
+
+    std::cout << avCount << std::endl;
 
     return avCount;
 }
@@ -117,11 +125,17 @@ int BellmanFord<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount
         {
             for(int j = 0; j < numOfInitV; j++)
             {
-                if(mValues[eSet[i].dst * numOfInitV + j] > (MessageValueType)vValues[eSet[i].src * numOfInitV + j] + eSet[i].weight)
-                    mValues[eSet[i].dst * numOfInitV + j] = (MessageValueType)vValues[eSet[i].src * numOfInitV + j] + eSet[i].weight;
+                if(mValues[eSet[i].dst * numOfInitV + j] > (MessageValueType)vValues[eSet[i].src * numOfInitV + j] + eSet[i].weight) {
+                    mValues[eSet[i].dst * numOfInitV + j] =
+                            (MessageValueType) vValues[eSet[i].src * numOfInitV + j] + eSet[i].weight;
+                }
             }
         }
     }
+
+//    std::cout << "--------------------" << std::endl;
+//    for(int i = 0; i < eCount; i++)
+//        std::cout << " src: " << eSet[i].src << " dest: " << eSet[i].dst << " mvalue: " << mValues[i] << std::endl;
 
     return vCount * numOfInitV;
 }

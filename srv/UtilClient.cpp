@@ -215,3 +215,21 @@ int UtilClient<VertexValueType, MessageValueType>::copyBack(VertexValueType *vVa
     }
     else return -1;
 }
+
+template<typename VertexValueType, typename MessageValueType>
+void UtilClient<VertexValueType, MessageValueType>::requestMSGApply()
+{
+    char tmp[256];
+
+    this->client_msq.send("execute_msg_apply", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+    this->server_msq.recv(tmp, (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+}
+
+template<typename VertexValueType, typename MessageValueType>
+void UtilClient<VertexValueType, MessageValueType>::requestMSGMerge()
+{
+    char tmp[256];
+
+    this->client_msq.send("execute_msg_merge", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+    this->server_msq.recv(tmp, (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+}

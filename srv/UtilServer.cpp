@@ -253,6 +253,16 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
 
             total += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
         }
+        else if(std::string("execute_msg_apply") == cmd)
+        {
+            std::cout << "apply message" << std::endl;
+            int avCount = this->executor.MSGApply_array(this->vCount, this->eCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+        }
+        else if(std::string("execute_msg_merge") == cmd)
+        {
+            std::cout << "merge message" << std::endl;
+            int msgCount = this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+        }
         else
         {
             break;
