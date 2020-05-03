@@ -88,39 +88,12 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge(const Graph
 template <typename VertexValueType, typename MessageValueType>
 int LabelPropagation<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
 {
-    //vValues Clear
-    for(int i = 0; i < this->totalMValuesCount; i++)
-    {
-        vValues[i] = VertexValueType(INVALID_INITV_INDEX, -1, 0);
-    }
-
     for(int i = 0; i < eCount; i++)
     {
-        auto edgeIndex = mValues[i].edgeOriginIndex;
-        auto destVId = mValues[i].destVId;
-        auto offset = this->offsetInMValuesOfEachV[destVId];
-        auto flag = false;
-        auto label = mValues[i].label;
+        auto vid = mValues[i].destVId;
+        if(vid == -1 || !vSet[vid].isMaster) continue;
 
-        //test
-//        std::cout << offset << std::endl;
-//        std::cout << offset + vSet[destVId].inDegree << std::endl;
-//        std::cout << edgeIndex << std::endl;
-
-        for(int j = offset; j < offset + vSet[destVId].inDegree; j++)
-        {
-            if(vValues[j].label == label)
-            {
-                vValues[j].labelCnt++;
-                flag = true;
-                break;
-            }
-        }
-
-        if(!flag)
-        {
-            vValues[edgeIndex] = VertexValueType(destVId, label, 1);
-        }
+        vValues[vid].label = mValues[i].label;
     }
 
     return 0;
@@ -129,7 +102,6 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGApply_array(int vCou
 template <typename VertexValueType, typename MessageValueType>
 int LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
 {
-
     for(int i = 0; i < eCount; i++)
     {
         mValues[i] = MessageValueType(eSet[i].dst, eSet[i].originIndex, vValues[eSet[i].src].label);
@@ -144,8 +116,8 @@ void LabelPropagation<VertexValueType, MessageValueType>::Init(int vCount, int e
     //vValue size = e in order to store the label info for merging the subgraph
     int max = vCount > eCount ? vCount : eCount;
 
-    this->totalVValuesCount = max;
-    this->totalMValuesCount = eCount;
+    this->totalVValuesCount = vCount;
+    this->totalMValuesCount = max;
 
     this->offsetInMValuesOfEachV = new int [vCount];
 }

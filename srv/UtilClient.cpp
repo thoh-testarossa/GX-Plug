@@ -102,7 +102,7 @@ int UtilClient<VertexValueType, MessageValueType>::transfer(VertexValueType *vVa
         memcpy(this->filteredV, filteredV, this->vCount * sizeof(bool));
         memcpy(this->timestamp, timestamp, this->vCount * sizeof(int));
 
-        this->graphInit();
+        //this->graphInit();
 
         return 0;
     }
