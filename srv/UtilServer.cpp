@@ -260,11 +260,13 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
         {
             std::cout << "apply message" << std::endl;
             avCount = this->executor.MSGApply_array(this->vCount, msgCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+            this->server_msq.send("finished msg apply", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
         }
         else if(std::string("execute_msg_merge") == cmd)
         {
             std::cout << "merge message" << std::endl;
             msgCount = this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+            this->server_msq.send("finished msg merge", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
         }
         else
         {
