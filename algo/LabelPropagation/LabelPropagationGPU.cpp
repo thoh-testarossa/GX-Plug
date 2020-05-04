@@ -22,7 +22,7 @@ auto LabelPropagationGPU<VertexValueType, MessageValueType>::MSGGenMerge_GPU_MVC
     auto err = cudaSuccess;
 
     //vSet copy
-    err = cudaMemcpy(d_vSet, vSet, vGCount * sizeof(Vertex), cudaMemcpyHostToDevice);
+//    err = cudaMemcpy(d_vSet, vSet, vGCount * sizeof(Vertex), cudaMemcpyHostToDevice);
 
     //vValueSet copy
     err = cudaMemcpy(d_vValues, vValues, vGCount * sizeof(VertexValueType), cudaMemcpyHostToDevice);
@@ -43,7 +43,7 @@ auto LabelPropagationGPU<VertexValueType, MessageValueType>::MSGApply_GPU_VVCopy
 {
     auto err = cudaSuccess;
 
-    int vValueSize = vGCount > eGCount ? vGCount : eGCount;
+    int vValueSize = vGCount;
 
     for(int i = 0; i < vValueSize; i++)
     {
@@ -87,7 +87,7 @@ void LabelPropagationGPU<VertexValueType, MessageValueType>::Deploy(int vCount, 
 
     cudaError_t err = cudaSuccess;
 
-    int vValueSize = vCount > eCount ? vCount : eCount;
+    int vValueSize = vCount;
 
     err = cudaMalloc((void **)&this->d_vValueSet, vValueSize * sizeof(VertexValueType));
     err = cudaMalloc((void **)&this->d_vSet, vCount * sizeof(Vertex));
@@ -132,12 +132,12 @@ int LabelPropagationGPU<VertexValueType, MessageValueType>::MSGApply_array(int v
 
     bool needReflect = false;
 
-    int vValueSize = vCount > eCount ? vCount : eCount;
+    int vValueSize = vCount;
 
-    if(!needReflect)
-    {
-        err = MSGApply_GPU_VVCopy(this->d_vValueSet, vValues, this->d_offsetInValues, vCount, eCount);
-    }
+//    if(!needReflect)
+//    {
+//        err = MSGApply_GPU_VVCopy(this->d_vValueSet, vValues, this->d_offsetInValues, vCount, eCount);
+//    }
 
     //Apply msgs to v
     int mGCount = 0;
@@ -149,7 +149,7 @@ int LabelPropagationGPU<VertexValueType, MessageValueType>::MSGApply_array(int v
 
     for(int i = 0; i < eCount; i++)
     {
-        if(mValues[i].destVId != -1)
+        if(mValues[i].destVId != -1 && vSet[mValues[i].destVId].isMaster)
         {
             mGSet.insertMsg(Message<MessageValueType>(0, mValues[i].destVId, mValues[i]));
             mGCount++;
@@ -302,8 +302,8 @@ int LabelPropagationGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(in
     int batchCnt = 0;
     for(int i = 0; i < eCount; i++)
     {
-            eGSet.emplace_back(eSet[i]);
-            eGCount++;
+        eGSet.emplace_back(eSet[i]);
+        eGCount++;
 
         //Only dst receives message
         //isDst[eSet[i].dst] = true;
@@ -312,6 +312,9 @@ int LabelPropagationGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(in
         {
             auto reflectIndex = std::vector<int>();
             auto reversedIndex = std::vector<int>();
+
+            std::cout << "size: " << eGSet.size() << std::endl;
+            std::cout << "eGCount: " << eGCount << std::endl;
 
             auto r_g = Graph<VertexValueType>(0);
 
@@ -376,6 +379,7 @@ int LabelPropagationGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(in
             //for(int j = 0; j < vCount; j++) isDst[j] = false;
         }
     }
+
 
     return eCount;
 }

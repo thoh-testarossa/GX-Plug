@@ -117,7 +117,7 @@ void LabelPropagation<VertexValueType, MessageValueType>::Init(int vCount, int e
     int max = vCount > eCount ? vCount : eCount;
 
     this->totalVValuesCount = vCount;
-    this->totalMValuesCount = max;
+    this->totalMValuesCount = eCount;
 
     this->offsetInMValuesOfEachV = new int [vCount];
 }
