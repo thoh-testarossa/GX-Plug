@@ -93,7 +93,6 @@ int PageRank<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexV
 template <typename VertexValueType, typename MessageValueType>
 int PageRank<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
 {
-    auto msgCnt = vCount;
     int avCount = 0;
 
     for(int i = 0; i < vCount; i++)
@@ -101,17 +100,18 @@ int PageRank<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int 
         vSet[i].isActive = false;
     }
 
-    for(int i = 0; i < msgCnt; i++)
+    for(int i = 0; i < vCount; i++)
     {
         auto destVId = mValues[i].destVId;
 
-        if(destVId == -1)
+        if(destVId == -1 || !vSet[destVId].isMaster)
         {
             continue;
         }
 
         vSet[destVId].isActive = true;
-        vValues[destVId].second = (1.0 - this->resetProb) * mValues[i].rank;
+        vValues[destVId].first += mValues[i].rank;
+        vValues[destVId].second = mValues[i].rank;
         avCount++;
     }
 
@@ -137,7 +137,7 @@ int PageRank<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, i
         if(vSet[srcVId].isActive && vValues[srcVId].second > this->deltaThreshold)
         {
             //msg value -- <destinationID, rank>
-            msgValue = MessageValueType(eSet[i].dst, vValues[eSet[i].src].second * eSet[i].weight);
+            msgValue = MessageValueType(eSet[i].dst, vValues[eSet[i].src].second * eSet[i].weight * (1 - resetProb));
 
             mValues[msgValue.destVId].destVId = msgValue.destVId;
             mValues[msgValue.destVId].rank += msgValue.rank;
@@ -404,28 +404,10 @@ void PageRank<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> 
         std::cout << "merge time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - mergeGraphStart).count() << std::endl;
     }
 
-    //test
-    std::vector<sortValue> sortedArray;
-    sortedArray.reserve(g.vCount);
     for(int i = 0; i < g.vCount; i++)
     {
-        sortedArray.emplace_back(sortValue(i, g.verticesValue.at(i).first));
+        std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
     }
-
-    std::sort(sortedArray.begin(), sortedArray.end(), cmp);
-
-//    for(int i = 0; i < g.vCount; i++)
-//    {
-//        //std::cout << "outdegree: " << g.vList.at(i).outDegree << std::endl;
-//        std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
-//    }
-
-    //test
-    for(int i = 0; i < g.vCount; i++)
-    {
-        std::cout << sortedArray.at(i).id << " " << sortedArray.at(i).rank << std::endl;
-    }
-
 
     Free();
 }
