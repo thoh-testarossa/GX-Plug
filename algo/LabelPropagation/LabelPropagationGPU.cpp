@@ -147,15 +147,17 @@ int LabelPropagationGPU<VertexValueType, MessageValueType>::MSGApply_array(int v
     auto r_vSet = std::vector<Vertex>();
     auto r_vValueSet = std::vector<VertexValueType>();
 
-    for(int i = 0; i < eCount; i++)
+    std::cout << vCount << std::endl;
+    for(int i = 0; i < vCount; i++)
     {
-        if(mValues[i].destVId != -1 && vSet[mValues[i].destVId].isMaster)
+        if(mValues[i].destVId == -1) i = vCount - 1;
+        else if(vSet[mValues[i].destVId].isMaster)
         {
             mGSet.insertMsg(Message<MessageValueType>(0, mValues[i].destVId, mValues[i]));
             mGCount++;
         }
 
-        if(mGCount == this->mPerMSGSet || i == eCount - 1) //A batch of msgs will be transferred into GPU. Don't forget last batch!
+        if(mGCount == this->mPerMSGSet || i == vCount - 1) //A batch of msgs will be transferred into GPU. Don't forget last batch!
         {
             std::cout << "size: " << mGSet.mSet.size() << std::endl;
 
