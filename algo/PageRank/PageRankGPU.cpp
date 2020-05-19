@@ -32,12 +32,12 @@ auto PageRankGPU<VertexValueType, MessageValueType>::MSGGenMerge_GPU_MVCopy(Vert
     err = cudaMemcpy(d_mTransformedMergedMSGValueSet, mTransformedMergedMSGValueSet, vGCount * sizeof(MessageValueType), cudaMemcpyHostToDevice);
 
     //test
-    // std::cout << "========value info========" << std::endl;
-    // for(int i = 0; i < vGCount; i++)
-    // {
-    //     std::cout << i << " " << vValues[i << 1] << " " << vValues[(i << 1) + 1] << std::endl;
-    // }
-    // std::cout << "=========value end=======" << std::endl << std::endl;
+//     std::cout << "========value info========" << std::endl;
+//     for(int i = 0; i < vGCount; i++)
+//     {
+//         std::cout << i << " " << vValues[i << 1] << " " << vValues[(i << 1) + 1] << std::endl;
+//     }
+//     std::cout << "=========value end=======" << std::endl << std::endl;
     return err;
 }
 
@@ -169,6 +169,8 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount, i
         if(mGCount == this->mPerMSGSet || i == vCount - 1) //A batch of msgs will be transferred into GPU. Don't forget last batch!
         {
 
+            std::cout << mGCount << std::endl;
+
             //-----reflect-----
             auto reflectIndex = std::vector<int>();
             auto reversedIndex = std::vector<int>();
@@ -257,7 +259,7 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount, i
         err = cudaMemcpy(vSet, this->d_vSet, vCount * sizeof(Vertex), cudaMemcpyDeviceToHost);
     }
 
-    //test
+//    //test
 //     std::cout << "========value info========" << std::endl;
 //     for(int i = 0; i < vCount; i++)
 //     {
@@ -269,6 +271,10 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGApply_array(int vCount, i
     int avCount = 0;
 
     //test
+//    for(int i = 0 ; i < vCount; i++)
+//    {
+//        if(vSet[i].isActive) avCount++;
+//    }
 //    std::cout << "gpu avCount " << avCount << std::endl;
 
     return avCount;

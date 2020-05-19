@@ -115,6 +115,7 @@ int PageRank<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int 
         avCount++;
     }
 
+//    std::cout << "active " << avCount << std::endl;
     return avCount;
 }
 
