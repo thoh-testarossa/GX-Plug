@@ -25,22 +25,6 @@ public:
     double rank;
 };
 
-//test
-struct sortValue
-{
-    sortValue()
-    {
-
-    }
-    sortValue(int id , double rank)
-    {
-        this->id = id;
-        this->rank = rank;
-    }
-    int id;
-    double rank;
-};
-
 template <typename VertexValueType, typename MessageValueType>
 class PageRank : public GraphUtil<VertexValueType, MessageValueType>
 {
@@ -69,11 +53,6 @@ public:
     void Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList);
 
     void ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList, int partitionCount);
-
-    void InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount);
-
-    //test
-    static bool cmp(sortValue &v1, sortValue &v2);
 
 protected:
     int numOfInitV;

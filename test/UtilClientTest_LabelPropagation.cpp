@@ -22,27 +22,23 @@ void testFut(UtilClient<VertexValueType, MessageValueType> *uc, VertexValueType 
 {
     uc->connect();
     uc->update(vValues);
-    uc->request();
+    uc->requestMSGMerge();
+    uc->requestMSGApply();
     uc->disconnect();
-}
-
-bool edgeCmp(Edge &e1, Edge &e2)
-{
-    return e1.dst < e2.dst;
 }
 
 int main(int argc, char *argv[])
 {
-    if(argc != 4 && argc != 5)
+    if(argc != 4 && argc != 5 && argc != 6)
     {
-        std::cout << "Usage:" << std::endl << "./UtilClientTest_Propagation vCount eCount numOfInitV [nodeCount]" << std::endl;
+        std::cout << "Usage:" << std::endl << "./UtilClientTest_LabelPropagation graph vCount eCount numOfInitV nodecount" << std::endl;
         return 1;
     }
 
-    int vCount = atoi(argv[1]);
-    int eCount = atoi(argv[2]);
-    int numOfInitV = atoi(argv[3]);
-    int nodeCount = atoi(argv[4]);
+    int vCount = atoi(argv[2]);
+    int eCount = atoi(argv[3]);
+    int numOfInitV = atoi(argv[4]);
+    int nodeCount = atoi(argv[5]);
 
     //Parameter check
     if(vCount <= 0 || eCount <= 0 || numOfInitV <= 0 || nodeCount <= 0)
@@ -56,51 +52,45 @@ int main(int argc, char *argv[])
     bool *filteredV = new bool [vCount];
     int *timestamp = new int [vCount];
 
-    std::vector<Vertex> vSet = std::vector<Vertex>();
-    std::vector<Edge> eSet = std::vector<Edge>();
-
-    std::ifstream Gin("../../data/testGraph4000000.txt");
+    std::ifstream Gin(argv[1]);
     if(!Gin.is_open())
     {
         std::cout << "Error! File testGraph.txt not found!" << std::endl;
         return 4;
     }
 
-    int tmp;
-    Gin >> tmp;
-    if(vCount != tmp)
+    //init v index
+    std::cout << "init initVSet ..." << std::endl;
+
+    initVSet[0] = -1;
+
+    std::cout << "init vSet ..." << std::endl;
+
+    Graph<LPA_Value> test = Graph<LPA_Value>(vCount);
+    for(int i = 0; i < eCount; i++)
     {
-        std::cout << "Graph file doesn't match up UtilClient's parameter" << std::endl;
-        return 5;
+        int src, dst;
+        double weight;
+
+        Gin >> src >> dst >> weight;
+        test.insertEdge(src, dst, weight);
+
+        //for edge-cut partition
+        test.vList.at(src).isMaster = true;
+        test.vList.at(dst).isMaster = true;
     }
-    Gin >> tmp;
-    if(eCount != tmp)
-    {
-        std::cout << "Graph file doesn't match up UtilClient's parameter" << std::endl;
-        return 5;
-    }
+    Gin.close();
+
+    std::cout << "init vValues ..." << std::endl;
 
     for(int i = 0; i < vCount; i++)
     {
         vValues[i] = LPA_Value(i, i, 0);
     }
 
-    for(int i = 0; i < vCount; i++) vSet.emplace_back(i, false, -1);
+    numOfInitV = 1;
 
-    for(int i = 0; i < vCount; i++) filteredV[i] = false;
-
-    for(int i = 0; i < vCount; i++) timestamp[i] = -1;
-
-    for(int i = 0; i < eCount; i++)
-    {
-        int src, dst;
-        double weight;
-        Gin >> src >> dst >> weight;
-        eSet.emplace_back(src, dst, weight);
-    }
-    Gin.close();
-
-
+    std::cout << "start transfer" << std::endl;
 
     //Client Init Data Transfer
     auto clientVec = std::vector<UtilClient<LPA_Value, LPA_MSG>>();
@@ -116,21 +106,11 @@ int main(int argc, char *argv[])
             return 2;
         }
 
-        chk = clientVec.at(i).transfer(vValues, &vSet[0], &eSet[(i * eCount) / nodeCount], initVSet, filteredV, timestamp);
+        chk = clientVec.at(i).transfer(vValues, &test.vList[0], &test.eList[(i * eCount) / nodeCount], initVSet, filteredV, timestamp);
+
         if(chk == -1)
         {
             std::cout << "Parameter illegal" << std::endl;
-            return 3;
-        }
-
-        //init the graph info
-        clientVec.at(i).graphInit();
-        //copy back the up-to-date graph info
-        chk = clientVec.at(i).copyBack(vValues);
-
-        if(chk == -1)
-        {
-            std::cout << "copy Back error" << std::endl;
             return 3;
         }
 
@@ -159,7 +139,7 @@ int main(int argc, char *argv[])
         auto futList = new std::future<void> [nodeCount];
         for(int i = 0; i < nodeCount; i++)
         {
-            std::future<void> tmpFut = std::async(testFut<LPA_Value, LPA_MSG>, &clientVec.at(i), vValues, &vSet[0]);
+            std::future<void> tmpFut = std::async(testFut<LPA_Value, LPA_MSG>, &clientVec.at(i), vValues, &test.vList[0]);
             futList[i] = std::move(tmpFut);
         }
 
@@ -190,11 +170,11 @@ int main(int argc, char *argv[])
 
                 if(labelCnt.find(value.label) == labelCnt.end())
                 {
-                    labelCnt[value.label] = value.labelCnt;
+                    labelCnt[value.label] = 1;
                 }
                 else
                 {
-                    labelCnt[value.label] += value.labelCnt;
+                    labelCnt[value.label] += 1;
                 }
 
                 if(maxLabel.second <= labelCnt[value.label])

@@ -25,8 +25,6 @@ public:
     int MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues) override;
     int MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues) override;
 
-    void InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount) override ;
-
 protected:
     int vertexLimit;
     int mPerMSGSet;
@@ -41,8 +39,6 @@ protected:
     Edge *d_eGSet;  //limit size = ePerEdgeSet
 
     LPA_MSG *d_mTransformedMergedMSGValueSet; //limist size = max(mPerMSGSet, ePerEdgeSet)
-
-    int *d_offsetInValues; //limist size = vertexLimist
 
 
 private:

@@ -22,7 +22,8 @@ void testFut(UtilClient<VertexValueType, MessageValueType> *uc, VertexValueType 
 {
     uc->connect();
     uc->update(vValues);
-    uc->request();
+    uc->requestMSGMerge();
+    uc->requestMSGApply();
     uc->disconnect();
 }
 
@@ -202,9 +203,6 @@ int main(int argc, char *argv[])
             std::cout << "Parameter illegal" << std::endl;
             return 3;
         }
-
-        //copy back the up-to-date graph info
-        chk = clientVec.at(i).copyBack(vValues);
 
         if(chk == -1)
         {

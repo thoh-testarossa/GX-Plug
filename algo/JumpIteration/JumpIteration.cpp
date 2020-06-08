@@ -149,8 +149,3 @@ void JumpIteration<VertexValueType, MessageValueType>::Free()
 
 }
 
-template<typename VertexValueType, typename MessageValueType>
-void JumpIteration<VertexValueType, MessageValueType>::InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount)
-{
-
-}

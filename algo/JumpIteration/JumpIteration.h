@@ -34,8 +34,6 @@ public:
     void Deploy(int vCount, int eCount, int numOfInitV) override;
     void Free() override;
 
-    void InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount) override;
-
     int loadIterationInfoFile(int vCount);
 
     int iterationCount;

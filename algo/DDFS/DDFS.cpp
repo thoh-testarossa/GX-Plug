@@ -15,12 +15,6 @@ DDFS<VertexValueType, MessageValueType>::DDFS()
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void DDFS<VertexValueType, MessageValueType>::InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount)
-{
-
-}
-
-template <typename VertexValueType, typename MessageValueType>
 int DDFS<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet,
                                      std::set<int> &activeVertice, const MessageSet<MessageValueType> &mSet)
 {

@@ -29,7 +29,11 @@ int main(int argc, char *argv[])
         double weight;
 
         Gin >> src >> dst >> weight;
-        test.insertEdgeUpdateInfo(src, dst, weight, i);
+        test.insertEdge(src, dst, weight);
+
+        //for edge-cut partition
+        test.vList.at(src).isMaster = true;
+        test.vList.at(dst).isMaster = true;
     }
 
     Gin.close();

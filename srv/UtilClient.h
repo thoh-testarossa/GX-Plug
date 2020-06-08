@@ -23,13 +23,11 @@ public:
     int transfer(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int *initVSet, bool *filteredV, int *timestamp);
     int update(VertexValueType *vValues, Vertex *vSet, int *avSet = nullptr, int avCount = -1);
     int update(VertexValueType *vValues, int *avSet = nullptr, int avCount = -1);
-    void request();
     void requestMSGApply();
     void requestMSGMerge();
     void disconnect();
     void shutdown();
     void graphInit();
-    int copyBack(VertexValueType *vValues);
 
     int nodeNo;
 

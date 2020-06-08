@@ -1,6 +1,6 @@
 #include "LabelPropagationGPU_kernel.h"
 
-__global__ void MSGApply_kernel(Vertex *vSet, LPA_Value *vValues, int numOfMsg, LPA_MSG *mValueSet, int *offsetInValues)
+__global__ void MSGApply_kernel(Vertex *vSet, LPA_Value *vValues, int numOfMsg, LPA_MSG *mValueSet)
 {
 	int tid = threadIdx.x;
 
@@ -8,18 +8,19 @@ __global__ void MSGApply_kernel(Vertex *vSet, LPA_Value *vValues, int numOfMsg, 
 	{
 		LPA_MSG msg = mValueSet[tid];
 		int destVId = msg.destVId;
+		int index = msg.mValueIndex;
 		int label = msg.label;
 
-		vValues[destVId].label = label;
-
+		vValues[index].label = label;
+        vValues[index].destVId = destVId;
 	}
 }
 
-cudaError_t MSGApply_kernel_exec(Vertex *vSet, LPA_Value *vValues, int numOfMsg, LPA_MSG *mValueSet, int *offsetInValues)
+cudaError_t MSGApply_kernel_exec(Vertex *vSet, LPA_Value *vValues, int numOfMsg, LPA_MSG *mValueSet)
 {
 	cudaError_t err = cudaSuccess;
 	
-	MSGApply_kernel<<<1, NUMOFGPUCORE>>>(vSet, vValues, numOfMsg, mValueSet, offsetInValues);
+	MSGApply_kernel<<<1, NUMOFGPUCORE>>>(vSet, vValues, numOfMsg, mValueSet);
     err = cudaGetLastError();
 
 	cudaDeviceSynchronize();

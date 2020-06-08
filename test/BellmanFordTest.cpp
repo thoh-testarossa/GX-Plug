@@ -30,6 +30,9 @@ int main(int argc, char *argv[])
 
         Gin >> src >> dst >> weight;
         test.insertEdge(src, dst, weight);
+
+        test.vList.at(src).isMaster = true;
+        test.vList.at(dst).isMaster = true;
     }
 
     Gin.close();
@@ -38,7 +41,6 @@ int main(int argc, char *argv[])
     initVList.push_back(1);
 
     BellmanFord<double, double> executor = BellmanFord<double, double>();
-    //executor.Apply(test, initVList);
     executor.ApplyD(test, initVList, 4);
 
     for(int i = 0; i < test.vCount * initVList.size(); i++)

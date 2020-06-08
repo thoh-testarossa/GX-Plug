@@ -87,7 +87,7 @@ void LabelPropagationGPU<VertexValueType, MessageValueType>::Deploy(int vCount, 
 
     cudaError_t err = cudaSuccess;
 
-    int vValueSize = vCount;
+    int vValueSize = std::max(vCount, eCount);
 
     err = cudaMalloc((void **)&this->d_vValueSet, vValueSize * sizeof(VertexValueType));
     err = cudaMalloc((void **)&this->d_vSet, vCount * sizeof(Vertex));
@@ -97,10 +97,7 @@ void LabelPropagationGPU<VertexValueType, MessageValueType>::Deploy(int vCount, 
 
     this->mValueSet = new MessageValueType [mSize];
     err = cudaMalloc((void **)&this->d_mValueSet, mSize * sizeof(MessageValueType));
-
     err = cudaMalloc((void **)&d_mTransformedMergedMSGValueSet, mSize * sizeof(MessageValueType));
-
-    err = cudaMalloc((void **)&this->d_offsetInValues, vCount * sizeof(int));
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -117,8 +114,6 @@ void LabelPropagationGPU<VertexValueType, MessageValueType>::Free()
     cudaFree(this->d_mValueSet);
 
     cudaFree(this->d_mTransformedMergedMSGValueSet);
-
-    cudaFree(this->d_offsetInValues);
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -132,7 +127,8 @@ int LabelPropagationGPU<VertexValueType, MessageValueType>::MSGApply_array(int v
 
     bool needReflect = false;
 
-    int vValueSize = vCount;
+    int vValueSize = std::max(vCount, eCount);
+    int mValuesSize = std::max(vCount, eCount);
 
 //    if(!needReflect)
 //    {
@@ -147,17 +143,16 @@ int LabelPropagationGPU<VertexValueType, MessageValueType>::MSGApply_array(int v
     auto r_vSet = std::vector<Vertex>();
     auto r_vValueSet = std::vector<VertexValueType>();
 
-    std::cout << vCount << std::endl;
-    for(int i = 0; i < vCount; i++)
+    for(int i = 0; i < mValuesSize; i++)
     {
-        if(mValues[i].destVId == -1) i = vCount - 1;
-        else if(vSet[mValues[i].destVId].isMaster)
+        if(mValues[i].destVId != -1 && vSet[mValues[i].destVId].isMaster)
         {
+            mValues[i].mValueIndex = i;
             mGSet.insertMsg(Message<MessageValueType>(0, mValues[i].destVId, mValues[i]));
             mGCount++;
         }
 
-        if(mGCount == this->mPerMSGSet || i == vCount - 1) //A batch of msgs will be transferred into GPU. Don't forget last batch!
+        if(mGCount == this->mPerMSGSet || i == mValuesSize - 1) //A batch of msgs will be transferred into GPU. Don't forget last batch!
         {
             std::cout << "size: " << mGSet.mSet.size() << std::endl;
 
@@ -215,7 +210,7 @@ int LabelPropagationGPU<VertexValueType, MessageValueType>::MSGApply_array(int v
             {
                 int msgNumUsedForExec = (mGCount - j > NUMOFGPUCORE) ? NUMOFGPUCORE : (mGCount - j);
 
-                err = MSGApply_kernel_exec(this->d_vSet, this->d_vValueSet, msgNumUsedForExec, &this->d_mValueSet[j], this->d_offsetInValues);
+                err = MSGApply_kernel_exec(this->d_vSet, this->d_vValueSet, msgNumUsedForExec, &this->d_mValueSet[j]);
             }
 
             //Deflection
@@ -382,35 +377,11 @@ int LabelPropagationGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(in
         }
     }
 
-
-    return eCount;
-}
-
-template <typename VertexValueType, typename MessageValueType>
-void LabelPropagationGPU<VertexValueType, MessageValueType>::InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount)
-{
-    for(int i = 0; i < this->totalMValuesCount; i++)
+    //maybe eCount < vCount
+    for(int i = eCount; i < vCount; i++)
     {
-        vValues[i] = LPA_Value(INVALID_INITV_INDEX, -1, 0);
+        mValues[i].destVId = -1;
     }
 
-    for(int i = 0; i < vCount; i++)
-    {
-        vValues[i] = LPA_Value(i, i, 0);
-    }
-
-    std::sort(eSet, eSet + this->totalMValuesCount, this->labelPropagationEdgeCmp);
-    for(int i = 0; i < this->totalMValuesCount; i++)
-    {
-        vSet[eSet[i].dst].inDegree++;
-        eSet[i].originIndex = i;
-    }
-
-    this->offsetInMValuesOfEachV[0] = 0;
-    for(int i = 1; i < vCount; i++)
-    {
-        this->offsetInMValuesOfEachV[i] = this->offsetInMValuesOfEachV[i - 1] + vSet[i].inDegree;
-    }
-
-    int err = cudaMemcpy(this->d_mTransformedMergedMSGValueSet, this->offsetInMValuesOfEachV, vCount * sizeof(int), cudaMemcpyHostToDevice);
+    return std::max(eCount, vCount);
 }

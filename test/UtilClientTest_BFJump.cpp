@@ -22,7 +22,8 @@ void testFut(UtilClient<VertexValueType, MessageValueType> *uc, double *vValues,
 {
     uc->connect();
     uc->update(vValues, vSet);
-    uc->request();
+    uc->requestMSGMerge();
+    uc->requestMSGApply();
     uc->disconnect();
 }
 

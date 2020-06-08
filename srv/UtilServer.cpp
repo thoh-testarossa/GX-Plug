@@ -200,54 +200,12 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
         //Test end
 
         cmd = msgp;
-        if(std::string("execute") == cmd)
-        {
-            auto start = std::chrono::system_clock::now();
-            auto mergeEnd = std::chrono::system_clock::now();
-            auto applyEnd = std::chrono::system_clock::now();
-
-            this->executor.optimize = this->getEdgesFromAvSet();
-
-            auto end = std::chrono::system_clock::now();
-            std::cout << "construct edges time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
-            total += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-
-            std::cout << "optimize: " << this->executor.optimize << std::endl;
-
-            if(this->executor.optimize)
-            {
-                start = std::chrono::system_clock::now();
-                msgCount = this->executor.MSGGenMerge_array(this->vCount, this->avECount, this->vSet, this->avESet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
-                mergeEnd = std::chrono::system_clock::now();
-                avCount = this->executor.MSGApply_array(this->vCount, msgCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
-                applyEnd = std::chrono::system_clock::now();
-            }
-            else
-            {
-                start = std::chrono::system_clock::now();
-                msgCount = this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
-                mergeEnd = std::chrono::system_clock::now();
-                avCount = this->executor.MSGApply_array(this->vCount, msgCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
-                applyEnd = std::chrono::system_clock::now();
-            }
-
-            //test
-            std::cout << "msg gen time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count() << std::endl;
-            std::cout << "apply time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(applyEnd - mergeEnd).count() << std::endl;
-            total += std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count();
-            total += std::chrono::duration_cast<std::chrono::microseconds>(applyEnd - mergeEnd).count();
-
-            this->server_msq.send("finished", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
-        }
-        else if(std::string("exit") == cmd)
-            break;
-        else if(std::string("init") == cmd)
+        if(std::string("init") == cmd)
         {
             auto start = std::chrono::system_clock::now();
 
             if(this->executor.optimize)
                 this->graphInit();
-            this->executor.InitGraph_array(this->vValues, this->vSet, this->eSet, this->vCount);
             this->server_msq.send("finished", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
 
             auto end = std::chrono::system_clock::now();
@@ -259,19 +217,37 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
         else if(std::string("execute_msg_apply") == cmd)
         {
             std::cout << "apply message" << std::endl;
-            avCount = this->executor.MSGApply_array(this->vCount, msgCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+
+            auto start = std::chrono::system_clock::now();
+
+            avCount = this->executor.MSGApply_array(this->vCount, this->eCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+
+            auto applyEnd = std::chrono::system_clock::now();
+
+            std::cout << "apply time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(applyEnd - start).count() << std::endl;
+
             this->server_msq.send("finished msg apply", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
         }
         else if(std::string("execute_msg_merge") == cmd)
         {
             std::cout << "merge message" << std::endl;
-            msgCount = this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+
+            this->executor.optimize = this->getEdgesFromAvSet();
+
+            auto start = std::chrono::system_clock::now();
+
+            if(this->executor.optimize)
+                msgCount = this->executor.MSGGenMerge_array(this->vCount, this->avECount, this->vSet, this->avESet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+            else
+                msgCount = this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+
+            auto mergeEnd = std::chrono::system_clock::now();
+            std::cout << "msg gen time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count() << std::endl;
+
             this->server_msq.send("finished msg merge", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
         }
-        else
-        {
+        else if(std::string("exit") == cmd)
             break;
-        }
     }
 
     //Test

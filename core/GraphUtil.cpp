@@ -17,7 +17,9 @@ std::vector<Graph<VertexValueType>> GraphUtil<VertexValueType, MessageValueType>
 
         //Distribute e info
         for(int k = i * g.eCount / partitionCount; k < (i + 1) * g.eCount / partitionCount; k++)
-            res.at(i).insertEdge(g.eList.at(k).src, g.eList.at(k).dst, g.eList.at(k).weight);
+            res.at(i).eList.emplace_back(g.eList.at(k).src, g.eList.at(k).dst, g.eList.at(k).weight);
+
+        res.at(i).eCount = res.at(i).eList.size();
     }
 
     return res;

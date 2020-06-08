@@ -16,12 +16,6 @@ PageRank<VertexValueType, MessageValueType>::PageRank()
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void PageRank<VertexValueType, MessageValueType>::InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount)
-{
-
-}
-
-template <typename VertexValueType, typename MessageValueType>
 int PageRank<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices, const MessageSet<MessageValueType> &mSet)
 {
     //Availability check
@@ -106,6 +100,7 @@ int PageRank<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int 
 
         if(destVId == -1 || !vSet[destVId].isMaster)
         {
+//            std::cout << "not master or destvid == -1" << std::endl;
             continue;
         }
 
@@ -142,6 +137,7 @@ int PageRank<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, i
 
             mValues[msgValue.destVId].destVId = msgValue.destVId;
             mValues[msgValue.destVId].rank += msgValue.rank;
+//            std::cout << mValues[msgValue.destVId].destVId << " " << mValues[msgValue.destVId].rank << std::endl;
         }
     }
 
@@ -163,7 +159,10 @@ std::vector<Graph<VertexValueType>> PageRank<VertexValueType, MessageValueType>:
 
         //Distribute e info
         for(int k = i * g.eCount / partitionCount; k < (i + 1) * g.eCount / partitionCount; k++)
-            res.at(i).insertEdge(g.eList.at(k).src, g.eList.at(k).dst, g.eList.at(k).weight);
+        {
+            res.at(i).eList.emplace_back(g.eList.at(k).src, g.eList.at(k).dst, g.eList.at(k).weight);
+        }
+        res.at(i).eCount = res.at(i).eList.size();
     }
 
     return res;
@@ -262,8 +261,6 @@ void PageRank<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueTy
         g.vList.at(i).isActive = false;
     }
 
-    double rankSum = 0.0;
-
     //Merge graphs
     for(const auto &subG : subGSet)
     {
@@ -279,6 +276,7 @@ void PageRank<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueTy
                 }
                 else
                 {
+                    g.verticesValue.at(i).first += subG.verticesValue.at(i).second;
                     g.verticesValue.at(i).second += subG.verticesValue.at(i).second;
                 }
             }
@@ -286,20 +284,11 @@ void PageRank<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueTy
             {
                 g.verticesValue.at(i) = subG.verticesValue.at(i);
             }
-
 //            std::cout << i << " " << subG.verticesValue.at(i).first << " " << subG.verticesValue.at(i).second << std::endl;
 //            std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
         }
     }
 
-    //calculate delta and newRank
-    for(int i = 0; i < g.verticesValue.size(); i++)
-    {
-        if(g.vList.at(i).isActive)
-        {
-            g.verticesValue.at(i).first += g.verticesValue.at(i).second;
-        }
-    }
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -397,7 +386,6 @@ void PageRank<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> 
         //test
 //        for(int i = 0; i < g.vCount; i++)
 //        {
-//            //std::cout << "outdegree: " << g.vList.at(i).outDegree << std::endl;
 //            std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
 //        }
 
@@ -411,11 +399,5 @@ void PageRank<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> 
     }
 
     Free();
-}
-
-//test
-template<typename VertexValueType, typename MessageValueType>
-bool PageRank<VertexValueType, MessageValueType>::cmp(sortValue &v1, sortValue &v2) {
-    return v1.rank < v2.rank;
 }
 

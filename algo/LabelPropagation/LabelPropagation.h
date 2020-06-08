@@ -32,21 +32,21 @@ public:
 class LPA_MSG
 {
 public:
-    LPA_MSG():LPA_MSG(-1, -1, -1)
+    LPA_MSG():LPA_MSG(-1, -1)
     {
 
     }
 
-    LPA_MSG(int destVId, int edgeOriginIndex, int label)
+    LPA_MSG(int destVId, int label)
     {
         this->destVId = destVId;
-        this->edgeOriginIndex = edgeOriginIndex;
         this->label = label;
     }
 
     int destVId;
-    int edgeOriginIndex;
     int label;
+    //used for gpu apply array
+    int mValueIndex;
 };
 
 template <typename VertexValueType, typename MessageValueType>
@@ -77,16 +77,6 @@ public:
     void Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList);
 
     void ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList, int partitionCount);
-
-    void InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount);
-
-protected:
-    int *offsetInMValuesOfEachV;
-
-    static bool labelPropagationEdgeCmp(Edge &e1, Edge &e2)
-    {
-        return e1.dst < e2.dst;
-    }
 };
 
 #endif

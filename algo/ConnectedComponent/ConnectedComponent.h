@@ -36,8 +36,6 @@ public:
 
     void ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList, int partitionCount);
 
-    void InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount);
-
 protected:
     int numOfInitV;
 };

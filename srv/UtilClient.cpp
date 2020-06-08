@@ -102,7 +102,7 @@ int UtilClient<VertexValueType, MessageValueType>::transfer(VertexValueType *vVa
         memcpy(this->filteredV, filteredV, this->vCount * sizeof(bool));
         memcpy(this->timestamp, timestamp, this->vCount * sizeof(int));
 
-        //this->graphInit();
+        this->graphInit();
 
         return 0;
     }
@@ -154,15 +154,6 @@ int UtilClient<VertexValueType, MessageValueType>::update(VertexValueType *vValu
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void UtilClient<VertexValueType, MessageValueType>::request()
-{
-    char tmp[256];
-
-    this->client_msq.send("execute", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
-    this->server_msq.recv(tmp, (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
-}
-
-template <typename VertexValueType, typename MessageValueType>
 void UtilClient<VertexValueType, MessageValueType>::disconnect()
 {
     this->vValues_shm.detach();
@@ -202,20 +193,6 @@ void UtilClient<VertexValueType, MessageValueType>::graphInit()
     this->server_msq.recv(tmp, (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
 }
 
-template <typename VertexValueType, typename MessageValueType>
-int UtilClient<VertexValueType, MessageValueType>::copyBack(VertexValueType *vValues)
-{
-    if(this->vCount > 0 && this->eCount > 0 && this->numOfInitV > 0)
-    {
-        if(this->vValues == nullptr || vValues == nullptr) return -1;
-
-        memcpy(vValues, this->vValues, this->vCount * this->numOfInitV * sizeof(VertexValueType));
-
-        return 0;
-    }
-    else return -1;
-}
-
 template<typename VertexValueType, typename MessageValueType>
 void UtilClient<VertexValueType, MessageValueType>::requestMSGApply()
 {
@@ -229,6 +206,7 @@ void UtilClient<VertexValueType, MessageValueType>::requestMSGApply()
         if(errno == EINTR) continue;
 
         perror("msg apply");
+        break;
     }
 }
 
@@ -246,5 +224,6 @@ void UtilClient<VertexValueType, MessageValueType>::requestMSGMerge()
         if(errno == EINTR) continue;
 
         perror("msg merge");
+        break;
     }
 }

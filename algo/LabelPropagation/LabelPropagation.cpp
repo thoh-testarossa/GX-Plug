@@ -26,9 +26,9 @@ std::vector<Graph<VertexValueType>> LabelPropagation<VertexValueType, MessageVal
         //Distribute e info
         for(int k = i * g.eCount / partitionCount; k < (i + 1) * g.eCount / partitionCount; k++)
         {
-            res.at(i).insertEdge(g.eList.at(k).src, g.eList.at(k).dst, g.eList.at(k).weight);
-            res.at(i).eList.at(res.at(i).eCount - 1).originIndex = g.eList.at(k).originIndex;
+            res.at(i).eList.emplace_back(g.eList.at(k).src, g.eList.at(k).dst, g.eList.at(k).weight);
         }
+        res.at(i).eCount = res.at(i).eList.size();
     }
     return res;
 }
@@ -40,9 +40,9 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGApply(Graph<VertexVa
     if(g.eCount <= 0 || g.vCount <= 0) return 0;
 
     //mValues init
-    MessageValueType *mValues = new MessageValueType [g.eCount];
+    MessageValueType *mValues = new MessageValueType [std::max(g.vCount, g.eCount)];
 
-    for(int i = 0; i < g.eCount; i++)
+    for(int i = 0; i < std::max(g.vCount, g.eCount); i++)
     {
         mValues[i] = mSet.mSet.at(i).value;
     }
@@ -64,7 +64,7 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge(const Graph
     if(g.eCount <= 0 || g.vCount <= 0) return 0;
 
     //mValues init
-    MessageValueType *mValues = new MessageValueType [g.eCount];
+    MessageValueType *mValues = new MessageValueType [std::max(g.vCount, g.eCount)];
 
     //array form computation
     std::cout << "msg merge array..." << std::endl;
@@ -73,28 +73,28 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge(const Graph
 
     //Generate merged msgs directly
     mSet.mSet.clear();
-    mSet.mSet.reserve(g.eCount);
+    mSet.mSet.reserve(std::max(g.vCount, g.eCount));
 
-    for(int i = 0; i < g.eCount; i++)
+    for(int i = 0; i < std::max(g.vCount, g.eCount); i++)
     {
-        mSet.insertMsg(Message<MessageValueType>(g.eList.at(i).src, g.eList.at(i).dst, mValues[i]));
+        mSet.insertMsg(Message<MessageValueType>(0, 0, mValues[i]));
     }
 
     delete[] mValues;
 
-    return g.eCount;
+    return std::max(g.vCount, g.eCount);
 }
 
 template <typename VertexValueType, typename MessageValueType>
 int LabelPropagation<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
 {
-    for(int i = 0; i < vCount; i++)
+    for(int i = 0; i < std::max(vCount, eCount); i++)
     {
         auto vid = mValues[i].destVId;
-        if(vid == -1) break;
+        if(vid == -1) continue;
         if(!vSet[vid].isMaster) continue;
-        vValues[vid].label = mValues[i].label;
-        vSet[vid].isActive = true;
+        vValues[i].label = mValues[i].label;
+        vValues[i].destVId = vid;
     }
 
     return 0;
@@ -103,12 +103,15 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGApply_array(int vCou
 template <typename VertexValueType, typename MessageValueType>
 int LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
 {
+    for(int i = eCount; i < vCount; i++)
+        mValues[i] = MessageValueType(-1, 0);
+
     for(int i = 0; i < eCount; i++)
     {
-        mValues[i] = MessageValueType(eSet[i].dst, eSet[i].originIndex, vValues[eSet[i].src].label);
+        mValues[i] = MessageValueType(eSet[i].dst, vValues[eSet[i].src].label);
     }
 
-    return eCount;
+    return std::max(vCount, eCount);
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -117,10 +120,8 @@ void LabelPropagation<VertexValueType, MessageValueType>::Init(int vCount, int e
     //vValue size = e in order to store the label info for merging the subgraph
     int max = vCount > eCount ? vCount : eCount;
 
-    this->totalVValuesCount = vCount;
+    this->totalVValuesCount = max;
     this->totalMValuesCount = max;
-
-    this->offsetInMValuesOfEachV = new int [vCount];
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -134,47 +135,6 @@ void LabelPropagation<VertexValueType, MessageValueType>::GraphInit(Graph<Vertex
     {
         g.verticesValue.at(i) = LPA_Value(g.vList.at(i).vertexID, g.vList.at(i).vertexID, 0);
     }
-
-    //offsetInMValuesOfEachV init
-    this->offsetInMValuesOfEachV[0] = 0;
-    for(int i = 1; i < g.vCount; i++)
-    {
-        this->offsetInMValuesOfEachV[i] = this->offsetInMValuesOfEachV[i - 1] + g.vList.at(i).inDegree;
-    }
-
-    //update the edge info
-    std::sort(g.eList.begin(), g.eList.end(), labelPropagationEdgeCmp);
-    for(int i = 0; i < g.eCount; i++)
-    {
-        g.eList.at(i).originIndex = i;
-    }
-}
-
-template <typename VertexValueType, typename MessageValueType>
-void LabelPropagation<VertexValueType, MessageValueType>::InitGraph_array(VertexValueType *vValues, Vertex *vSet, Edge *eSet, int vCount)
-{
-    for(int i = 0; i < this->totalMValuesCount; i++)
-    {
-        vValues[i] = LPA_Value(INVALID_INITV_INDEX, -1, 0);
-    }
-
-    for(int i = 0; i < vCount; i++)
-    {
-        vValues[i] = LPA_Value(i, i, 0);
-    }
-
-    std::sort(eSet, eSet + this->totalMValuesCount, this->labelPropagationEdgeCmp);
-    for(int i = 0; i < this->totalMValuesCount; i++)
-    {
-        vSet[eSet[i].dst].inDegree++;
-        eSet[i].originIndex = i;
-    }
-
-    this->offsetInMValuesOfEachV[0] = 0;
-    for(int i = 1; i < vCount; i++)
-    {
-        this->offsetInMValuesOfEachV[i] = this->offsetInMValuesOfEachV[i - 1] + vSet[i].inDegree;
-    }
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -185,12 +145,10 @@ void LabelPropagation<VertexValueType, MessageValueType>::Deploy(int vCount, int
 template <typename VertexValueType, typename MessageValueType>
 void LabelPropagation<VertexValueType, MessageValueType>::Free()
 {
-    //do not forget to be called in GPU version
-    delete[] this->offsetInMValuesOfEachV;
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void LabelPropagation<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueType> &g, const std::vector<Graph<VertexValueType>> &subGSet,
+void LabelPropagation<VertexValueType, MessageValueType>:: MergeGraph(Graph<VertexValueType> &g, const std::vector<Graph<VertexValueType>> &subGSet,
                     std::set<int> &activeVertices, const std::vector<std::set<int>> &activeVerticeSet,
                     const std::vector<int> &initVList)
 {
@@ -210,7 +168,7 @@ void LabelPropagation<VertexValueType, MessageValueType>::MergeGraph(Graph<Verte
     for(const auto &subG : subGSet)
     {
         //vValues merge
-        for(int i = 0; i < this->totalMValuesCount; i++)
+        for(int i = 0; i < subG.eCount; i++)
         {
             auto lpaValue = subG.verticesValue.at(i);
 
@@ -224,11 +182,11 @@ void LabelPropagation<VertexValueType, MessageValueType>::MergeGraph(Graph<Verte
 
             if(labelCnt.find(lpaValue.label) == labelCnt.end())
             {
-                labelCnt[lpaValue.label] = lpaValue.labelCnt;
+                labelCnt[lpaValue.label] = 1;
             }
             else
             {
-                labelCnt[lpaValue.label] += lpaValue.labelCnt;
+                labelCnt[lpaValue.label] += 1;
             }
 
             if(maxLabel.second <= labelCnt[lpaValue.label])
@@ -238,6 +196,22 @@ void LabelPropagation<VertexValueType, MessageValueType>::MergeGraph(Graph<Verte
             }
         }
     }
+
+//    //test
+//    for(int i = 0; i < g.vCount; i++)
+//    {
+//        auto &labelCnt = labelCntPerVertice.at(i);
+//        auto &maxLabel = maxLabelCnt.at(i);
+//
+//        for(auto item : labelCnt)
+//        {
+//            if(maxLabel.second <= item.second)
+//            {
+//                maxLabel.first = item.first;
+//                maxLabel.second = item.second;
+//            }
+//        }
+//    }
 
     for(int i = 0; i < g.vCount; i++)
     {
@@ -309,7 +283,7 @@ void LabelPropagation<VertexValueType, MessageValueType>::ApplyD(Graph<VertexVal
 
     int iterCount = 0;
 
-    while(iterCount < 60)
+    while(iterCount < 50)
     {
         std::cout << "iterCount: " << iterCount << std::endl;
         auto start = std::chrono::system_clock::now();

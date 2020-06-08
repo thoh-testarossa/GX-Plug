@@ -12,9 +12,9 @@
 
 #include <cuda_runtime.h>
 
-__global__ void MSGApply_kernel(Vertex *vSet, LPA_Value *vValues, int numOfMsg, LPA_MSG *mValueSet, int *offsetInValues);
+__global__ void MSGApply_kernel(Vertex *vSet, LPA_Value *vValues, int numOfMsg, LPA_MSG *mValueSet);
 
-cudaError_t MSGApply_kernel_exec(Vertex *vSet, LPA_Value *vValues, int numOfMsg, LPA_MSG *mValueSet, int *offsetInValues);
+cudaError_t MSGApply_kernel_exec(Vertex *vSet, LPA_Value *vValues, int numOfMsg, LPA_MSG *mValueSet);
 
 __global__ void MSGGenMerge_kernel(LPA_MSG *mTransformdMergedMSGValueSet, Vertex *vSet, LPA_Value *vValues, int numOfEdge, Edge *eSet, int batchCnt);
 
