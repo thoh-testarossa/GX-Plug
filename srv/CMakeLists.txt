@@ -5,6 +5,11 @@ set(CMAKE_CXX_STANDARD 14)
 
 find_package(CUDA)
 
+add_library(threadPool
+        ThreadPool.h
+        ThreadPool.cpp
+        )
+
 if(UNIX)
     add_library(srv_UNIX_shm
             UNIX_shm.h
