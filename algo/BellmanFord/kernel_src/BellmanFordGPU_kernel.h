@@ -12,17 +12,13 @@
 
 #include <cuda_runtime.h>
 
-__global__ void MSGApply_kernel(Vertex *vSet, int numOfInitV, int *initVSet, double *vValues,
-                                int numOfMsg, int *mDstSet, int *mInitVIndexSet, double *mValueSet);
+__global__ void MSGApply_kernel(int numOfUnits, ComputeUnit<double> *computeUnits, double *mValueSet, int numOfInitV);
 
-cudaError_t MSGApply_kernel_exec(Vertex *vSet, int numOfInitV, int *initVSet, double *vValues,
-                                 int numOfMsg, int *mDstSet, int *mInitVIndexSet, double *mValueSet);
+cudaError_t MSGApply_kernel_exec(int numOfUnits, ComputeUnit<double> *computeUnits, double *mValueSet, int numOfInitV);
 
-__global__ void MSGGenMerge_kernel(unsigned long long int *mTransformdMergedMSGValueSet,
-                                   Vertex *vSet, int numOfInitV, int *initVSet, double *vValues,
-                                   int numOfEdge, Edge *eSet);
+__global__ void MSGGenMerge_kernel(int numOfUnits, ComputeUnit<double> *computeUnits, unsigned long long int *mValueSet,
+                                   int numOfInitV);
 
-cudaError_t MSGGenMerge_kernel_exec(unsigned long long int *mTransformdMergedMSGValueSet,
-                                    Vertex *vSet, int numOfInitV, int *initVSet, double *vValues,
-                                    int numOfEdge, Edge *eSet);
+cudaError_t MSGGenMerge_kernel_exec(int numOfUnits, ComputeUnit<double> *computeUnits, unsigned long long int *mValueSet,
+                                    int numOfInitV);
 #endif //GRAPH_ALGO_BELLMANFORDGPU_KERNEL_H

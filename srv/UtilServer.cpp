@@ -27,9 +27,13 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
                     numOfInitV > 0 &&
                     nodeNo >= 0;
 
-    this->vValues = nullptr;
+    this->vValuesDownload = nullptr;
+    this->vValuesUpdate = nullptr;
+    this->vValuesCompute = nullptr;
     this->mValues = nullptr;
-    this->vSet = nullptr;
+    this->vSetDownload = nullptr;
+    this->vSetUpdate = nullptr;
+    this->vSetCompute = nullptr;
     this->eSet = nullptr;
     this->initVSet = nullptr;
     this->filteredV = nullptr;
@@ -44,8 +48,12 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
         this->executor = GraphUtilType();
         this->executor.Init(vCount, eCount, numOfInitV);
         this->executor.partitionId = nodeNo;
-        this->vValues_shm = UNIX_shm();
-        this->vSet_shm = UNIX_shm();
+        this->vValuesCompute_shm = UNIX_shm();
+        this->vValuesDownload_shm = UNIX_shm();
+        this->vValuesUpdate_shm = UNIX_shm();
+        this->vSetCompute_shm = UNIX_shm();
+        this->vSetDownload_shm = UNIX_shm();
+        this->vSetUpdate_shm = UNIX_shm();
         this->eSet_shm = UNIX_shm();
         this->initVSet_shm = UNIX_shm();
         this->filteredV_shm = UNIX_shm();
@@ -59,8 +67,8 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
 
         if(chk != -1)
             chk = this->vValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (VVALUES_SHM << SHM_OFFSET)),
-                this->executor.totalVValuesCount * sizeof(VertexValueType),
-                0666);
+                                           this->executor.totalVValuesCount * sizeof(VertexValueType),
+                                           0666);
         if(chk != -1)
             chk = this->mValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (MVALUES_SHM << SHM_OFFSET)),
                 this->executor.totalMValuesCount * sizeof(MessageValueType),

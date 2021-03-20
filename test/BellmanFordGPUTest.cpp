@@ -7,14 +7,20 @@
 #include <iostream>
 #include <fstream>
 
-int main()
+int main(int argc, char *argv[])
 {
+    if(argc != 4)
+    {
+        std::cout << "Usage:" << std::endl << "./algo_BellmanFordTest graph_path vcount ecount" << std::endl;
+        return 1;
+    }
+
     //Read the Graph
-    std::ifstream Gin("testGraph.txt");
+    std::ifstream Gin(argv[1]);
     if(!Gin.is_open()) {std::cout << "Error! File testGraph.txt not found!" << std::endl; return 1; }
 
-    int vCount, eCount;
-    Gin >> vCount >> eCount;
+    int vCount = atoi(argv[2]);
+    int eCount = atoi(argv[3]);
 
     Graph<double> test = Graph<double>(vCount);
     for(int i = 0; i < eCount; i++)
@@ -24,14 +30,17 @@ int main()
 
         Gin >> src >> dst >> weight;
         test.insertEdge(src, dst, weight);
+
+        test.vList.at(src).isMaster = true;
+        test.vList.at(dst).isMaster = true;
     }
 
     Gin.close();
 
     std::vector<int> initVList = std::vector<int>();
     initVList.push_back(1);
-    initVList.push_back(2);
-    initVList.push_back(4);
+//    initVList.push_back(2);
+//    initVList.push_back(4);
 
     BellmanFordGPU<double, double> executor = BellmanFordGPU<double, double>();
     //executor.Apply(test, initVList);
