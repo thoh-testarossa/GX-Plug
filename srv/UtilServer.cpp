@@ -8,8 +8,9 @@
 #include <iostream>
 #include <chrono>
 
-template <typename GraphUtilType, typename VertexValueType, typename MessageValueType>
-UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCount, int eCount, int numOfInitV, int nodeNo)
+template<typename GraphUtilType, typename VertexValueType, typename MessageValueType>
+UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCount, int eCount, int numOfInitV,
+                                                                         int nodeNo, int maxComputeUnits)
 {
     //Test
     std::cout << "Server init" << std::endl;
@@ -20,120 +21,139 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
     this->vCount = vCount;
     this->eCount = eCount;
     this->numOfInitV = numOfInitV;
+    this->maxComputeUnits = maxComputeUnits;
 
     this->isLegal = TIsExtended<GraphUtilType, GraphUtil<VertexValueType, MessageValueType>>::Result &&
                     vCount > 0 &&
                     eCount > 0 &&
                     numOfInitV > 0 &&
-                    nodeNo >= 0;
+                    nodeNo >= 0 &&
+                    maxComputeUnits >= 0;
 
-    this->vValuesDownload = nullptr;
-    this->vValuesUpdate = nullptr;
-    this->vValuesCompute = nullptr;
+
     this->mValues = nullptr;
-    this->vSetDownload = nullptr;
-    this->vSetUpdate = nullptr;
-    this->vSetCompute = nullptr;
-    this->eSet = nullptr;
     this->initVSet = nullptr;
     this->filteredV = nullptr;
     this->timestamp = nullptr;
 
-    this->avESet = new Edge[this->eCount];
+    this->computeUnitsUpdate = nullptr;
+    this->computeUnitsCompute = nullptr;
+    this->computeUnitsDownload = nullptr;
+    this->updateCnt = nullptr;
+    this->computeCnt = nullptr;
+    this->downloadCnt = nullptr;
 
-    if(this->isLegal)
+    if (this->isLegal)
     {
         int chk = 0;
 
         this->executor = GraphUtilType();
-        this->executor.Init(vCount, eCount, numOfInitV);
+        this->executor.Init(vCount, eCount, numOfInitV, maxComputeUnits);
         this->executor.partitionId = nodeNo;
-        this->vValuesCompute_shm = UNIX_shm();
-        this->vValuesDownload_shm = UNIX_shm();
-        this->vValuesUpdate_shm = UNIX_shm();
-        this->vSetCompute_shm = UNIX_shm();
-        this->vSetDownload_shm = UNIX_shm();
-        this->vSetUpdate_shm = UNIX_shm();
-        this->eSet_shm = UNIX_shm();
+
         this->initVSet_shm = UNIX_shm();
         this->filteredV_shm = UNIX_shm();
         this->timestamp_shm = UNIX_shm();
         this->avCount_shm = UNIX_shm();
         this->avSet_shm = UNIX_shm();
 
+        this->computeUnitsUpdate_shm = UNIX_shm();
+        this->computeUnitsCompute_shm = UNIX_shm();
+        this->computeUnitsDownload_shm = UNIX_shm();
+        this->updateCnt_shm = UNIX_shm();
+        this->computeCnt_shm = UNIX_shm();
+        this->downloadCnt_shm = UNIX_shm();
+
         this->server_msq = UNIX_msg();
         this->init_msq = UNIX_msg();
         this->client_msq = UNIX_msg();
 
-        if(chk != -1)
-            chk = this->vValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (VVALUES_SHM << SHM_OFFSET)),
-                                           this->executor.totalVValuesCount * sizeof(VertexValueType),
-                                           0666);
-        if(chk != -1)
+        if (chk != -1)
             chk = this->mValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (MVALUES_SHM << SHM_OFFSET)),
-                this->executor.totalMValuesCount * sizeof(MessageValueType),
-                0666);
-        if(chk != -1)
-            chk = this->vSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (VSET_SHM << SHM_OFFSET)),
-                this->vCount * sizeof(Vertex),
-                0666);
-        if(chk != -1)
-            chk = this->eSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (ESET_SHM << SHM_OFFSET)),
-                this->eCount * sizeof(Edge),
-                0666);
-        if(chk != -1)
+                                           this->executor.totalMValuesCount * sizeof(MessageValueType),
+                                           0666);
+        if (chk != -1)
             chk = this->initVSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (INITVSET_SHM << SHM_OFFSET)),
-                this->numOfInitV * sizeof(int),
-                0666);
-        if(chk != -1)
+                                            this->numOfInitV * sizeof(int),
+                                            0666);
+        if (chk != -1)
             chk = this->filteredV_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (FILTEREDV_SHM << SHM_OFFSET)),
-                this->vCount * sizeof(bool),
-                0666);
-        if(chk != -1)
+                                             this->vCount * sizeof(bool),
+                                             0666);
+        if (chk != -1)
             chk = this->timestamp_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (TIMESTAMP_SHM << SHM_OFFSET)),
-                this->vCount * sizeof(int),
-                0666);
-        if(chk != -1)
+                                             this->vCount * sizeof(int),
+                                             0666);
+        if (chk != -1)
             chk = this->avSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (AVSET_SHM << SHM_OFFSET)),
-                this->vCount * sizeof(int),
-                0666);
-        if(chk != -1)
+                                         this->vCount * sizeof(int),
+                                         0666);
+        if (chk != -1)
             chk = this->avCount_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (AVCOUNT_SHM << SHM_OFFSET)),
-                sizeof(int),
-                0666);
+                                           sizeof(int),
+                                           0666);
 
+        if (chk != -1)
+            chk = this->computeUnitsDownload_shm.create(
+                    ((this->nodeNo << NODE_NUM_OFFSET) | (DOWNLOAD_SHM << SHM_OFFSET)),
+                    this->maxComputeUnits * sizeof(ComputeUnit<VertexValueType>), 0666);
+        if (chk != -1)
+            chk = this->computeUnitsUpdate_shm.create(
+                    ((this->nodeNo << NODE_NUM_OFFSET) | (UPDATE_SHM << SHM_OFFSET)),
+                    this->maxComputeUnits * sizeof(ComputeUnit<VertexValueType>), 0666);
+        if (chk != -1)
+            chk = this->computeUnitsCompute_shm.create(
+                    ((this->nodeNo << NODE_NUM_OFFSET) | (COMPUTE_SHM << SHM_OFFSET)),
+                    this->maxComputeUnits * sizeof(ComputeUnit<VertexValueType>), 0666);
+        if (chk != -1)
+            chk = this->downloadCnt_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (DOWNLOAD_CNT_SHM << SHM_OFFSET)),
+                                               sizeof(int), 0666);
+        if (chk != -1)
+            chk = this->updateCnt_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (UPDATE_CNT_SHM << SHM_OFFSET)),
+                                               sizeof(int), 0666);
+        if (chk != -1)
+            chk = this->computeCnt_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (COMPUTE_CNT_SHM << SHM_OFFSET)),
+                                               sizeof(int), 0666);
 
-        if(chk != -1)
+        if (chk != -1)
             chk = this->server_msq.create(((this->nodeNo << NODE_NUM_OFFSET) | (SRV_MSG_TYPE << MSG_TYPE_OFFSET)),
-                0666);
-        if(chk != -1)
+                                          0666);
+        if (chk != -1)
             chk = this->init_msq.create(((this->nodeNo << NODE_NUM_OFFSET) | (INIT_MSG_TYPE << MSG_TYPE_OFFSET)),
-                0666);
-        if(chk != -1)
+                                        0666);
+        if (chk != -1)
             chk = this->client_msq.create(((this->nodeNo << NODE_NUM_OFFSET) | (CLI_MSG_TYPE << MSG_TYPE_OFFSET)),
-                0666);
+                                          0666);
 
-        if(chk != -1)
+        if (chk != -1)
         {
-            this->vValues_shm.attach(0666);
             this->mValues_shm.attach(0666);
-            this->vSet_shm.attach(0666);
-            this->eSet_shm.attach(0666);
             this->initVSet_shm.attach(0666);
             this->filteredV_shm.attach(0666);
             this->timestamp_shm.attach(0666);
             this->avSet_shm.attach(0666);
             this->avCount_shm.attach(0666);
 
-            this->vValues = (VertexValueType *) this->vValues_shm.shmaddr;
+            this->computeUnitsCompute_shm.attach(0666);
+            this->computeUnitsDownload_shm.attach(0666);
+            this->computeUnitsUpdate_shm.attach(0666);
+            this->computeCnt_shm.attach(0666);
+            this->downloadCnt_shm.attach(0666);
+            this->updateCnt_shm.attach(0666);
+
             this->mValues = (MessageValueType *) this->mValues_shm.shmaddr;
-            this->vSet = (Vertex *) this->vSet_shm.shmaddr;
-            this->eSet = (Edge *) this->eSet_shm.shmaddr;
             this->initVSet = (int *) this->initVSet_shm.shmaddr;
             this->filteredV = (bool *) this->filteredV_shm.shmaddr;
             this->timestamp = (int *) this->timestamp_shm.shmaddr;
             this->avSet = (int *) this->avSet_shm.shmaddr;
             this->avCount = (int *) this->avCount_shm.shmaddr;
+
+            this->computeUnitsUpdate = (ComputeUnit<VertexValueType> *) this->computeUnitsUpdate_shm.shmaddr;
+            this->computeUnitsDownload = (ComputeUnit<VertexValueType> *) this->computeUnitsDownload_shm.shmaddr;
+            this->computeUnitsCompute = (ComputeUnit<VertexValueType> *) this->computeUnitsCompute_shm.shmaddr;
+            this->updateCnt = (int *) this->updateCnt_shm.shmaddr;
+            this->downloadCnt = (int *) this->downloadCnt_shm.shmaddr;
+            this->computeCnt = (int *) this->computeCnt_shm.shmaddr;
 
             this->init_msq.send("initiated", (INIT_MSG_TYPE << MSG_TYPE_OFFSET), 256);
 
@@ -142,8 +162,7 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
             //Test end
 
             this->executor.Deploy(vCount, eCount, numOfInitV);
-        }
-        else
+        } else
         {
             this->isLegal = false;
 
@@ -154,42 +173,68 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
     }
 }
 
-template <typename GraphUtilType, typename VertexValueType, typename MessageValueType>
+template<typename GraphUtilType, typename VertexValueType, typename MessageValueType>
 UtilServer<GraphUtilType, VertexValueType, MessageValueType>::~UtilServer()
 {
     this->executor.Free();
 
-    delete this->avESet;
-
-    this->vValues = nullptr;
     this->mValues = nullptr;
-    this->vSet = nullptr;
-    this->eSet = nullptr;
     this->initVSet = nullptr;
     this->filteredV = nullptr;
     this->timestamp = nullptr;
 
-    this->vValues_shm.control(IPC_RMID);
+    this->computeUnitsUpdate = nullptr;
+    this->computeUnitsDownload = nullptr;
+    this->computeUnitsCompute = nullptr;
+    this->computeCnt = nullptr;
+    this->updateCnt = nullptr;
+    this->downloadCnt = nullptr;
+
     this->mValues_shm.control(IPC_RMID);
-    this->vSet_shm.control(IPC_RMID);
-    this->eSet_shm.control(IPC_RMID);
     this->initVSet_shm.control(IPC_RMID);
     this->filteredV_shm.control(IPC_RMID);
     this->timestamp_shm.control(IPC_RMID);
     this->avSet_shm.control(IPC_RMID);
     this->avCount_shm.control(IPC_RMID);
 
+    this->computeUnitsCompute_shm.control(IPC_RMID);
+    this->computeUnitsUpdate_shm.control(IPC_RMID);
+    this->computeUnitsDownload_shm.control(IPC_RMID);
+    this->computeCnt_shm.control(IPC_RMID);
+    this->updateCnt_shm.control(IPC_RMID);
+    this->downloadCnt_shm.control(IPC_RMID);
+
     this->server_msq.control(IPC_RMID);
     this->init_msq.control(IPC_RMID);
     this->client_msq.control(IPC_RMID);
 }
 
-template <typename GraphUtilType, typename VertexValueType, typename MessageValueType>
+template<typename GraphUtilType, typename VertexValueType, typename MessageValueType>
+void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::rotate()
+{
+    auto ptr = this->computeUnitsDownload;
+    auto cntPtr = this->downloadCnt;
+
+//    std::cout << "update: " << *(this->updateCnt) << std::endl;
+//    std::cout << "computeCnt: " << *(this->computeCnt) << std::endl;
+
+    this->computeUnitsDownload = this->computeUnitsCompute;
+    this->computeUnitsCompute = this->computeUnitsUpdate;
+    this->computeUnitsUpdate = ptr;
+
+    this->downloadCnt = this->computeCnt;
+    this->computeCnt = this->updateCnt;
+    this->updateCnt = cntPtr;
+
+//    std::cout << "update: " << *(this->updateCnt) << std::endl;
+//    std::cout << "computeCnt: " << *(this->computeCnt) << std::endl;
+}
+
+template<typename GraphUtilType, typename VertexValueType, typename MessageValueType>
 void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
 {
-    if(!this->isLegal) return;
+    if (!this->isLegal) return;
 
-    //VertexValueType *mValues = new VertexValueType [this->vCount * this->numOfInitV];
     char msgp[256];
     std::string cmd = std::string("");
 
@@ -201,61 +246,53 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
     //test
     int total = 0;
 
-    while(this->client_msq.recv(msgp, (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256) != -1)
+    while (this->client_msq.recv(msgp, (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256) != -1)
     {
         //Test
         std::cout << "Processing at iter " << ++iterCount << std::endl;
         //Test end
 
         cmd = msgp;
-        if(std::string("init") == cmd)
+        if (std::string("init") == cmd)
         {
             auto start = std::chrono::system_clock::now();
 
-            if(this->executor.optimize)
+            if (this->executor.optimize)
                 this->graphInit();
             this->server_msq.send("finished", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
 
             auto end = std::chrono::system_clock::now();
 
-            std::cout << "server init time : " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
+            std::cout << "server init time : "
+                      << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
 
             total += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-        }
-        else if(std::string("execute_msg_apply") == cmd)
+        } else if (std::string("ExchangeF") == cmd)
         {
-            std::cout << "apply message" << std::endl;
+//            std::cout << "RotateF" << std::endl;
+            rotate();
 
-            auto start = std::chrono::system_clock::now();
+            this->server_msq.send("RotateF", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
 
-            avCount = this->executor.MSGApply_array(this->vCount, this->eCount, this->vSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
+            if(*(this->computeCnt) == 0) {
+//                std::cout << "ComputeAF" << std::endl;
+                this->server_msq.send("ComputeAF", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+                continue;
+            }
 
-            auto applyEnd = std::chrono::system_clock::now();
+            this->executor.MSGGenMerge_array(*(this->computeCnt), this->computeUnitsCompute, this->mValues);
+            this->executor.MSGApply_array(*(this->computeCnt), this->computeUnitsCompute, this->mValues);
 
-            std::cout << "apply time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(applyEnd - start).count() << std::endl;
-
-            this->server_msq.send("finished msg apply", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
-        }
-        else if(std::string("execute_msg_merge") == cmd)
+            this->server_msq.send("ComputeF", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+//            std::cout << "RotateF" << std::endl;
+        } else if (std::string("IterationInit") == cmd)
         {
-            std::cout << "merge message" << std::endl;
-
-            this->executor.optimize = this->getEdgesFromAvSet();
-
-            auto start = std::chrono::system_clock::now();
-
-            if(this->executor.optimize)
-                msgCount = this->executor.MSGGenMerge_array(this->vCount, this->avECount, this->vSet, this->avESet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
-            else
-                msgCount = this->executor.MSGGenMerge_array(this->vCount, this->eCount, this->vSet, this->eSet, this->numOfInitV, this->initVSet, this->vValues, this->mValues);
-
-            auto mergeEnd = std::chrono::system_clock::now();
-            std::cout << "msg gen time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count() << std::endl;
-
-            this->server_msq.send("finished msg merge", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+            this->executor.IterationInit(this->vCount, this->eCount, this->mValues);
         }
-        else if(std::string("exit") == cmd)
+        else if (std::string("exit") == cmd)
+        {
             break;
+        }
     }
 
     //Test
@@ -267,42 +304,12 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
 template<typename GraphUtilType, typename VertexValueType, typename MessageValueType>
 void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::graphInit()
 {
-    this->adjacencyTable.reserve(this->vCount);
-    this->adjacencyTable.assign(this->vCount, std::vector<Edge>());
 
-    for(int i = 0; i < this->vCount; i++)
-    {
-        this->adjacencyTable.at(i).reserve(this->vSet[i].outDegree);
-    }
-
-    for(int i = 0; i < this->eCount; i++)
-    {
-        auto edge = this->eSet[i];
-        this->adjacencyTable.at(edge.src).emplace_back(edge.src, edge.dst, edge.weight);
-    }
 }
 
 template<typename GraphUtilType, typename VertexValueType, typename MessageValueType>
 bool UtilServer<GraphUtilType, VertexValueType, MessageValueType>::getEdgesFromAvSet()
 {
-    if(this->adjacencyTable.empty() || *(this->avCount) <= 0 || *(this->avCount) > (this->vCount >> 1))
-    {
-        return false;
-    }
 
-    this->avECount = 0;
-
-    for(int i = 0; i < *(this->avCount); i++)
-    {
-        int avID = this->avSet[i];
-
-        for(auto edge : this->adjacencyTable.at(avID))
-        {
-            this->avESet[this->avECount] = edge;
-            this->avECount++;
-        }
-    }
-
-    return true;
 }
 

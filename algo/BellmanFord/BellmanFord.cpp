@@ -109,9 +109,12 @@ int BellmanFord<VertexValueType, MessageValueType>::MSGApply_array(int computeUn
         {
             computeUnit.destValue = (VertexValueType) mValues[destVId * numOfInitV + computeUnit.indexOfInitV];
             computeUnit.destVertex.isActive = true;
+//            std::cout << "isActive: " << computeUnit.destVertex.vertexID << std::endl;
             avCount++;
         }
     }
+
+//    std::cout << "address: " << &computeUnits[0] << std::endl;
 
     return avCount;
 }
@@ -145,7 +148,7 @@ BellmanFord<VertexValueType, MessageValueType>::Init(int vCount, int eCount, int
     //Memory parameter init
     this->totalVValuesCount = vCount * numOfInitV;
     this->totalMValuesCount = vCount * numOfInitV;
-    this->maxComputeUnits = maxComputeUnits * numOfInitV;
+    this->maxComputeUnits = maxComputeUnits;
 
     this->optimize = false;
 }

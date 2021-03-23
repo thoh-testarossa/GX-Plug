@@ -106,7 +106,7 @@ if(CUDA_FOUND)
 #            core_GraphUtil)
 endif(CUDA_FOUND)
 #
-#if(UNIX)
+if(UNIX)
 #    add_executable(srv_Test_srv
 #            SRVTest_srv.cpp)
 #
@@ -125,16 +125,16 @@ endif(CUDA_FOUND)
 #            srv_UtilServer
 #            srv_UtilClient)
 #
-#    IF(CUDA_FOUND)
-#        add_executable(srv_UtilServerTest_BellmanFordGPU
-#                UtilServerTest_BellmanFordGPU.cpp)
-#
-#        target_link_libraries(srv_UtilServerTest_BellmanFordGPU
-#                srv_UNIX_shm
-#                srv_UNIX_msg
-#                srv_UtilServer
-#                algo_BellmanFord
-#                algo_BellmanFordGPU)
+    IF(CUDA_FOUND)
+        add_executable(srv_UtilServerTest_BellmanFordGPU
+                UtilServerTest_BellmanFordGPU.cpp)
+
+        target_link_libraries(srv_UtilServerTest_BellmanFordGPU
+                srv_UNIX_shm
+                srv_UNIX_msg
+                srv_UtilServer
+                algo_BellmanFord
+                algo_BellmanFordGPU)
 #
 #        add_executable(srv_UtilServerTest_PageRankGPU
 #                UtilServerTest_PageRankGPU.cpp)
@@ -165,16 +165,16 @@ endif(CUDA_FOUND)
 #                srv_UtilServer
 #                algo_ConnectedComponent
 #                algo_ConnectedComponentGPU)
-#    ENDIF(CUDA_FOUND)
+    ENDIF(CUDA_FOUND)
 #
-#    add_executable(srv_UtilServerTest_BellmanFord
-#            UtilServerTest_BellmanFord.cpp)
-#
-#    target_link_libraries(srv_UtilServerTest_BellmanFord
-#            srv_UNIX_shm
-#            srv_UNIX_msg
-#            srv_UtilServer
-#            algo_BellmanFord)
+    add_executable(srv_UtilServerTest_BellmanFord
+            UtilServerTest_BellmanFord.cpp)
+
+    target_link_libraries(srv_UtilServerTest_BellmanFord
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilServer
+            algo_BellmanFord)
 #
 #    add_executable(srv_UtilServerTest_LabelPropagation
 #            UtilServerTest_LabelPropagation.cpp)
@@ -212,15 +212,15 @@ endif(CUDA_FOUND)
 #            srv_UtilServer
 #            algo_JumpIteration)
 #
-#    add_executable(srv_UtilClientTest
-#            UtilClientTest.cpp)
-#
-#    target_link_libraries(srv_UtilClientTest
-#            pthread
-#            srv_UNIX_shm
-#            srv_UNIX_msg
-#            srv_UtilClient
-#            algo_BellmanFord)
+    add_executable(srv_UtilClientTest
+            UtilClientTest.cpp)
+
+    target_link_libraries(srv_UtilClientTest
+            pthread
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilClient
+            algo_BellmanFord)
 #
 #    add_executable(srv_UtilClientTest_BFOptimize
 #            UtilClientTest_BFOptimize.cpp)
@@ -292,4 +292,4 @@ endif(CUDA_FOUND)
 #            srv_UtilClient
 #            algo_JumpIteration)
 #
-#ENDIF(UNIX)
+ENDIF(UNIX)

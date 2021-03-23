@@ -17,13 +17,11 @@ template <typename VertexValueType, typename MessageValueType>
 class UtilClient
 {
 public:
-    UtilClient(int vCount, int eCount, int numOfInitV, int nodeNo = 0, int pipeVCount = 0, int pipeECount = 0);
+    UtilClient(int numOfInitV, int nodeNo = 0, int threadNum = 0);
     ~UtilClient() = default;
 
     int connect();
-    int transfer(int *initVSet, bool *filteredV, int *timestamp);
-    int update(VertexValueType *vValues, Vertex *vSet, int *avSet = nullptr, int avCount = -1);
-    int update(VertexValueType *vValues, int *avSet = nullptr, int avCount = -1);
+    int transfer(VertexValueType *vValues, Vertex *vSet);
     void requestMSGApply();
     void requestMSGMerge();
     void disconnect();
@@ -31,15 +29,11 @@ public:
     void graphInit();
 
     void initPipeline(int threadNum);
-    void startPipeline(VertexValueType *vValues, Vertex *vSet, Edge *eSet);
+    void startPipeline(ComputeUnitPackage<VertexValueType> *computePackages, int packagesCnt);
     void stopPipeline();
 
     int nodeNo;
 
-    int totalVCount;
-    int totalECount;
-    int pipeVCount;
-    int pipeECount;
     int numOfInitV;
 
     int *initVSet;
@@ -47,20 +41,22 @@ public:
     int *timestamp;
     MessageValueType *mValues;
 
-    VertexValueType *vValuesUpdate;
-    VertexValueType *vValuesDownload;
-    VertexValueType *vValuesCompute;
-    Vertex *vSetUpdate;
-    Vertex *vSetDownload;
-    Vertex *vSetCompute;
-    Edge *eSetUpdate;
-    Edge *eSetDownload;
-    Edge *eSetCompute;
+    ComputeUnit<VertexValueType> *computeUnitsUpdate;
+    ComputeUnit<VertexValueType> *computeUnitsCompute;
+    ComputeUnit<VertexValueType> *computeUnitsDownload;
+    int *updateCnt;
+    int *computeCnt;
+    int *downloadCnt;
 
     int *avSet;
     int *avCount;
 
 private:
+
+    void rotate();
+    int update(int computeUnitCount, ComputeUnit<VertexValueType> *computeUnits);
+    int download();
+
     UNIX_shm initVSet_shm;
     UNIX_shm filteredV_shm;
     UNIX_shm timestamp_shm;
@@ -68,18 +64,18 @@ private:
     UNIX_shm avSet_shm;
     UNIX_shm avCount_shm;
 
-    UNIX_shm vValuesUpdate_shm;
-    UNIX_shm vValuesDownload_shm;
-    UNIX_shm vValuesCompute_shm;
-    UNIX_shm vSetUpdate_shm;
-    UNIX_shm vSetDownload_shm;
-    UNIX_shm vSetCompute_shm;
-    UNIX_shm eSetUpdate_shm;
-    UNIX_shm eSetDownload_shm;
-    UNIX_shm eSetCompute_shm;
+    UNIX_shm computeUnitsUpdate_shm;
+    UNIX_shm computeUnitsCompute_shm;
+    UNIX_shm computeUnitsDownload_shm;
+    UNIX_shm updateCnt_shm;
+    UNIX_shm computeCnt_shm;
+    UNIX_shm downloadCnt_shm;
 
     UNIX_msg server_msq;
     UNIX_msg client_msq;
+
+    VertexValueType *vValues_agent;
+    Vertex *vSets_agent;
 
     std::shared_ptr<ThreadPool> threadPoolPtr = nullptr;
 };

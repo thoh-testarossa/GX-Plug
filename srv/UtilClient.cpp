@@ -4,19 +4,15 @@
 
 #include <cstring>
 #include <iostream>
+#include <memory>
 #include "UtilClient.h"
 
 template<typename VertexValueType, typename MessageValueType>
-UtilClient<VertexValueType, MessageValueType>::UtilClient(int vCount, int eCount, int numOfInitV, int nodeNo,
-                                                          int pipeVCount, int pipeECount)
+UtilClient<VertexValueType, MessageValueType>::UtilClient(int numOfInitV, int nodeNo, int threadNum)
 {
     this->nodeNo = nodeNo;
 
     this->numOfInitV = numOfInitV;
-    this->totalVCount = vCount;
-    this->totalECount = eCount;
-    this->pipeECount = pipeECount;
-    this->pipeVCount = pipeVCount;
 
     this->mValues_shm = UNIX_shm();
     this->initVSet_shm = UNIX_shm();
@@ -25,15 +21,12 @@ UtilClient<VertexValueType, MessageValueType>::UtilClient(int vCount, int eCount
     this->avCount_shm = UNIX_shm();
     this->avSet_shm = UNIX_shm();
 
-    this->vValuesUpdate_shm = UNIX_shm();
-    this->vValuesDownload_shm = UNIX_shm();
-    this->vValuesCompute_shm = UNIX_shm();
-    this->vSetUpdate_shm = UNIX_shm();
-    this->vSetDownload_shm = UNIX_shm();
-    this->vSetCompute_shm = UNIX_shm();
-    this->eSetUpdate_shm = UNIX_shm();
-    this->eSetDownload_shm = UNIX_shm();
-    this->eSetCompute_shm = UNIX_shm();
+    this->computeUnitsUpdate_shm = UNIX_shm();
+    this->computeUnitsCompute_shm = UNIX_shm();
+    this->computeUnitsDownload_shm = UNIX_shm();
+    this->updateCnt_shm = UNIX_shm();
+    this->computeCnt_shm = UNIX_shm();
+    this->downloadCnt_shm = UNIX_shm();
 
     this->server_msq = UNIX_msg();
     this->client_msq = UNIX_msg();
@@ -45,15 +38,17 @@ UtilClient<VertexValueType, MessageValueType>::UtilClient(int vCount, int eCount
     this->avCount = nullptr;
     this->avSet = nullptr;
 
-    this->vValuesUpdate = nullptr;
-    this->vValuesDownload = nullptr;
-    this->vValuesCompute = nullptr;
-    this->vSetUpdate = nullptr;
-    this->vSetDownload = nullptr;
-    this->vSetCompute = nullptr;
-    this->eSetUpdate = nullptr;
-    this->eSetDownload = nullptr;
-    this->eSetCompute = nullptr;
+    this->computeUnitsUpdate = nullptr;
+    this->computeUnitsCompute = nullptr;
+    this->computeUnitsDownload = nullptr;
+    this->updateCnt = nullptr;
+    this->computeCnt = nullptr;
+    this->downloadCnt = nullptr;
+
+    this->vValues_agent = nullptr;
+    this->vSets_agent = nullptr;
+
+    this->initPipeline(threadNum);
 }
 
 template<typename VertexValueType, typename MessageValueType>
@@ -69,24 +64,19 @@ int UtilClient<VertexValueType, MessageValueType>::connect()
     if (ret != -1) ret = this->avCount_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (AVCOUNT_SHM << SHM_OFFSET)));
 
     if (ret != -1)
-        ret = this->vValuesUpdate_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (VVALUES_UPDATE_SHM << SHM_OFFSET)));
+        ret = this->computeUnitsDownload_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (DOWNLOAD_SHM << SHM_OFFSET)));
     if (ret != -1)
-        ret = this->vValuesDownload_shm.fetch(
-                ((this->nodeNo << NODE_NUM_OFFSET) | (VVALUES_DOWNLOAD_SHM << SHM_OFFSET)));
+        ret = this->computeUnitsUpdate_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (UPDATE_SHM << SHM_OFFSET)));
     if (ret != -1)
-        ret = this->vValuesCompute_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (VVALUES_COMPUTE_SHM << SHM_OFFSET)));
+        ret = this->computeUnitsCompute_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (COMPUTE_SHM << SHM_OFFSET)));
     if (ret != -1)
-        ret = this->vSetUpdate_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (VSET_UPDATE_SHM << SHM_OFFSET)));
+        ret = this->downloadCnt_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (DOWNLOAD_CNT_SHM << SHM_OFFSET)));
     if (ret != -1)
-        ret = this->vSetDownload_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (VSET_DOWNLOAD_SHM << SHM_OFFSET)));
+        ret = this->updateCnt_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (UPDATE_CNT_SHM << SHM_OFFSET)));
     if (ret != -1)
-        ret = this->vSetCompute_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (VSET_COMPUTE_SHM << SHM_OFFSET)));
-    if (ret != -1)
-        ret = this->eSetUpdate_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (ESET_UPDATE_SHM << SHM_OFFSET)));
-    if (ret != -1)
-        ret = this->eSetDownload_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (ESET_DOWNLOAD_SHM << SHM_OFFSET)));
-    if (ret != -1)
-        ret = this->eSetCompute_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (ESET_COMPUTE_SHM << SHM_OFFSET)));
+        ret = this->computeCnt_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (COMPUTE_CNT_SHM << SHM_OFFSET)));
+
+
     if (ret != -1)
         ret = this->server_msq.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (SRV_MSG_TYPE << MSG_TYPE_OFFSET)));
     if (ret != -1)
@@ -101,15 +91,12 @@ int UtilClient<VertexValueType, MessageValueType>::connect()
         this->avSet_shm.attach(0666);
         this->avCount_shm.attach(0666);
 
-        this->vValuesUpdate_shm.attach(0666);
-        this->vValuesDownload_shm.attach(0666);
-        this->vValuesCompute_shm.attach(0666);
-        this->vSetUpdate_shm.attach(0666);
-        this->vSetDownload_shm.attach(0666);
-        this->vSetCompute_shm.attach(0666);
-        this->eSetUpdate_shm.attach(0666);
-        this->eSetDownload_shm.attach(0666);
-        this->eSetCompute_shm.attach(0666);
+        this->computeUnitsCompute_shm.attach(0666);
+        this->computeUnitsDownload_shm.attach(0666);
+        this->computeUnitsUpdate_shm.attach(0666);
+        this->computeCnt_shm.attach(0666);
+        this->downloadCnt_shm.attach(0666);
+        this->updateCnt_shm.attach(0666);
 
         this->mValues = (MessageValueType *) this->mValues_shm.shmaddr;
         this->initVSet = (int *) this->initVSet_shm.shmaddr;
@@ -118,80 +105,101 @@ int UtilClient<VertexValueType, MessageValueType>::connect()
         this->avSet = (int *) this->avSet_shm.shmaddr;
         this->avCount = (int *) this->avCount_shm.shmaddr;
 
-        this->vValuesUpdate = (VertexValueType *) this->vValuesUpdate_shm.shmaddr;
-        this->vValuesDownload = (VertexValueType *) this->vValuesDownload_shm.shmaddr;
-        this->vValuesCompute = (VertexValueType *) this->vValuesCompute_shm.shmaddr;
-        this->vSetUpdate = (Vertex *) this->vSetUpdate_shm.shmaddr;
-        this->vSetDownload = (Vertex *) this->vSetDownload_shm.shmaddr;
-        this->vSetCompute = (Vertex *) this->vSetCompute_shm.shmaddr;
-        this->eSetUpdate = (Edge *) this->eSetUpdate_shm.shmaddr;
-        this->eSetDownload = (Edge *) this->eSetDownload_shm.shmaddr;
-        this->eSetCompute = (Edge *) this->eSetCompute_shm.shmaddr;
+        this->computeUnitsUpdate = (ComputeUnit<VertexValueType> *) this->computeUnitsUpdate_shm.shmaddr;
+        this->computeUnitsDownload = (ComputeUnit<VertexValueType> *) this->computeUnitsDownload_shm.shmaddr;
+        this->computeUnitsCompute = (ComputeUnit<VertexValueType> *) this->computeUnitsCompute_shm.shmaddr;
+        this->updateCnt = (int *) this->updateCnt_shm.shmaddr;
+        this->downloadCnt = (int *) this->downloadCnt_shm.shmaddr;
+        this->computeCnt = (int *) this->computeCnt_shm.shmaddr;
     }
 
     return ret;
 }
 
 template<typename VertexValueType, typename MessageValueType>
-int UtilClient<VertexValueType, MessageValueType>::transfer(int *initVSet, bool *filteredV, int *timestamp)
+int UtilClient<VertexValueType, MessageValueType>::transfer(VertexValueType *vValues, Vertex *vSet)
 {
-    if (this->numOfInitV > 0)
-    {
-        if (this->initVSet == nullptr) return -1;
-        if (this->filteredV == nullptr) return -1;
-        if (this->timestamp == nullptr) return -1;
-
-        memcpy(this->initVSet, initVSet, this->numOfInitV * sizeof(int));
-        memcpy(this->filteredV, filteredV, this->vCount * sizeof(bool));
-        memcpy(this->timestamp, timestamp, this->vCount * sizeof(int));
-
-        this->graphInit();
-
-        return 0;
-    } else return -1;
+    if (vValues != nullptr) this->vValues_agent = vValues;
+    if (vSet != nullptr) this->vSets_agent = vSet;
 }
 
 template<typename VertexValueType, typename MessageValueType>
 int
-UtilClient<VertexValueType, MessageValueType>::update(VertexValueType *vValues, Vertex *vSet, int *avSet, int avCount)
+UtilClient<VertexValueType, MessageValueType>::update(int computeUnitCount, ComputeUnit<VertexValueType> *computeUnits)
 {
-    if (this->vCount > 0 && this->eCount > 0 && this->numOfInitV > 0)
-    {
-        if (this->vValues == nullptr) return -1;
-        if (this->vSet == nullptr) return -1;
-
-        memcpy(this->vValues, vValues, this->vCount * this->numOfInitV * sizeof(VertexValueType));
-        memcpy(this->vSet, vSet, this->vCount * sizeof(Vertex));
-
-        memcpy(this->avCount, &avCount, sizeof(int));
-
-        if (avCount > 0 && avSet != nullptr)
-        {
-            memcpy(this->avSet, avSet, avCount * sizeof(int));
-        }
-
-        return 0;
-    } else return -1;
+    if (computeUnitCount <= 0 || computeUnits == nullptr) return -1;
+//    if (this->nodeNo == 0)
+//        std::cout << "into update start " << std::endl;
+//    if (this->nodeNo == 0)
+//        std::cout << "computeUnitCount: " << computeUnitCount << std::endl;
+    memcpy(this->computeUnitsUpdate, computeUnits, computeUnitCount * sizeof(ComputeUnit<VertexValueType>));
+    memcpy(this->updateCnt, &computeUnitCount, sizeof(int));
+//    if (this->nodeNo == 0)
+//        std::cout << "this->updateCnt: " << *(this->updateCnt) << std::endl;
+    return 0;
 }
 
 template<typename VertexValueType, typename MessageValueType>
-int UtilClient<VertexValueType, MessageValueType>::update(VertexValueType *vValues, int *avSet, int avCount)
+int UtilClient<VertexValueType, MessageValueType>::download()
 {
-    if (this->vCount > 0 && this->eCount > 0 && this->numOfInitV > 0)
+//    if (this->nodeNo == 0)
+//        std::cout << "download:" << std::endl;
+    auto computeUnits = this->computeUnitsDownload;
+    int count = *(this->downloadCnt);
+//
+//    if (this->nodeNo == 0)
+//        std::cout << "download-cnt: " << count << std::endl;
+//
+//    if (this->nodeNo == 0)
+//        std::cout << "address: " << &computeUnits[0] << std::endl;
+
+    std::set<int> activeVertices;
+    for (int i = 0; i < count; i++)
     {
-        if (this->vValues == nullptr) return -1;
+        int destVId = computeUnits[i].destVertex.vertexID;
+        int srcVId = computeUnits[i].srcVertex.vertexID;
+        int indexOfInit = computeUnits[i].indexOfInitV;
 
-        memcpy(this->vValues, vValues, this->vCount * this->numOfInitV * sizeof(VertexValueType));
+        this->vSets_agent[destVId].isActive |= computeUnits[i].destVertex.isActive;
+        this->vSets_agent[srcVId].isActive |= computeUnits[i].srcVertex.isActive;
 
-        memcpy(this->avCount, &avCount, sizeof(int));
+        if (this->vSets_agent[destVId].isActive) activeVertices.emplace(destVId);
+        if (this->vSets_agent[srcVId].isActive) activeVertices.emplace(srcVId);
 
-        if (avCount > 0 && avSet != nullptr)
-        {
-            memcpy(this->avSet, avSet, avCount * sizeof(int));
-        }
+        if (this->vValues_agent[srcVId * numOfInitV + indexOfInit] > computeUnits[i].srcValue)
+            this->vValues_agent[srcVId * numOfInitV + indexOfInit] = computeUnits[i].srcValue;
 
-        return 0;
-    } else return -1;
+        if (this->vValues_agent[destVId * numOfInitV + indexOfInit] > computeUnits[i].destValue)
+            this->vValues_agent[destVId * numOfInitV + indexOfInit] = computeUnits[i].destValue;
+    }
+
+
+
+//    if (this->nodeNo == 0)
+//        std::cout << "count:" << activeVertices.size() << std::endl;
+//    if (this->nodeNo == 0){
+//        for(auto id : activeVertices)
+//        {
+//            std::cout << "id:" << id << std::endl;
+//        }
+//
+//    }
+    return 0;
+}
+
+template<typename VertexValueType, typename MessageValueType>
+void UtilClient<VertexValueType, MessageValueType>::rotate()
+{
+    auto ptr = this->computeUnitsDownload;
+    auto cntPtr = this->downloadCnt;
+
+    this->computeUnitsDownload = this->computeUnitsCompute;
+    this->computeUnitsCompute = this->computeUnitsUpdate;
+    this->computeUnitsUpdate = ptr;
+
+    this->downloadCnt = this->computeCnt;
+    this->computeCnt = this->updateCnt;
+    this->updateCnt = cntPtr;
 }
 
 template<typename VertexValueType, typename MessageValueType>
@@ -204,15 +212,12 @@ void UtilClient<VertexValueType, MessageValueType>::disconnect()
     this->avSet_shm.detach();
     this->avCount_shm.detach();
 
-    this->vValuesUpdate_shm.detach();
-    this->vValuesDownload_shm.detach();
-    this->vValuesCompute_shm.detach();
-    this->vSetUpdate_shm.detach();
-    this->vSetDownload_shm.detach();
-    this->vSetCompute_shm.detach();
-    this->eSetUpdate_shm.detach();
-    this->eSetDownload_shm.detach();
-    this->eSetCompute_shm.detach();
+    this->computeUnitsCompute_shm.detach();
+    this->computeUnitsDownload_shm.detach();
+    this->computeUnitsUpdate_shm.detach();
+    this->computeCnt_shm.detach();
+    this->updateCnt_shm.detach();
+    this->computeCnt_shm.detach();
 
     this->mValues = nullptr;
     this->initVSet = nullptr;
@@ -221,15 +226,12 @@ void UtilClient<VertexValueType, MessageValueType>::disconnect()
     this->avSet = nullptr;
     this->avCount = nullptr;
 
-    this->vValuesUpdate = nullptr;
-    this->vValuesDownload = nullptr;
-    this->vValuesCompute = nullptr;
-    this->vSetUpdate = nullptr;
-    this->vSetDownload = nullptr;
-    this->vSetCompute = nullptr;
-    this->eSetUpdate = nullptr;
-    this->eSetDownload = nullptr;
-    this->eSetCompute = nullptr;
+    this->computeUnitsUpdate = nullptr;
+    this->computeUnitsDownload = nullptr;
+    this->computeUnitsCompute = nullptr;
+    this->computeCnt = nullptr;
+    this->updateCnt = nullptr;
+    this->downloadCnt = nullptr;
 }
 
 template<typename VertexValueType, typename MessageValueType>
@@ -289,15 +291,100 @@ void UtilClient<VertexValueType, MessageValueType>::initPipeline(int threadNum)
 {
     if (this->threadPoolPtr == nullptr)
     {
-        this->threadPoolPtr = new ThreadPool(threadNum);
+        this->threadPoolPtr = std::make_shared<ThreadPool>(threadNum);
         this->threadPoolPtr->start();
     }
 }
 
 template<typename VertexValueType, typename MessageValueType>
-void UtilClient<VertexValueType, MessageValueType>::startPipeline(VertexValueType *vValues, Vertex *vSet, Edge *eSet)
+void UtilClient<VertexValueType, MessageValueType>::startPipeline(ComputeUnitPackage<VertexValueType> *computePackages,
+                                                                  int packagesCnt)
 {
+    std::cout << "start pipeline" << std::endl;
+    int sendCnt = 0;
+    char serverMsg[256];
 
+    //init message
+    this->client_msq.send("IterationInit", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+
+    //init the compute and download buffer
+    *(this->computeCnt) = 0;
+    *(this->downloadCnt) = 0;
+
+    if (packagesCnt <= 0)
+    {
+        this->client_msq.send("End", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+        return;
+    }
+
+    //commit the update task
+    if (sendCnt < packagesCnt)
+    {
+        auto computeUnits = computePackages[sendCnt].getUnitPtr();
+        int count = computePackages[sendCnt].getCount();
+        if (this->nodeNo == 0)
+            std::cout << "count: " << count << std::endl;
+        this->threadPoolPtr->commitTask(
+                std::bind(&UtilClient<VertexValueType, MessageValueType>::update, this, count, computeUnits));
+        sendCnt++;
+
+        if (this->nodeNo == 0)
+            std::cout << "update: " << *(this->updateCnt) << std::endl;
+        while (this->threadPoolPtr->taskCount() != 0);
+        if (this->nodeNo == 0)
+            std::cout << "ExchangeF" << std::endl;
+        this->client_msq.send("ExchangeF", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+    }
+
+    while (this->server_msq.recv(serverMsg, (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256))
+    {
+        if (errno == EINTR) continue;
+
+        if (!strcmp("RotateF", serverMsg))
+        {
+            if (this->nodeNo == 0)
+                std::cout << "RotateF" << std::endl;
+            rotate();
+
+            // commit download task
+            this->threadPoolPtr->commitTask(
+                    std::bind(&UtilClient<VertexValueType, MessageValueType>::download, this));
+
+            if (sendCnt == packagesCnt)
+            {
+                int a = 0;
+                memcpy(this->updateCnt, &a, sizeof(int));
+                continue;
+            }
+
+            // commit update task
+            auto computeUnits = computePackages[sendCnt].getUnitPtr();
+            int count = computePackages[sendCnt].getCount();
+            this->threadPoolPtr->commitTask(
+                    std::bind(&UtilClient<VertexValueType, MessageValueType>::update, this, count, computeUnits));
+
+            sendCnt++;
+
+            if (this->nodeNo == 0)
+                std::cout << "RotateF" << std::endl;
+
+        } else if (!strcmp("ComputeF", serverMsg))
+        {
+            if (this->nodeNo == 0)
+                std::cout << "ComputeF" << std::endl;
+            while (this->threadPoolPtr->taskCount() != 0);
+            this->client_msq.send("ExchangeF", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+
+            if (this->nodeNo == 0)
+                std::cout << "ComputeF" << std::endl;
+        } else if (!strcmp("ComputeAF", serverMsg))
+        {
+            if (this->nodeNo == 0)
+                std::cout << "ComputeAF" << std::endl;
+            while (this->threadPoolPtr->taskCount() != 0);
+            break;
+        }
+    }
 }
 
 template<typename VertexValueType, typename MessageValueType>

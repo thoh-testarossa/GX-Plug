@@ -9,7 +9,7 @@ ThreadPool::ThreadPool(int threadNum)
     if (threadNum > MAX_THREAD_NUM || threadNum < 0) threadNum = MAX_THREAD_NUM;
 
     this->threadNum = threadNum;
-    this->idleThreadNum = threadNum;
+    this->idleTask = 0;
     this->isRun = false;
 }
 
@@ -32,11 +32,9 @@ void ThreadPool::work()
             t = taskQueue.front();
             taskQueue.pop();
         }
-        this->idleThreadNum--;
         t();
-        this->idleThreadNum++;
+        this->idleTask--;
     }
-    this->idleThreadNum++;
 }
 
 void ThreadPool::start()
@@ -55,7 +53,6 @@ void ThreadPool::stop()
         if (thread.joinable())
         {
             thread.join();
-            this->idleThreadNum++;
         }
     }
     while (!this->taskQueue.empty()) this->taskQueue.pop();
@@ -63,6 +60,7 @@ void ThreadPool::stop()
 
 void ThreadPool::commitTask(const task &t)
 {
+    this->idleTask++;
     if (!this->isRun) throw std::runtime_error("commit task when ThreadPool is stopped");
     {
         std::unique_lock<std::mutex> uniqueLock(this->lock);
@@ -71,7 +69,7 @@ void ThreadPool::commitTask(const task &t)
     this->cond.notify_one();
 }
 
-int ThreadPool::idleThreadCount()
+int ThreadPool::taskCount()
 {
-    return this->idleThreadNum;
+    return this->idleTask;
 }

@@ -30,7 +30,9 @@ public:
 
     void commitTask(const task &t);
 
-    int idleThreadCount();
+    int taskCount();
+
+    int threadNum;
 
 private:
     void work();
@@ -40,8 +42,7 @@ private:
     std::mutex lock;
     std::condition_variable cond;
     std::atomic<bool> isRun{};
-    int threadNum;
-    std::atomic<int> idleThreadNum{};
+    std::atomic<int> idleTask{};
 };
 
 #endif //GRAPH_ALGO_THREADPOOL_H
