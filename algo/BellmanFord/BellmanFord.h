@@ -38,7 +38,6 @@ public:
 
 protected:
     int numOfInitV;
-    int maxComputeUnits;
 };
 
 #endif //GRAPH_ALGO_BELLMANFORD_H

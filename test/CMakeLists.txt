@@ -21,15 +21,15 @@ target_link_libraries(algo_BellmanFordTest
         core_Graph
         core_MessageSet
         core_GraphUtil)
-#
-#add_executable(algo_LabelPropagationTest
-#		LabelPropagationTest.cpp)
-#
-#target_link_libraries(algo_LabelPropagationTest
-#        algo_LabelPropagation
-#        core_Graph
-#        core_MessageSet
-#        core_GraphUtil)
+
+add_executable(algo_LabelPropagationTest
+		LabelPropagationTest.cpp)
+
+target_link_libraries(algo_LabelPropagationTest
+        algo_LabelPropagation
+        core_Graph
+        core_MessageSet
+        core_GraphUtil)
 #
 #add_executable(algo_ConnectedComponentTest
 #        ConnectedComponentTest.cpp)
@@ -87,14 +87,14 @@ if(CUDA_FOUND)
 #            core_MessageSet
 #            core_GraphUtil)
 #
-#    add_executable(algo_LabelPropagationGPUTest
-#            LabelPropagationGPUTest.cpp)
-#
-#    target_link_libraries(algo_LabelPropagationGPUTest
-#            algo_LabelPropagationGPU
-#            core_Graph
-#            core_MessageSet
-#            core_GraphUtil)
+    add_executable(algo_LabelPropagationGPUTest
+            LabelPropagationGPUTest.cpp)
+
+    target_link_libraries(algo_LabelPropagationGPUTest
+            algo_LabelPropagationGPU
+            core_Graph
+            core_MessageSet
+            core_GraphUtil)
 #
 #    add_executable(algo_ConnectedComponentGPUTest
 #            ConnectedComponentGPUTest.cpp)
@@ -146,15 +146,15 @@ if(UNIX)
 #                algo_PageRank
 #                algo_PageRankGPU)
 #
-#        add_executable(srv_UtilServerTest_LabelPropagationGPU
-#                UtilServerTest_LabelPropagationGPU.cpp)
-#
-#        target_link_libraries(srv_UtilServerTest_LabelPropagationGPU
-#                srv_UNIX_shm
-#                srv_UNIX_msg
-#                srv_UtilServer
-#                algo_LabelPropagation
-#                algo_LabelPropagationGPU)
+        add_executable(srv_UtilServerTest_LabelPropagationGPU
+                UtilServerTest_LabelPropagationGPU.cpp)
+
+        target_link_libraries(srv_UtilServerTest_LabelPropagationGPU
+                srv_UNIX_shm
+                srv_UNIX_msg
+                srv_UtilServer
+                algo_LabelPropagation
+                algo_LabelPropagationGPU)
 #
 #        add_executable(srv_UtilServerTest_ConnectedComponentGPU
 #                UtilServerTest_ConnectedComponentGPU.cpp)
@@ -175,15 +175,15 @@ if(UNIX)
             srv_UNIX_msg
             srv_UtilServer
             algo_BellmanFord)
-#
-#    add_executable(srv_UtilServerTest_LabelPropagation
-#            UtilServerTest_LabelPropagation.cpp)
-#
-#    target_link_libraries(srv_UtilServerTest_LabelPropagation
-#            srv_UNIX_shm
-#            srv_UNIX_msg
-#            srv_UtilServer
-#            algo_LabelPropagation)
+
+    add_executable(srv_UtilServerTest_LabelPropagation
+            UtilServerTest_LabelPropagation.cpp)
+
+    target_link_libraries(srv_UtilServerTest_LabelPropagation
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilServer
+            algo_LabelPropagation)
 #
 #    add_executable(srv_UtilServerTest_PageRank
 #            UtilServerTest_PageRank.cpp)
@@ -252,15 +252,15 @@ if(UNIX)
 #            srv_UtilClient
 #            algo_BellmanFord)
 #
-#    add_executable(srv_UtilClientTest_LabelPropagation
-#            UtilClientTest_LabelPropagation.cpp)
-#
-#    target_link_libraries(srv_UtilClientTest_LabelPropagation
-#            pthread
-#            srv_UNIX_shm
-#            srv_UNIX_msg
-#            srv_UtilClient
-#            algo_LabelPropagation)
+    add_executable(srv_UtilClientTest_LabelPropagation
+            UtilClientTest_LabelPropagation.cpp)
+
+    target_link_libraries(srv_UtilClientTest_LabelPropagation
+            pthread
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilClient
+            algo_LabelPropagation)
 #
 #    add_executable(srv_UtilClientTest_LabelPropagationPartition
 #            UtilClientTest_LabelPropagationPartition.cpp)

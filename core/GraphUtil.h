@@ -100,6 +100,8 @@ public:
     int totalMValuesCount;
     int partitionId;
     bool optimize = false;
+protected:
+    int maxComputeUnits;
 };
 
 #endif //GRAPH_ALGO_GRAPHUTIL_H

@@ -12,9 +12,10 @@
 
 int main(int argc, char *argv[])
 {
-    if(argc != 4 && argc != 5)
+    if (argc != 4 && argc != 5)
     {
-        std::cout << "Usage:" << std::endl << "./UtilServerTest_LabelPropagation vCount eCount numOfInitV [nodeNo]" << std::endl;
+        std::cout << "Usage:" << std::endl << "./UtilServerTest_LabelPropagation vCount eCount numOfInitV [nodeNo]"
+                  << std::endl;
         return 1;
     }
 
@@ -23,8 +24,10 @@ int main(int argc, char *argv[])
     int numOfInitV = atoi(argv[3]);
     int nodeNo = (argc == 4) ? 0 : atoi(argv[4]);
 
-    auto testUtilServer = UtilServer<LabelPropagationGPU<LPA_Value, LPA_MSG>, LPA_Value, LPA_MSG>(vCount, eCount, numOfInitV, nodeNo);
-    if(!testUtilServer.isLegal)
+    auto testUtilServer = UtilServer<LabelPropagationGPU<LPA_Value, LPA_MSG>, LPA_Value, LPA_MSG>(vCount, eCount,
+                                                                                                  numOfInitV, nodeNo,
+                                                                                                  1000);
+    if (!testUtilServer.isLegal)
     {
         std::cout << "mem allocation failed or parameters are illegal" << std::endl;
         return 2;

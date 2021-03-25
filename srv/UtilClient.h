@@ -21,7 +21,7 @@ public:
     ~UtilClient() = default;
 
     int connect();
-    int transfer(VertexValueType *vValues, Vertex *vSet);
+    int transfer(ComputeUnitPackage<VertexValueType> *computePackages, int packagesCnt);
     void requestMSGApply();
     void requestMSGMerge();
     void disconnect();
@@ -29,7 +29,7 @@ public:
     void graphInit();
 
     void initPipeline(int threadNum);
-    void startPipeline(ComputeUnitPackage<VertexValueType> *computePackages, int packagesCnt);
+    void startPipeline();
     void stopPipeline();
 
     int nodeNo;
@@ -41,6 +41,14 @@ public:
     int *timestamp;
     MessageValueType *mValues;
 
+    int *avSet;
+    int *avCount;
+
+private:
+
+    ComputeUnitPackage<VertexValueType> *computePackages;
+    int packagesCnt;
+
     ComputeUnit<VertexValueType> *computeUnitsUpdate;
     ComputeUnit<VertexValueType> *computeUnitsCompute;
     ComputeUnit<VertexValueType> *computeUnitsDownload;
@@ -48,14 +56,9 @@ public:
     int *computeCnt;
     int *downloadCnt;
 
-    int *avSet;
-    int *avCount;
-
-private:
-
     void rotate();
     int update(int computeUnitCount, ComputeUnit<VertexValueType> *computeUnits);
-    int download();
+    void download(ComputeUnitPackage<VertexValueType> *computePackages, int &copyIndex);
 
     UNIX_shm initVSet_shm;
     UNIX_shm filteredV_shm;
@@ -73,9 +76,6 @@ private:
 
     UNIX_msg server_msq;
     UNIX_msg client_msq;
-
-    VertexValueType *vValues_agent;
-    Vertex *vSets_agent;
 
     std::shared_ptr<ThreadPool> threadPoolPtr = nullptr;
 };

@@ -45,9 +45,6 @@ UtilClient<VertexValueType, MessageValueType>::UtilClient(int numOfInitV, int no
     this->computeCnt = nullptr;
     this->downloadCnt = nullptr;
 
-    this->vValues_agent = nullptr;
-    this->vSets_agent = nullptr;
-
     this->initPipeline(threadNum);
 }
 
@@ -117,10 +114,11 @@ int UtilClient<VertexValueType, MessageValueType>::connect()
 }
 
 template<typename VertexValueType, typename MessageValueType>
-int UtilClient<VertexValueType, MessageValueType>::transfer(VertexValueType *vValues, Vertex *vSet)
+int UtilClient<VertexValueType, MessageValueType>::transfer(ComputeUnitPackage<VertexValueType> *computePackages,
+                                                            int packagesCnt)
 {
-    if (vValues != nullptr) this->vValues_agent = vValues;
-    if (vSet != nullptr) this->vSets_agent = vSet;
+    this->computePackages = computePackages;
+    this->packagesCnt = packagesCnt;
 }
 
 template<typename VertexValueType, typename MessageValueType>
@@ -140,51 +138,22 @@ UtilClient<VertexValueType, MessageValueType>::update(int computeUnitCount, Comp
 }
 
 template<typename VertexValueType, typename MessageValueType>
-int UtilClient<VertexValueType, MessageValueType>::download()
+void UtilClient<VertexValueType, MessageValueType>::download(ComputeUnitPackage<VertexValueType> *computePackages,
+                                                             int &copyIndex)
 {
-//    if (this->nodeNo == 0)
-//        std::cout << "download:" << std::endl;
     auto computeUnits = this->computeUnitsDownload;
     int count = *(this->downloadCnt);
-//
+
 //    if (this->nodeNo == 0)
 //        std::cout << "download-cnt: " << count << std::endl;
 //
 //    if (this->nodeNo == 0)
-//        std::cout << "address: " << &computeUnits[0] << std::endl;
+//        std::cout << "copyIndex: " << copyIndex << std::endl;
 
-    std::set<int> activeVertices;
-    for (int i = 0; i < count; i++)
-    {
-        int destVId = computeUnits[i].destVertex.vertexID;
-        int srcVId = computeUnits[i].srcVertex.vertexID;
-        int indexOfInit = computeUnits[i].indexOfInitV;
+    if (count == 0) return;
 
-        this->vSets_agent[destVId].isActive |= computeUnits[i].destVertex.isActive;
-        this->vSets_agent[srcVId].isActive |= computeUnits[i].srcVertex.isActive;
-
-        if (this->vSets_agent[destVId].isActive) activeVertices.emplace(destVId);
-        if (this->vSets_agent[srcVId].isActive) activeVertices.emplace(srcVId);
-
-        if (this->vValues_agent[srcVId * numOfInitV + indexOfInit] > computeUnits[i].srcValue)
-            this->vValues_agent[srcVId * numOfInitV + indexOfInit] = computeUnits[i].srcValue;
-
-        if (this->vValues_agent[destVId * numOfInitV + indexOfInit] > computeUnits[i].destValue)
-            this->vValues_agent[destVId * numOfInitV + indexOfInit] = computeUnits[i].destValue;
-    }
-
-
-
-//    if (this->nodeNo == 0)
-//        std::cout << "count:" << activeVertices.size() << std::endl;
-//    if (this->nodeNo == 0){
-//        for(auto id : activeVertices)
-//        {
-//            std::cout << "id:" << id << std::endl;
-//        }
-//
-//    }
-    return 0;
+    memcpy(computePackages[copyIndex].getUnitPtr(), computeUnits, count * sizeof(ComputeUnit<VertexValueType>));
+    copyIndex++;
 }
 
 template<typename VertexValueType, typename MessageValueType>
@@ -297,11 +266,11 @@ void UtilClient<VertexValueType, MessageValueType>::initPipeline(int threadNum)
 }
 
 template<typename VertexValueType, typename MessageValueType>
-void UtilClient<VertexValueType, MessageValueType>::startPipeline(ComputeUnitPackage<VertexValueType> *computePackages,
-                                                                  int packagesCnt)
+void UtilClient<VertexValueType, MessageValueType>::startPipeline()
 {
     std::cout << "start pipeline" << std::endl;
     int sendCnt = 0;
+    int downloadCnt = 0;
     char serverMsg[256];
 
     //init message
@@ -322,17 +291,17 @@ void UtilClient<VertexValueType, MessageValueType>::startPipeline(ComputeUnitPac
     {
         auto computeUnits = computePackages[sendCnt].getUnitPtr();
         int count = computePackages[sendCnt].getCount();
-        if (this->nodeNo == 0)
-            std::cout << "count: " << count << std::endl;
+//        if (this->nodeNo == 0)
+//            std::cout << "count: " << count << std::endl;
         this->threadPoolPtr->commitTask(
                 std::bind(&UtilClient<VertexValueType, MessageValueType>::update, this, count, computeUnits));
         sendCnt++;
 
-        if (this->nodeNo == 0)
-            std::cout << "update: " << *(this->updateCnt) << std::endl;
+//        if (this->nodeNo == 0)
+//            std::cout << "update: " << *(this->updateCnt) << std::endl;
         while (this->threadPoolPtr->taskCount() != 0);
-        if (this->nodeNo == 0)
-            std::cout << "ExchangeF" << std::endl;
+//        if (this->nodeNo == 0)
+//            std::cout << "ExchangeF" << std::endl;
         this->client_msq.send("ExchangeF", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
     }
 
@@ -342,13 +311,14 @@ void UtilClient<VertexValueType, MessageValueType>::startPipeline(ComputeUnitPac
 
         if (!strcmp("RotateF", serverMsg))
         {
-            if (this->nodeNo == 0)
-                std::cout << "RotateF" << std::endl;
+//            if (this->nodeNo == 0)
+//                std::cout << "RotateF" << std::endl;
             rotate();
 
             // commit download task
             this->threadPoolPtr->commitTask(
-                    std::bind(&UtilClient<VertexValueType, MessageValueType>::download, this));
+                    std::bind(&UtilClient<VertexValueType, MessageValueType>::download, this, computePackages,
+                              std::ref(downloadCnt)));
 
             if (sendCnt == packagesCnt)
             {
@@ -365,22 +335,22 @@ void UtilClient<VertexValueType, MessageValueType>::startPipeline(ComputeUnitPac
 
             sendCnt++;
 
-            if (this->nodeNo == 0)
-                std::cout << "RotateF" << std::endl;
+//            if (this->nodeNo == 0)
+//                std::cout << "RotateF" << std::endl;
 
         } else if (!strcmp("ComputeF", serverMsg))
         {
-            if (this->nodeNo == 0)
-                std::cout << "ComputeF" << std::endl;
+//            if (this->nodeNo == 0)
+//                std::cout << "ComputeF" << std::endl;
             while (this->threadPoolPtr->taskCount() != 0);
             this->client_msq.send("ExchangeF", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
 
-            if (this->nodeNo == 0)
-                std::cout << "ComputeF" << std::endl;
+//            if (this->nodeNo == 0)
+//                std::cout << "ComputeF" << std::endl;
         } else if (!strcmp("ComputeAF", serverMsg))
         {
-            if (this->nodeNo == 0)
-                std::cout << "ComputeAF" << std::endl;
+//            if (this->nodeNo == 0)
+//                std::cout << "ComputeAF" << std::endl;
             while (this->threadPoolPtr->taskCount() != 0);
             break;
         }

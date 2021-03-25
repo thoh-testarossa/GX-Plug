@@ -12,12 +12,12 @@
 
 #include <cuda_runtime.h>
 
-__global__ void MSGApply_kernel(Vertex *vSet, LPA_Value *vValues, int numOfMsg, LPA_MSG *mValueSet);
+__global__ void MSGApply_kernel(int numOfUnits, ComputeUnit<LPA_Value> *computeUnits, LPA_MSG *mValueSet);
 
-cudaError_t MSGApply_kernel_exec(Vertex *vSet, LPA_Value *vValues, int numOfMsg, LPA_MSG *mValueSet);
+cudaError_t MSGApply_kernel_exec(int numOfUnits, ComputeUnit<LPA_Value> *computeUnits, LPA_MSG *mValueSet);
 
-__global__ void MSGGenMerge_kernel(LPA_MSG *mTransformdMergedMSGValueSet, Vertex *vSet, LPA_Value *vValues, int numOfEdge, Edge *eSet, int batchCnt);
+__global__ void MSGGenMerge_kernel(int numOfUnits, ComputeUnit<LPA_Value> *computeUnits, LPA_MSG *mValueSet);
 
-cudaError_t MSGGenMerge_kernel_exec(LPA_MSG *mTransformdMergedMSGValueSet, Vertex *vSet, LPA_Value *vValues, int numOfEdge, Edge *eSet, int batchCnt);
+cudaError_t MSGGenMerge_kernel_exec(int numOfUnits, ComputeUnit<LPA_Value> *computeUnits, LPA_MSG *mValueSet);
 
 #endif //GRAPH_ALGO_LABELPROPAGATIONGPU_KERNEL_H

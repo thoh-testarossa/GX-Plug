@@ -9,5 +9,5 @@
 
 template class UtilClient<double, double>;
 //template class UtilClient<std::pair<double, double>, PRA_MSG>;
-//template class UtilClient<LPA_Value, LPA_MSG>;
+template class UtilClient<LPA_Value, LPA_MSG>;
 //template class UtilClient<int, int>;

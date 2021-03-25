@@ -58,8 +58,31 @@ void testFut(UtilClient<VertexValueType, MessageValueType> *uc, Graph<double> &g
     for(auto &v : subGraph.vList)
         v.isActive = false;
 
-    uc->transfer(&subGraph.verticesValue[0], &subGraph.vList[0]);
-    uc->startPipeline(&computePackages[0], computePackages.size());
+    uc->transfer(&computePackages[0], computePackages.size());
+    uc->startPipeline();
+
+    for (auto &computePackage : computePackages)
+    {
+        computeCnt = computePackage.getCount();
+        computeUnits = computePackage.getUnitPtr();
+
+        for (int i = 0; i < computeCnt; i++)
+        {
+            int destVId = computeUnits[i].destVertex.vertexID;
+            int srcVId = computeUnits[i].srcVertex.vertexID;
+            int indexOfInit = computeUnits[i].indexOfInitV;
+
+            subGraph.vList[destVId].isActive |= computeUnits[i].destVertex.isActive;
+            subGraph.vList[srcVId].isActive |= computeUnits[i].srcVertex.isActive;
+
+            if (subGraph.verticesValue[srcVId * uc->numOfInitV + indexOfInit] > computeUnits[i].srcValue)
+                subGraph.verticesValue[srcVId * uc->numOfInitV + indexOfInit] = computeUnits[i].srcValue;
+
+            if (subGraph.verticesValue[destVId * uc->numOfInitV + indexOfInit] > computeUnits[i].destValue)
+                subGraph.verticesValue[destVId * uc->numOfInitV + indexOfInit] = computeUnits[i].destValue;
+        }
+    }
+
 
     for (auto &computePackage : computePackages)
     {
