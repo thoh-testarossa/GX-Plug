@@ -33,7 +33,7 @@ if(UNIX)
                 srv_UNIX_shm
                 core_Graph
                 core_GraphUtil
-#                algo_PageRankGPU_kernel
+                algo_PageRankGPU_kernel
 #                algo_ConnectedComponentGPU_kernel
                 algo_BellmanFordGPU_kernel
                 algo_LabelPropagationGPU_kernel

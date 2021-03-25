@@ -14,27 +14,83 @@
 
 int optimize = 0;
 
-template <typename VertexValueType, typename MessageValueType>
-void testFut(UtilClient<VertexValueType, MessageValueType> *uc, VertexValueType *vValues, Vertex *vSet, int *avSet, int avCount)
+template<typename VertexValueType, typename MessageValueType>
+void testFut(UtilClient<VertexValueType, MessageValueType> *uc, Graph<std::pair<double, double>> &graph,
+             Graph<std::pair<double, double>> &subGraph,
+             int maxComputeUnits)
 {
-    uc->connect();
-    if(optimize)
-        uc->update(vValues, vSet, avSet, avCount);
-    else
-        uc->update(vValues, vSet);
-    uc->requestMSGMerge();
-    uc->requestMSGApply();
-    uc->disconnect();
+    subGraph.vList = graph.vList;
+    subGraph.verticesValue = graph.verticesValue;
+
+    int computeCnt = 0;
+    std::vector<ComputeUnitPackage<VertexValueType>> computePackages;
+    ComputeUnit<VertexValueType> *computeUnits = nullptr;
+
+    for (int i = 0; i < subGraph.eCount; i++)
+    {
+        int destVId = subGraph.eList[i].dst;
+        int srcVId = subGraph.eList[i].src;
+
+        if (!subGraph.vList[srcVId].isActive) continue;
+
+        if (computeCnt == 0) computeUnits = new ComputeUnit<VertexValueType>[maxComputeUnits];
+        computeUnits[computeCnt].destVertex = subGraph.vList[destVId];
+        computeUnits[computeCnt].destValue = subGraph.verticesValue[destVId];
+        computeUnits[computeCnt].srcVertex = subGraph.vList[srcVId];
+        computeUnits[computeCnt].srcValue = subGraph.verticesValue[srcVId];
+        computeUnits[computeCnt].edgeWeight = subGraph.eList[i].weight;
+        computeCnt++;
+
+        if (computeCnt == maxComputeUnits || i == subGraph.eCount - 1)
+        {
+            computePackages.emplace_back(ComputeUnitPackage<VertexValueType>(computeUnits, computeCnt));
+            computeCnt = 0;
+        }
+    }
+
+    if (computeCnt != 0)
+    {
+        computePackages.emplace_back(ComputeUnitPackage<VertexValueType>(computeUnits, computeCnt));
+    }
+
+    for (auto &v : subGraph.vList)
+        v.isActive = false;
+
+    uc->transfer(&computePackages[0], computePackages.size());
+    uc->startPipeline();
+
+    for (auto &computePackage : computePackages)
+    {
+        computeCnt = computePackage.getCount();
+        computeUnits = computePackage.getUnitPtr();
+
+        for (int i = 0; i < computeCnt; i++)
+        {
+            int destVId = computeUnits[i].destVertex.vertexID;
+            int srcVId = computeUnits[i].srcVertex.vertexID;
+
+            subGraph.vList[destVId].isActive |= computeUnits[i].destVertex.isActive;
+            subGraph.vList[srcVId].isActive |= computeUnits[i].srcVertex.isActive;
+
+            subGraph.verticesValue[destVId] = computeUnits[i].destValue;
+        }
+    }
+
+
+    for (auto &computePackage : computePackages)
+    {
+        free(computePackage.getUnitPtr());
+    }
 }
 
 int main(int argc, char *argv[])
 {
-    if(argc != 4 && argc != 5 && argc != 6)
+    if (argc != 4 && argc != 5 && argc != 6)
     {
-        std::cout << "Usage:" << std::endl << "./UtilClientTest_PageRank graph vCount eCount numOfInitV nodecount" << std::endl;
+        std::cout << "Usage:" << std::endl << "./UtilClientTest_PageRank graph vCount eCount numOfInitV nodecount"
+                  << std::endl;
         return 1;
     }
-
 
     int vCount = atoi(argv[2]);
     int eCount = atoi(argv[3]);
@@ -42,19 +98,16 @@ int main(int argc, char *argv[])
     int nodeCount = atoi(argv[5]);
 
     //Parameter check
-    if(vCount <= 0 || eCount <= 0 || numOfInitV <= 0 || nodeCount <= 0)
+    if (vCount <= 0 || eCount <= 0 || numOfInitV <= 0 || nodeCount <= 0)
     {
         std::cout << "Parameter illegal" << std::endl;
-        return -1;
+        return 3;
     }
 
-    int *initVSet = new int [numOfInitV];
-    std::pair<double, double> *vValues = new std::pair<double, double> [vCount];
-    bool *filteredV = new bool [vCount];
-    int *timestamp = new int [vCount];
-
+    //Init the Graph
+    int *initVSet = new int[numOfInitV];
     std::ifstream Gin(argv[1]);
-    if(!Gin.is_open())
+    if (!Gin.is_open())
     {
         std::cout << "Error! File testGraph.txt not found!" << std::endl;
         return 4;
@@ -67,8 +120,9 @@ int main(int argc, char *argv[])
 
     std::cout << "init vSet ..." << std::endl;
 
+    // input the graph
     Graph<std::pair<double, double>> test = Graph<std::pair<double, double>>(vCount);
-    for(int i = 0; i < eCount; i++)
+    for (int i = 0; i < eCount; i++)
     {
         int src, dst;
         double weight;
@@ -76,180 +130,166 @@ int main(int argc, char *argv[])
         Gin >> src >> dst >> weight;
         test.insertEdge(src, dst, weight);
 
-        //for edge-cut partition
         test.vList.at(src).isMaster = true;
         test.vList.at(dst).isMaster = true;
     }
+
     Gin.close();
 
-    std::cout << "init vValues ..." << std::endl;
-
-    if(initVSet[0] == -1)
+    //v Init
+    bool personalized = true;
+    if (initVSet[0] == INVALID_INITV_INDEX)
     {
-        for(int i = 0; i < vCount; i++)
+        personalized = false;
+    }
+
+    if (personalized)
+    {
+        for (int i = 0; i < numOfInitV; i++)
         {
-            auto newRank = 0.15;
-            vValues[i] = std::pair<double, double>(newRank, newRank);
+            test.vList.at(initVSet[i]).initVIndex = initVSet[i];
+            test.vList.at(initVSet[i]).isActive = true;
+        }
+    } else
+    {
+        for (int i = 0; i < test.vCount; i++)
+        {
             test.vList.at(i).isActive = true;
         }
     }
-    else
+
+    //vValues init
+    test.verticesValue.reserve(test.vCount);
+    test.verticesValue.assign(test.vCount, std::pair<double, double>(0.0, 0.0));
+
+    if (personalized)
     {
-        for(int i = 0; i < vCount; i++)
+        for (int i = 0; i < test.vList.size(); i++)
         {
-            if(test.vList.at(i).initVIndex == INVALID_INITV_INDEX)
+            if (test.vList.at(i).initVIndex == INVALID_INITV_INDEX)
             {
-                vValues[i] = std::pair<double, double>(0.0, 0.0);
-            }
-            else
+                test.verticesValue.at(i) = std::pair<double, double>(0.0, 0.0);
+            } else
             {
-                vValues[i] = std::pair<double, double>(1.0, 1.0);
-                test.vList.at(i).isActive = true;
+                test.verticesValue.at(i) = std::pair<double, double>(1.0, 1.0);
             }
         }
-
-    }
-
-    std::cout << "init edge ..." << std::endl;
-
-    for(int i = 0; i < eCount; i++)
+    } else
     {
-        test.eList.at(i).weight = 1.0 / test.vList.at(test.eList.at(i).src).outDegree;
+        for (int i = 0; i < test.vCount; i++)
+        {
+            auto newRank = (0.15);
+            test.verticesValue.at(i) = std::pair<double, double>(newRank, newRank);
+        }
     }
 
-    numOfInitV = 1;
+    //eValue init
+    for (auto &e : test.eList)
+    {
+        e.weight = 1.0 / test.vList.at(e.src).outDegree;
+    }
 
-    std::cout << "start transfer" << std::endl;
+
+    //partition
+    std::vector<Graph<std::pair<double, double>>> subGraph = std::vector<Graph<std::pair<double, double>>>();
+    for (int i = 0; i < nodeCount; i++) subGraph.emplace_back(0);
+    for (int i = 0; i < nodeCount; i++)
+    {
+        //Copy v & vValues info but do not copy e info
+        subGraph.at(i) = Graph<std::pair<double, double>>(test.vList, std::vector<Edge>(), test.verticesValue);
+
+        //Distribute e info
+        for (int k = i * test.eCount / nodeCount; k < (i + 1) * test.eCount / nodeCount; k++)
+            subGraph.at(i).eList.emplace_back(test.eList.at(k).src, test.eList.at(k).dst, test.eList.at(k).weight);
+
+        subGraph.at(i).eCount = subGraph.at(i).eList.size();
+    }
+
 
     //Client Init Data Transfer
     auto clientVec = std::vector<UtilClient<std::pair<double, double>, PRA_MSG>>();
-    for(int i = 0; i < nodeCount; i++)
-        clientVec.push_back(UtilClient<std::pair<double, double>, PRA_MSG>(vCount, ((i + 1) * eCount) / nodeCount - (i * eCount) / nodeCount, numOfInitV, i));
+    for (int i = 0; i < nodeCount; i++)
+        clientVec.emplace_back(numOfInitV, i, 2);
     int chk = 0;
-
-    for(int i = 0; i < nodeCount && chk != -1; i++)
+    for (int i = 0; i < nodeCount; i++)
     {
-        std::cout << "connect" << std::endl;
         chk = clientVec.at(i).connect();
-        std::cout << "connect end" << std::endl;
         if (chk == -1)
         {
             std::cout << "Cannot establish the connection with server correctly" << std::endl;
             return 2;
         }
-
-        chk = clientVec.at(i).transfer(vValues, &test.vList[0], &test.eList[(i * eCount) / nodeCount], initVSet, filteredV, timestamp);
-
-        if(chk == -1)
-        {
-            std::cout << "Parameter illegal" << std::endl;
-            return 3;
-        }
-
-        clientVec.at(i).disconnect();
     }
+
+    bool isActive = true;
     int iterCount = 0;
 
     //Test
     std::cout << "Init finished" << std::endl;
     //Test end
 
-    bool isActive = true;
-
-    int avCount = 0;
-    std::vector<int> avSet;
-    avSet.reserve(vCount);
-    avSet.assign(vCount, 0);
-
-    while(isActive)
+    while (isActive)
     {
         //Test
         std::cout << "Processing at iter " << ++iterCount << std::endl;
         //Test end
 
-        isActive = false;
-
-        auto futList = new std::future<void> [nodeCount];
-        for(int i = 0; i < nodeCount; i++)
+        auto futList = new std::future<void>[nodeCount];
+        for (int i = 0; i < nodeCount; i++)
         {
-            std::future<void> tmpFut = std::async(testFut<std::pair<double, double>, PRA_MSG>, &clientVec.at(i), vValues, &test.vList[0], &avSet[0], avCount);
+            std::future<void> tmpFut = std::async(testFut<std::pair<double, double>, PRA_MSG>, &clientVec.at(i),
+                                                  std::ref(test),
+                                                  std::ref(subGraph[i]), (int) (100));
             futList[i] = std::move(tmpFut);
         }
 
-        for(int i = 0; i < nodeCount; i++)
+        for (int i = 0; i < nodeCount; i++)
             futList[i].get();
 
-        auto start = std::chrono::system_clock::now();
-
-        //clear active info
-        for(int i = 0; i < vCount; i++)
-        {
-            test.vList[i].isActive = false;
-        }
-
         //Retrieve data
-        for(int i = 0; i < nodeCount; i++)
+        isActive = false;
+        for (auto &v : test.vList) v.isActive = false;
+
+        for (const auto &subG : subGraph)
         {
-            clientVec.at(i).connect();
-
-
-            //Collect data
-            for(int j = 0; j < vCount; j++)
+            for (int i = 0; i < subG.verticesValue.size(); i++)
             {
-                auto &value = clientVec.at(i).vValues[j];
-                if(clientVec.at(i).vSet[j].isActive)
+                isActive |= subG.vList.at(i).isActive;
+                if (subG.vList.at(i).isActive)
                 {
-                    if(!test.vList.at(j).isActive)
+                    if (!test.vList.at(i).isActive)
                     {
-                        test.vList.at(j).isActive = clientVec.at(i).vSet[j].isActive;
-                        vValues[j].first = value.first;
-                        vValues[j].second = value.second;
-                    }
-                    else
+                        test.vList.at(i).isActive = subG.vList.at(i).isActive;
+                        test.verticesValue.at(i).first = subG.verticesValue.at(i).first;
+                        test.verticesValue.at(i).second = subG.verticesValue.at(i).second;
+                    } else
                     {
-                        vValues[j].first += value.second;
-                        vValues[j].second += value.second;
+                        test.verticesValue.at(i).first += subG.verticesValue.at(i).second;
+                        test.verticesValue.at(i).second += subG.verticesValue.at(i).second;
                     }
-                }
-                else if(!test.vList.at(j).isActive)
+                } else if (!test.vList.at(i).isActive)
                 {
-                    vValues[j] = value;
+                    test.verticesValue.at(i) = subG.verticesValue.at(i);
                 }
-            }
-
-            clientVec.at(i).disconnect();
-        }
-
-        auto mergeEnd = std::chrono::system_clock::now();
-
-        std::cout << "graph merge time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count() << std::endl;
-
-        avCount = 0;
-        for(int i = 0; i < vCount; i++)
-        {
-            if(test.vList[i].isActive)
-            {
-                avSet.at(avCount) = i;
-                avCount++;
-                isActive = true;
             }
         }
 
-        std::cout << "avCount : " << avCount << std::endl;
+        int avCount = 0;
+        for (auto v : test.vList)
+        {
+            if (v.isActive) avCount++;
+        }
 
-        //test
-//        for(int i = 0; i < vCount; i++)
-//        {
-//            std::cout << i << ":" << vValues[i].first << " " << vValues[i].second << std::endl ;
-//        }
+        std::cout << "avcount: " << avCount << std::endl;
+
     }
 
     std::cout << "===========result===========" << std::endl;
     //result check
-    for(int i = 0; i < vCount; i++)
+    for (int i = 0; i < vCount; i++)
     {
-        std::cout << i << ":" << vValues[i].first << " " << vValues[i].second << std::endl ;
+        std::cout << i << ":" << test.verticesValue[i].first << " " << test.verticesValue[i].second << std::endl;
     }
 
-    for(int i = 0; i < nodeCount; i++) clientVec.at(i).shutdown();
+    for (int i = 0; i < nodeCount; i++) clientVec.at(i).shutdown();
 }

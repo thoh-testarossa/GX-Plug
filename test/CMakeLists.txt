@@ -57,15 +57,15 @@ target_link_libraries(algo_LabelPropagationTest
 #        core_MessageSet
 #        core_GraphUtil)
 #
-#add_executable(algo_PageRankTest
-#        PageRankTest.cpp)
-#
-#target_link_libraries(algo_PageRankTest
-#        algo_PageRank
-#        core_Graph
-#        core_MessageSet
-#        core_GraphUtil)
-#
+add_executable(algo_PageRankTest
+        PageRankTest.cpp)
+
+target_link_libraries(algo_PageRankTest
+        algo_PageRank
+        core_Graph
+        core_MessageSet
+        core_GraphUtil)
+
 if(CUDA_FOUND)
     include_directories("${CUDA_INCLUDE_DIRS}")
 
@@ -78,15 +78,15 @@ if(CUDA_FOUND)
             core_MessageSet
             core_GraphUtil)
 
-#    add_executable(algo_PageRankGPUTest
-#            PageRankGPUTest.cpp)
-#
-#    target_link_libraries(algo_PageRankGPUTest
-#            algo_PageRankGPU
-#            core_Graph
-#            core_MessageSet
-#            core_GraphUtil)
-#
+    add_executable(algo_PageRankGPUTest
+            PageRankGPUTest.cpp)
+
+    target_link_libraries(algo_PageRankGPUTest
+            algo_PageRankGPU
+            core_Graph
+            core_MessageSet
+            core_GraphUtil)
+
     add_executable(algo_LabelPropagationGPUTest
             LabelPropagationGPUTest.cpp)
 
@@ -135,17 +135,17 @@ if(UNIX)
                 srv_UtilServer
                 algo_BellmanFord
                 algo_BellmanFordGPU)
-#
-#        add_executable(srv_UtilServerTest_PageRankGPU
-#                UtilServerTest_PageRankGPU.cpp)
-#
-#        target_link_libraries(srv_UtilServerTest_PageRankGPU
-#                srv_UNIX_shm
-#                srv_UNIX_msg
-#                srv_UtilServer
-#                algo_PageRank
-#                algo_PageRankGPU)
-#
+
+        add_executable(srv_UtilServerTest_PageRankGPU
+                UtilServerTest_PageRankGPU.cpp)
+
+        target_link_libraries(srv_UtilServerTest_PageRankGPU
+                srv_UNIX_shm
+                srv_UNIX_msg
+                srv_UtilServer
+                algo_PageRank
+                algo_PageRankGPU)
+
         add_executable(srv_UtilServerTest_LabelPropagationGPU
                 UtilServerTest_LabelPropagationGPU.cpp)
 
@@ -184,16 +184,16 @@ if(UNIX)
             srv_UNIX_msg
             srv_UtilServer
             algo_LabelPropagation)
-#
-#    add_executable(srv_UtilServerTest_PageRank
-#            UtilServerTest_PageRank.cpp)
-#
-#    target_link_libraries(srv_UtilServerTest_PageRank
-#            srv_UNIX_shm
-#            srv_UNIX_msg
-#            srv_UtilServer
-#            algo_PageRank)
-#
+
+    add_executable(srv_UtilServerTest_PageRank
+            UtilServerTest_PageRank.cpp)
+
+    target_link_libraries(srv_UtilServerTest_PageRank
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilServer
+            algo_PageRank)
+
 #    add_executable(srv_UtilServerTest_ConnectedComponent
 #            UtilServerTest_ConnectedComponent.cpp)
 #
@@ -272,16 +272,16 @@ if(UNIX)
 #            srv_UtilClient
 #            algo_LabelPropagation)
 #
-#    add_executable(srv_UtilClientTest_PageRank
-#            UtilClientTest_PageRank.cpp)
-#
-#    target_link_libraries(srv_UtilClientTest_PageRank
-#            pthread
-#            srv_UNIX_shm
-#            srv_UNIX_msg
-#            srv_UtilClient
-#            algo_PageRank)
-#
+    add_executable(srv_UtilClientTest_PageRank
+            UtilClientTest_PageRank.cpp)
+
+    target_link_libraries(srv_UtilClientTest_PageRank
+            pthread
+            srv_UNIX_shm
+            srv_UNIX_msg
+            srv_UtilClient
+            algo_PageRank)
+
 #    add_executable(srv_UtilClientTest_JumpIteration
 #            UtilClientTest_JumpIteration.cpp)
 #

@@ -32,7 +32,7 @@ int PageRank<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType>
     }
 
     //array form computation
-    auto avCount = this->MSGApply_array(g.vCount, msgSize, &g.vList[0], 0, &initVSet[0], &g.verticesValue[0], mValues);
+//    auto avCount = this->MSGApply_array(g.vCount, msgSize, &g.vList[0], 0, &initVSet[0], &g.verticesValue[0], mValues);
 
     //test
 //    std::cout << "=============apply info================" << std::endl;
@@ -47,7 +47,7 @@ int PageRank<VertexValueType, MessageValueType>::MSGApply(Graph<VertexValueType>
 
     delete[] mValues;
 
-    return avCount;
+    return 0;
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -59,8 +59,9 @@ int PageRank<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexV
     //mValues init
     MessageValueType *mValues = new MessageValueType [g.vCount];
 
+    int msgCnt = 0;
     //array form computation
-    auto msgCnt = this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], 0, &initVSet[0], &g.verticesValue[0], mValues);
+//  msgCnt = this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], 0, &initVSet[0], &g.verticesValue[0], mValues);
 
     //Generate merged msgs directly
     mSet.mSet.clear();
@@ -85,66 +86,96 @@ int PageRank<VertexValueType, MessageValueType>::MSGGenMerge(const Graph<VertexV
 }
 
 template <typename VertexValueType, typename MessageValueType>
-int PageRank<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues)
+int PageRank<VertexValueType, MessageValueType>::MSGApply_array(int computeUnitCount,
+                                                                ComputeUnit<VertexValueType> *computeUnits,
+                                                                MessageValueType *mValues)
 {
     int avCount = 0;
 
-    for(int i = 0; i < vCount; i++)
+    for (int i = 0; i < computeUnitCount; i++)
     {
-        vSet[i].isActive = false;
+        computeUnits[i].srcVertex.isActive = false;
+        computeUnits[i].destVertex.isActive = false;
     }
 
-    for(int i = 0; i < vCount; i++)
+    for (int i = 0; i < computeUnitCount; i++)
     {
-        auto destVId = mValues[i].destVId;
+        auto &computeUnit = computeUnits[i];
+        int destVId = computeUnit.destVertex.vertexID;
 
-        if(destVId == -1 || !vSet[destVId].isMaster)
-        {
-//            std::cout << "not master or destvid == -1" << std::endl;
-            continue;
-        }
+        if (mValues[destVId].destVId == -1 || !computeUnit.destVertex.isMaster) continue;
 
-        vSet[destVId].isActive = true;
-        vValues[destVId].first += mValues[i].rank;
-        vValues[destVId].second = mValues[i].rank;
+        computeUnit.destVertex.isActive = true;
+        computeUnit.destValue.first += mValues[destVId].rank;
+        computeUnit.destValue.second = mValues[destVId].rank;
         avCount++;
     }
 
-//    std::cout << "active " << avCount << std::endl;
+//    for(int i = 0; i < vCount; i++)
+//    {
+//        auto destVId = mValues[i].destVId;
+//
+//        if(destVId == -1 || !vSet[destVId].isMaster)
+//        {
+////            std::cout << "not master or destvid == -1" << std::endl;
+//            continue;
+//        }
+//
+//        vSet[destVId].isActive = true;
+//        vValues[destVId].first += mValues[i].rank;
+//        vValues[destVId].second = mValues[i].rank;
+//        avCount++;
+//    }
+
     return avCount;
 }
 
 template <typename VertexValueType, typename MessageValueType>
-int PageRank<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues)
+int PageRank<VertexValueType, MessageValueType>::MSGGenMerge_array(int computeUnitCount,
+                                                                   ComputeUnit<VertexValueType> *computeUnits,
+                                                                   MessageValueType *mValues)
 {
     //test
     //std::cout << " =========== msg info =============" << std::endl;
 
-    for(int i = 0; i < vCount; i++)
-    {
-        mValues[i] = MessageValueType(-1, 0);
-    }
+//    for(int i = 0; i < vCount; i++)
+//    {
+//        mValues[i] = MessageValueType(-1, 0);
+//    }
+//
+//    for(int i = 0; i < eCount; i++)
+//    {
+//        auto srcVId = eSet[i].src;
+//
+//        auto msgValue = MessageValueType(-1, -1);
+//        if(vSet[srcVId].isActive && vValues[srcVId].second > this->deltaThreshold)
+//        {
+//            //msg value -- <destinationID, rank>
+//            msgValue = MessageValueType(eSet[i].dst, vValues[eSet[i].src].second * eSet[i].weight * (1 - resetProb));
+//
+//            mValues[msgValue.destVId].destVId = msgValue.destVId;
+//            mValues[msgValue.destVId].rank += msgValue.rank;
+////            std::cout << mValues[msgValue.destVId].destVId << " " << mValues[msgValue.destVId].rank << std::endl;
+//        }
+//    }
 
-    for(int i = 0; i < eCount; i++)
+    for (int i = 0; i < computeUnitCount; i++)
     {
-        auto srcVId = eSet[i].src;
+        auto computeUnit = computeUnits[i];
+        int destVId = computeUnit.destVertex.vertexID;
 
-        auto msgValue = MessageValueType(-1, -1);
-        if(vSet[srcVId].isActive && vValues[srcVId].second > this->deltaThreshold)
+        if(computeUnit.srcValue.second > this->deltaThreshold)
         {
-            //msg value -- <destinationID, rank>
-            msgValue = MessageValueType(eSet[i].dst, vValues[eSet[i].src].second * eSet[i].weight * (1 - resetProb));
-
-            mValues[msgValue.destVId].destVId = msgValue.destVId;
-            mValues[msgValue.destVId].rank += msgValue.rank;
-//            std::cout << mValues[msgValue.destVId].destVId << " " << mValues[msgValue.destVId].rank << std::endl;
+            double rank = computeUnit.srcValue.second * computeUnit.edgeWeight * (1 - this->resetProb);
+            mValues[destVId].rank += rank;
+            mValues[destVId].destVId = destVId;
         }
     }
 
     //test
     //std::cout << " ==================================" << std::endl;
 
-    return vCount;
+    return 0;
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -169,11 +200,12 @@ std::vector<Graph<VertexValueType>> PageRank<VertexValueType, MessageValueType>:
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void PageRank<VertexValueType, MessageValueType>::Init(int vCount, int eCount, int numOfInitV)
+void PageRank<VertexValueType, MessageValueType>::Init(int vCount, int eCount, int numOfInitV, int maxComputeUnits)
 {
     this->totalVValuesCount = vCount;
     this->totalMValuesCount = vCount;
     this->numOfInitV = numOfInitV;
+    this->maxComputeUnits = maxComputeUnits;
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -291,23 +323,89 @@ void PageRank<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueTy
 
 }
 
+template<typename VertexValueType, typename MessageValueType>
+void PageRank<VertexValueType, MessageValueType>::IterationInit(int vCount, int eCount, MessageValueType *mValues)
+{
+    for(int i = 0; i < vCount; i++)
+    {
+        mValues[i] = MessageValueType(-1, 0);
+    }
+}
+
 template <typename VertexValueType, typename MessageValueType>
 void PageRank<VertexValueType, MessageValueType>::ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices)
 {
-    MessageSet<MessageValueType> mMergedSet = MessageSet<MessageValueType>();
+    MessageValueType *mValues = new MessageValueType[g.vCount * this->numOfInitV];
 
-    mMergedSet.mSet.clear();
+    int computeCnt = 0;
 
-    auto start = std::chrono::system_clock::now();
-    MSGGenMerge(g, initVSet, activeVertices, mMergedSet);
-    auto mergeEnd = std::chrono::system_clock::now();
+    std::vector<ComputeUnitPackage<VertexValueType>> computePackages;
 
-    MSGApply(g, initVSet, activeVertices, mMergedSet);
-    auto applyEnd = std::chrono::system_clock::now();
+    ComputeUnit<VertexValueType> *computeUnits = nullptr;
 
-    //test
-    std::cout << "msg gen time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(mergeEnd - start).count() << std::endl;
-    std::cout << "apply time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(applyEnd - mergeEnd).count() << std::endl;
+    for (int i = 0; i < g.eCount; i++)
+    {
+        int destVId = g.eList[i].dst;
+        int srcVId = g.eList[i].src;
+
+        if (!g.vList[srcVId].isActive) continue;
+
+        if (computeCnt == 0) computeUnits = new ComputeUnit<VertexValueType>[this->maxComputeUnits];
+        computeUnits[computeCnt].destVertex = g.vList[destVId];
+        computeUnits[computeCnt].destValue = g.verticesValue[destVId];
+        computeUnits[computeCnt].srcVertex = g.vList[srcVId];
+        computeUnits[computeCnt].srcValue = g.verticesValue[srcVId];
+        computeUnits[computeCnt].edgeWeight = g.eList[i].weight;
+        computeCnt++;
+
+        if (computeCnt == this->maxComputeUnits || i == g.eCount - 1)
+        {
+            computePackages.emplace_back(ComputeUnitPackage<VertexValueType>(computeUnits, computeCnt));
+            computeCnt = 0;
+        }
+    }
+
+    if (computeCnt != 0)
+    {
+        computePackages.emplace_back(ComputeUnitPackage<VertexValueType>(computeUnits, computeCnt));
+    }
+
+    for (auto &v : g.vList) v.isActive = false;
+    activeVertices.clear();
+
+    this->IterationInit(g.vCount, g.eCount, mValues);
+
+    for (auto &computePackage : computePackages)
+    {
+        computeCnt = computePackage.getCount();
+        computeUnits = computePackage.getUnitPtr();
+
+        MSGGenMerge_array(computeCnt, computeUnits, mValues);
+        MSGApply_array(computeCnt, computeUnits, mValues);
+
+        for (int i = 0; i < computeCnt; i++)
+        {
+            int destVId = computeUnits[i].destVertex.vertexID;
+            int srcVId = computeUnits[i].srcVertex.vertexID;
+            int indexOfInit = computeUnits[i].indexOfInitV;
+
+            g.vList[destVId].isActive |= computeUnits[i].destVertex.isActive;
+            g.vList[srcVId].isActive |= computeUnits[i].srcVertex.isActive;
+
+            if (g.vList[destVId].isActive) activeVertices.emplace(destVId);
+            if (g.vList[srcVId].isActive) activeVertices.emplace(srcVId);
+
+            g.verticesValue[destVId] = computeUnits[i].destValue;
+        }
+    }
+
+    std::cout << "avcount: " << activeVertices.size() << std::endl;
+
+    free(mValues);
+    for (auto &computePackage : computePackages)
+    {
+        free(computePackage.getUnitPtr());
+    }
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -345,7 +443,7 @@ void PageRank<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> 
     std::vector<MessageSet<MessageValueType>> mMergedSetSet = std::vector<MessageSet<MessageValueType>>();
     for(int i = 0; i < partitionCount; i++) mMergedSetSet.push_back(MessageSet<MessageValueType>());
 
-    Init(g.vCount, g.eCount, initVList.size());
+    Init(g.vCount, g.eCount, initVList.size(), 100);
 
     GraphInit(g, activeVertice, initVList);
 

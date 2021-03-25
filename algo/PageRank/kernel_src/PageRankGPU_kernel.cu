@@ -1,60 +1,68 @@
 #include "PageRankGPU_kernel.h"
 
-__global__ void MSGApply_kernel(Vertex *vSet, double *vValues, int numOfMsg, int *mDstSet, PRA_MSG *mValueSet)
+__global__ void
+MSGApply_kernel(int numOfUnits, ComputeUnit<std::pair<double, double>> *computeUnits, PRA_MSG *mValueSet)
 {
-	int tid = threadIdx.x;
+    int tid = threadIdx.x;
 
-	if(tid < numOfMsg)
-	{
-        int vID = mDstSet[tid];
+    if (tid < numOfUnits)
+    {
+        int destVId = computeUnits[tid].destVertex.vertexID;
 
-		vSet[vID].isActive = true;
-		vValues[(vID << 1)] += mValueSet[tid].rank;
-		vValues[(vID << 1) + 1] = mValueSet[tid].rank;
-	}
+        computeUnits[tid].srcVertex.isActive = false;
+        computeUnits[tid].destVertex.isActive = false;
+
+        if (mValueSet[destVId].destVId == -1 || !computeUnits[tid].destVertex.isMaster) return;
+
+        computeUnits[tid].destVertex.isActive = true;
+        computeUnits[tid].destValue.first += mValueSet[destVId].rank;
+        computeUnits[tid].destValue.second = mValueSet[destVId].rank;
+    }
 }
 
-cudaError_t MSGApply_kernel_exec(Vertex *vSet, double *vValues, int numOfMsg, int *mDstSet, PRA_MSG *mValueSet)
+cudaError_t
+MSGApply_kernel_exec(int numOfUnits, ComputeUnit<std::pair<double, double>> *computeUnits, PRA_MSG *mValueSet)
 {
-	cudaError_t err = cudaSuccess;
+    cudaError_t err = cudaSuccess;
 
-	MSGApply_kernel<<<1, NUMOFGPUCORE>>>(vSet, vValues, numOfMsg, mDstSet, mValueSet);
+    MSGApply_kernel << < 1, NUMOFGPUCORE >> > (numOfUnits, computeUnits, mValueSet);
     err = cudaGetLastError();
 
-	cudaDeviceSynchronize();
+    cudaDeviceSynchronize();
 
-	return err;
+    return err;
 }
 
-__global__ void MSGGenMerge_kernel(PRA_MSG *mTransformdMergedMSGValueSet,
-	Vertex *vSet, double *vValues, int numOfEdge, Edge *eSet, double resetProb)
+__global__ void
+MSGGenMerge_kernel(int numOfUnits, ComputeUnit<std::pair<double, double>> *computeUnits, PRA_MSG *mValueSet,
+                   double resetProb, double deltaThreshold)
 {
-	int tid = threadIdx.x;
+    int tid = threadIdx.x;
 
-	if(tid < numOfEdge)
-	{
-		int srcVid = eSet[tid].src;
-		int mValueIndex = eSet[tid].dst;
+    if (tid < numOfUnits)
+    {
+        int destVId = computeUnits[tid].destVertex.vertexID;
 
-        //test
-//         printf("msg - srcVid: %d destVid: %d\n", srcVid, eSet[tid].dst);
-//         printf("vValue: %f weight %f\n", vValues[(srcVid << 1) + 1], eSet[tid].weight);
-//         printf("mValueIndex = %d\n", mValueIndex);
-
-        mTransformdMergedMSGValueSet[mValueIndex].destVId = mValueIndex;
-        atomicAdd(&mTransformdMergedMSGValueSet[mValueIndex].rank, vValues[(srcVid << 1) + 1] * eSet[tid].weight * (1.0 - resetProb));
-	}
+        if (computeUnits[tid].srcValue.second > deltaThreshold)
+        {
+            mValueSet[destVId].destVId = destVId;
+            atomicAdd(&mValueSet[destVId].rank,
+                      computeUnits[tid].srcValue.second * computeUnits[tid].edgeWeight * (1.0 - resetProb));
+        }
+    }
 }
 
-cudaError_t MSGGenMerge_kernel_exec(PRA_MSG *mTransformdMergedMSGValueSet,
-	Vertex *vSet, double *vValues, int numOfEdge, Edge *eSet, double resetProb)
+cudaError_t
+MSGGenMerge_kernel_exec(int numOfUnits, ComputeUnit<std::pair<double, double>> *computeUnits, PRA_MSG *mValueSet,
+                        double resetProb, double deltaThreshold)
 {
-	cudaError_t err = cudaSuccess;
+    cudaError_t err = cudaSuccess;
 
-	MSGGenMerge_kernel<<<1, NUMOFGPUCORE>>>(mTransformdMergedMSGValueSet, vSet, vValues, numOfEdge, eSet, resetProb);
-	err = cudaGetLastError();
+    MSGGenMerge_kernel << < 1, NUMOFGPUCORE >> >
+                               (numOfUnits, computeUnits, mValueSet, resetProb, deltaThreshold);
+    err = cudaGetLastError();
 
-	cudaDeviceSynchronize();
+    cudaDeviceSynchronize();
 
-	return err;
+    return err;
 }
