@@ -10,6 +10,7 @@ __global__ void MSGApply_kernel(int numOfUnits, ComputeUnit<LPA_Value> *computeU
 
         computeUnits[tid].destValue.label = computeUnits[tid].srcValue.label;
         computeUnits[tid].destValue.destVId = computeUnits[tid].destVertex.vertexID;
+        computeUnits[tid].destVertex.isActive = true;
     }
 }
 

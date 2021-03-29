@@ -72,12 +72,18 @@ public:
     void Deploy(int vCount, int eCount, int numOfInitV) override;
     void Free() override;
 
+    void download(VertexValueType *vValues, Vertex *vSet, int computeUnitCount,
+                  ComputeUnit<VertexValueType> *computeUnits) override;
+
     std::vector<Graph<VertexValueType>> DivideGraphByEdge(const Graph<VertexValueType> &g, int partitionCount);
 
     void ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices);
     void Apply(Graph<VertexValueType> &g, const std::vector<int> &initVList);
 
     void ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList, int partitionCount);
+
+private:
+    int pipeDownloadCnt = 0;
 };
 
 #endif

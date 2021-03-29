@@ -31,7 +31,10 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
                     maxComputeUnits >= 0;
 
 
+    this->vValues = nullptr;
     this->mValues = nullptr;
+    this->vSet = nullptr;
+    this->eSet = nullptr;
     this->initVSet = nullptr;
     this->filteredV = nullptr;
     this->timestamp = nullptr;
@@ -42,6 +45,8 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
     this->updateCnt = nullptr;
     this->computeCnt = nullptr;
     this->downloadCnt = nullptr;
+
+    this->initPipeline(2);
 
     if (this->isLegal)
     {
@@ -57,6 +62,11 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
         this->avCount_shm = UNIX_shm();
         this->avSet_shm = UNIX_shm();
 
+        this->vValues_shm = UNIX_shm();
+        this->mValues_shm = UNIX_shm();
+        this->vSet_shm = UNIX_shm();
+        this->eSet_shm = UNIX_shm();
+
         this->computeUnitsUpdate_shm = UNIX_shm();
         this->computeUnitsCompute_shm = UNIX_shm();
         this->computeUnitsDownload_shm = UNIX_shm();
@@ -69,9 +79,21 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
         this->client_msq = UNIX_msg();
 
         if (chk != -1)
+            chk = this->vValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (VVALUES_SHM << SHM_OFFSET)),
+                                           this->executor.totalVValuesCount * sizeof(VertexValueType),
+                                           0666);
+        if (chk != -1)
             chk = this->mValues_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (MVALUES_SHM << SHM_OFFSET)),
                                            this->executor.totalMValuesCount * sizeof(MessageValueType),
                                            0666);
+        if (chk != -1)
+            chk = this->vSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (VSET_SHM << SHM_OFFSET)),
+                                        this->vCount * sizeof(Vertex),
+                                        0666);
+        if (chk != -1)
+            chk = this->eSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (ESET_SHM << SHM_OFFSET)),
+                                        this->eCount * sizeof(Edge),
+                                        0666);
         if (chk != -1)
             chk = this->initVSet_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (INITVSET_SHM << SHM_OFFSET)),
                                             this->numOfInitV * sizeof(int),
@@ -110,10 +132,10 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
                                                sizeof(int), 0666);
         if (chk != -1)
             chk = this->updateCnt_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (UPDATE_CNT_SHM << SHM_OFFSET)),
-                                               sizeof(int), 0666);
+                                             sizeof(int), 0666);
         if (chk != -1)
             chk = this->computeCnt_shm.create(((this->nodeNo << NODE_NUM_OFFSET) | (COMPUTE_CNT_SHM << SHM_OFFSET)),
-                                               sizeof(int), 0666);
+                                              sizeof(int), 0666);
 
         if (chk != -1)
             chk = this->server_msq.create(((this->nodeNo << NODE_NUM_OFFSET) | (SRV_MSG_TYPE << MSG_TYPE_OFFSET)),
@@ -127,7 +149,10 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
 
         if (chk != -1)
         {
+            this->vValues_shm.attach(0666);
             this->mValues_shm.attach(0666);
+            this->vSet_shm.attach(0666);
+            this->eSet_shm.attach(0666);
             this->initVSet_shm.attach(0666);
             this->filteredV_shm.attach(0666);
             this->timestamp_shm.attach(0666);
@@ -142,6 +167,9 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::UtilServer(int vCo
             this->updateCnt_shm.attach(0666);
 
             this->mValues = (MessageValueType *) this->mValues_shm.shmaddr;
+            this->vValues = (VertexValueType *) this->vValues_shm.shmaddr;
+            this->vSet = (Vertex *) this->vSet_shm.shmaddr;
+            this->eSet = (Edge *) this->eSet_shm.shmaddr;
             this->initVSet = (int *) this->initVSet_shm.shmaddr;
             this->filteredV = (bool *) this->filteredV_shm.shmaddr;
             this->timestamp = (int *) this->timestamp_shm.shmaddr;
@@ -178,7 +206,10 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::~UtilServer()
 {
     this->executor.Free();
 
+    this->vValues = nullptr;
     this->mValues = nullptr;
+    this->vSet = nullptr;
+    this->eSet = nullptr;
     this->initVSet = nullptr;
     this->filteredV = nullptr;
     this->timestamp = nullptr;
@@ -191,6 +222,9 @@ UtilServer<GraphUtilType, VertexValueType, MessageValueType>::~UtilServer()
     this->downloadCnt = nullptr;
 
     this->mValues_shm.control(IPC_RMID);
+    this->vValues_shm.control(IPC_RMID);
+    this->vSet_shm.control(IPC_RMID);
+    this->eSet_shm.control(IPC_RMID);
     this->initVSet_shm.control(IPC_RMID);
     this->filteredV_shm.control(IPC_RMID);
     this->timestamp_shm.control(IPC_RMID);
@@ -231,6 +265,41 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::rotate()
 }
 
 template<typename GraphUtilType, typename VertexValueType, typename MessageValueType>
+void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::initPipeline(int threadNum)
+{
+    if (this->threadPoolPtr == nullptr)
+    {
+        this->threadPoolPtr = std::make_shared<ThreadPool>(threadNum);
+        this->threadPoolPtr->start();
+    }
+}
+
+template<typename GraphUtilType, typename VertexValueType, typename MessageValueType>
+void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::pipeCompute()
+{
+//    std::cout << "pipeCompute" << std::endl;
+
+    if (*(this->computeCnt) == 0) return;
+
+    this->executor.MSGGenMerge_array(*(this->computeCnt), this->computeUnitsCompute, this->mValues);
+    this->executor.MSGApply_array(*(this->computeCnt), this->computeUnitsCompute, this->mValues);
+}
+
+template<typename GraphUtilType, typename VertexValueType, typename MessageValueType>
+void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::pipeDownload()
+{
+//    std::cout << "pipeDownload" << std::endl;
+    if (*(this->downloadCnt) == 0) return;
+    this->executor.download(this->vValues, this->vSet, *(this->downloadCnt), this->computeUnitsDownload);
+}
+
+template<typename GraphUtilType, typename VertexValueType, typename MessageValueType>
+void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::stopPipeline()
+{
+    this->threadPoolPtr->stop();
+}
+
+template<typename GraphUtilType, typename VertexValueType, typename MessageValueType>
 void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
 {
     if (!this->isLegal) return;
@@ -267,30 +336,44 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
                       << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
 
             total += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-        } else if (std::string("ExchangeF") == cmd)
+        } else if (std::string("ExchangeF") == cmd || std::string("ExchangeAF") == cmd)
         {
 //            std::cout << "RotateF" << std::endl;
+            //sync
+            while (this->threadPoolPtr->taskCount() != 0);
+
             rotate();
 
-            this->server_msq.send("RotateF", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+            if (std::string("ExchangeF") == cmd)
+                this->server_msq.send("RotateF", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
 
-            if(*(this->computeCnt) == 0) {
-//                std::cout << "ComputeAF" << std::endl;
+            //commit download task
+            this->threadPoolPtr->commitTask(
+                    std::bind(&UtilServer<GraphUtilType, VertexValueType, MessageValueType>::pipeDownload, this));
+
+            //commit compute task
+            this->threadPoolPtr->commitTask(
+                    std::bind(&UtilServer<GraphUtilType, VertexValueType, MessageValueType>::pipeCompute, this));
+
+            if (std::string("ExchangeAF") == cmd)
+            {
+                while (this->threadPoolPtr->taskCount() != 0);
                 this->server_msq.send("ComputeAF", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
-                continue;
             }
+            while (this->threadPoolPtr->taskCount() != 0);
 
-            this->executor.MSGGenMerge_array(*(this->computeCnt), this->computeUnitsCompute, this->mValues);
-            this->executor.MSGApply_array(*(this->computeCnt), this->computeUnitsCompute, this->mValues);
-
-            this->server_msq.send("ComputeF", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
 //            std::cout << "RotateF" << std::endl;
         } else if (std::string("IterationInit") == cmd)
         {
             this->executor.IterationInit(this->vCount, this->eCount, this->mValues);
-        }
-        else if (std::string("exit") == cmd)
+
+            //init active vertex
+            for (int i = 0; i < this->vCount; i++)
+                this->vSet[i].isActive = false;
+
+        } else if (std::string("exit") == cmd)
         {
+            this->stopPipeline();
             break;
         }
     }

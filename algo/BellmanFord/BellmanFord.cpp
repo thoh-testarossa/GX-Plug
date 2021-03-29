@@ -302,9 +302,6 @@ BellmanFord<VertexValueType, MessageValueType>::ApplyStep(Graph<VertexValueType>
             if (g.vList[destVId].isActive) activeVertices.emplace(destVId);
             if (g.vList[srcVId].isActive) activeVertices.emplace(srcVId);
 
-            if (g.verticesValue[srcVId * numOfInitV + indexOfInit] > computeUnits[i].srcValue)
-                g.verticesValue[srcVId * numOfInitV + indexOfInit] = computeUnits[i].srcValue;
-
             if (g.verticesValue[destVId * numOfInitV + indexOfInit] > computeUnits[i].destValue)
                 g.verticesValue[destVId * numOfInitV + indexOfInit] = computeUnits[i].destValue;
         }
@@ -375,4 +372,25 @@ BellmanFord<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> &g
     //Test
     std::cout << "end" << ":" << clock() << std::endl;
     //Test end
+}
+
+template<typename VertexValueType, typename MessageValueType>
+void
+BellmanFord<VertexValueType, MessageValueType>::download(VertexValueType *vValues, Vertex *vSet, int computeUnitCount,
+                                                         ComputeUnit<VertexValueType> *computeUnits)
+{
+    for (int i = 0; i < computeUnitCount; i++)
+    {
+        int destVId = computeUnits[i].destVertex.vertexID;
+        int srcVId = computeUnits[i].srcVertex.vertexID;
+        int indexOfInit = computeUnits[i].indexOfInitV;
+
+        vSet[destVId].isActive |= computeUnits[i].destVertex.isActive;
+        vSet[srcVId].isActive |= computeUnits[i].srcVertex.isActive;
+
+        if (vValues[destVId * this->numOfInitV + indexOfInit] > computeUnits[i].destValue)
+        {
+            vValues[destVId * this->numOfInitV + indexOfInit] = computeUnits[i].destValue;
+        }
+    }
 }

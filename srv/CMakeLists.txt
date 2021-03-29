@@ -37,7 +37,7 @@ if(UNIX)
 #                algo_ConnectedComponentGPU_kernel
                 algo_BellmanFordGPU_kernel
                 algo_LabelPropagationGPU_kernel
-                )
+                threadPool)
     else()
         add_library(srv_UtilServer
                 UtilServer.h
@@ -48,7 +48,8 @@ if(UNIX)
                 srv_UNIX_msg
                 srv_UNIX_shm
                 core_Graph
-                core_GraphUtil)
+                core_GraphUtil
+                threadPool)
     endif(CUDA_FOUND)
 
     add_library(srv_UtilClient
@@ -60,6 +61,5 @@ if(UNIX)
             srv_UNIX_msg
             srv_UNIX_shm
             core_Graph
-            core_GraphUtil
-            threadPool)
+            core_GraphUtil)
 ENDIF(UNIX)

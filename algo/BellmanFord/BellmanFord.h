@@ -32,6 +32,9 @@ public:
     void Deploy(int vCount, int eCount, int numOfInitV) override;
     void Free() override;
 
+    void download(VertexValueType *vValues, Vertex *vSet, int computeUnitCount,
+                  ComputeUnit<VertexValueType> *computeUnits) override;
+
     void ApplyStep(Graph<VertexValueType> &g, const std::vector<int> &initVSet, std::set<int> &activeVertices);
 
     void ApplyD(Graph<VertexValueType> &g, const std::vector<int> &initVList, int partitionCount);

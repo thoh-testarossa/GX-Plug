@@ -67,7 +67,11 @@ public:
 
     //Master function
     virtual void Init(int vCount, int eCount, int numOfInitV, int maxComputeUnits = 0) = 0;
+
     virtual void IterationInit(int vCount, int eCount, MessageValueType *mValues) = 0;
+
+    virtual void download(VertexValueType *vValues, Vertex *vSet, int computeUnitCount,
+                          ComputeUnit<VertexValueType> *computeUnits) = 0;
 
     virtual void
     GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) = 0;

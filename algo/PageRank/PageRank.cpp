@@ -111,21 +111,7 @@ int PageRank<VertexValueType, MessageValueType>::MSGApply_array(int computeUnitC
         avCount++;
     }
 
-//    for(int i = 0; i < vCount; i++)
-//    {
-//        auto destVId = mValues[i].destVId;
-//
-//        if(destVId == -1 || !vSet[destVId].isMaster)
-//        {
-////            std::cout << "not master or destvid == -1" << std::endl;
-//            continue;
-//        }
-//
-//        vSet[destVId].isActive = true;
-//        vValues[destVId].first += mValues[i].rank;
-//        vValues[destVId].second = mValues[i].rank;
-//        avCount++;
-//    }
+    std::cout << "avCount" << std::endl;
 
     return avCount;
 }
@@ -135,30 +121,6 @@ int PageRank<VertexValueType, MessageValueType>::MSGGenMerge_array(int computeUn
                                                                    ComputeUnit<VertexValueType> *computeUnits,
                                                                    MessageValueType *mValues)
 {
-    //test
-    //std::cout << " =========== msg info =============" << std::endl;
-
-//    for(int i = 0; i < vCount; i++)
-//    {
-//        mValues[i] = MessageValueType(-1, 0);
-//    }
-//
-//    for(int i = 0; i < eCount; i++)
-//    {
-//        auto srcVId = eSet[i].src;
-//
-//        auto msgValue = MessageValueType(-1, -1);
-//        if(vSet[srcVId].isActive && vValues[srcVId].second > this->deltaThreshold)
-//        {
-//            //msg value -- <destinationID, rank>
-//            msgValue = MessageValueType(eSet[i].dst, vValues[eSet[i].src].second * eSet[i].weight * (1 - resetProb));
-//
-//            mValues[msgValue.destVId].destVId = msgValue.destVId;
-//            mValues[msgValue.destVId].rank += msgValue.rank;
-////            std::cout << mValues[msgValue.destVId].destVId << " " << mValues[msgValue.destVId].rank << std::endl;
-//        }
-//    }
-
     for (int i = 0; i < computeUnitCount; i++)
     {
         auto computeUnit = computeUnits[i];
@@ -171,9 +133,6 @@ int PageRank<VertexValueType, MessageValueType>::MSGGenMerge_array(int computeUn
             mValues[destVId].destVId = destVId;
         }
     }
-
-    //test
-    //std::cout << " ==================================" << std::endl;
 
     return 0;
 }
@@ -316,8 +275,6 @@ void PageRank<VertexValueType, MessageValueType>::MergeGraph(Graph<VertexValueTy
             {
                 g.verticesValue.at(i) = subG.verticesValue.at(i);
             }
-//            std::cout << i << " " << subG.verticesValue.at(i).first << " " << subG.verticesValue.at(i).second << std::endl;
-//            std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
         }
     }
 
@@ -482,20 +439,36 @@ void PageRank<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> 
         }
 
         //test
-//        for(int i = 0; i < g.vCount; i++)
-//        {
-//            std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
-//        }
+        for(int i = 0; i < g.vCount; i++)
+        {
+            std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
+        }
 
         //time test
         std::cout << "merge time: " <<  std::chrono::duration_cast<std::chrono::microseconds>(end - mergeGraphStart).count() << std::endl;
     }
 
-    for(int i = 0; i < g.vCount; i++)
-    {
-        std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
-    }
+//    for(int i = 0; i < g.vCount; i++)
+//    {
+//        std::cout << i << " " << g.verticesValue.at(i).first << " " << g.verticesValue.at(i).second << std::endl;
+//    }
 
     Free();
+}
+
+template<typename VertexValueType, typename MessageValueType>
+void PageRank<VertexValueType, MessageValueType>::download(VertexValueType *vValues, Vertex *vSet, int computeUnitCount,
+                                                           ComputeUnit<VertexValueType> *computeUnits)
+{
+    for (int i = 0; i < computeUnitCount; i++)
+    {
+        int destVId = computeUnits[i].destVertex.vertexID;
+        int srcVId = computeUnits[i].srcVertex.vertexID;
+
+        vSet[destVId].isActive |= computeUnits[i].destVertex.isActive;
+        vSet[srcVId].isActive |= computeUnits[i].srcVertex.isActive;
+
+        vValues[destVId] = computeUnits[i].destValue;
+    }
 }
 

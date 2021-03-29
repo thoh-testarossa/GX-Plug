@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     int numOfInitV = atoi(argv[3]);
     int nodeNo = (argc == 4) ? 0 : atoi(argv[4]);
 
-    auto testUtilServer = UtilServer<BellmanFord<double, double>, double, double>(vCount, eCount, numOfInitV, nodeNo, 1000);
+    auto testUtilServer = UtilServer<BellmanFord<double, double>, double, double>(vCount, eCount, numOfInitV, nodeNo, 10);
     if(!testUtilServer.isLegal)
     {
         std::cout << "mem allocation failed or parameters are illegal" << std::endl;

@@ -8,18 +8,25 @@
 #include "UtilClient.h"
 
 template<typename VertexValueType, typename MessageValueType>
-UtilClient<VertexValueType, MessageValueType>::UtilClient(int numOfInitV, int nodeNo, int threadNum)
+UtilClient<VertexValueType, MessageValueType>::UtilClient(int vCount, int eCount, int numOfInitV, int nodeNo,
+                                                          int maxComputeUnitsCnt)
 {
     this->nodeNo = nodeNo;
-
+    this->vCount = vCount;
+    this->eCount = eCount;
     this->numOfInitV = numOfInitV;
+    this->maxComputeUnitsCnt = maxComputeUnitsCnt;
 
-    this->mValues_shm = UNIX_shm();
     this->initVSet_shm = UNIX_shm();
     this->filteredV_shm = UNIX_shm();
     this->timestamp_shm = UNIX_shm();
     this->avCount_shm = UNIX_shm();
     this->avSet_shm = UNIX_shm();
+
+    this->vValues_shm = UNIX_shm();
+    this->mValues_shm = UNIX_shm();
+    this->vSet_shm = UNIX_shm();
+    this->eSet_shm = UNIX_shm();
 
     this->computeUnitsUpdate_shm = UNIX_shm();
     this->computeUnitsCompute_shm = UNIX_shm();
@@ -31,12 +38,16 @@ UtilClient<VertexValueType, MessageValueType>::UtilClient(int numOfInitV, int no
     this->server_msq = UNIX_msg();
     this->client_msq = UNIX_msg();
 
-    this->mValues = nullptr;
     this->initVSet = nullptr;
     this->filteredV = nullptr;
     this->timestamp = nullptr;
     this->avCount = nullptr;
     this->avSet = nullptr;
+
+    this->vValues = nullptr;
+    this->mValues = nullptr;
+    this->vSet = nullptr;
+    this->eSet = nullptr;
 
     this->computeUnitsUpdate = nullptr;
     this->computeUnitsCompute = nullptr;
@@ -44,8 +55,6 @@ UtilClient<VertexValueType, MessageValueType>::UtilClient(int numOfInitV, int no
     this->updateCnt = nullptr;
     this->computeCnt = nullptr;
     this->downloadCnt = nullptr;
-
-    this->initPipeline(threadNum);
 }
 
 template<typename VertexValueType, typename MessageValueType>
@@ -53,7 +62,11 @@ int UtilClient<VertexValueType, MessageValueType>::connect()
 {
     int ret = 0;
 
+    if (ret != -1) ret = this->vValues_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (VVALUES_SHM << SHM_OFFSET)));
     if (ret != -1) ret = this->mValues_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (MVALUES_SHM << SHM_OFFSET)));
+    if (ret != -1) ret = this->vSet_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (VSET_SHM << SHM_OFFSET)));
+    if (ret != -1) ret = this->eSet_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (ESET_SHM << SHM_OFFSET)));
+
     if (ret != -1) ret = this->initVSet_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (INITVSET_SHM << SHM_OFFSET)));
     if (ret != -1) ret = this->filteredV_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (FILTEREDV_SHM << SHM_OFFSET)));
     if (ret != -1) ret = this->timestamp_shm.fetch(((this->nodeNo << NODE_NUM_OFFSET) | (TIMESTAMP_SHM << SHM_OFFSET)));
@@ -81,7 +94,11 @@ int UtilClient<VertexValueType, MessageValueType>::connect()
 
     if (ret != -1)
     {
+        this->vValues_shm.attach(0666);
         this->mValues_shm.attach(0666);
+        this->vSet_shm.attach(0666);
+        this->eSet_shm.attach(0666);
+
         this->initVSet_shm.attach(0666);
         this->filteredV_shm.attach(0666);
         this->timestamp_shm.attach(0666);
@@ -95,7 +112,11 @@ int UtilClient<VertexValueType, MessageValueType>::connect()
         this->downloadCnt_shm.attach(0666);
         this->updateCnt_shm.attach(0666);
 
+        this->vValues = (VertexValueType *) this->vValues_shm.shmaddr;
         this->mValues = (MessageValueType *) this->mValues_shm.shmaddr;
+        this->vSet = (Vertex *) this->vSet_shm.shmaddr;
+        this->eSet = (Edge *) this->eSet_shm.shmaddr;
+
         this->initVSet = (int *) this->initVSet_shm.shmaddr;
         this->filteredV = (bool *) this->filteredV_shm.shmaddr;
         this->timestamp = (int *) this->timestamp_shm.shmaddr;
@@ -114,18 +135,52 @@ int UtilClient<VertexValueType, MessageValueType>::connect()
 }
 
 template<typename VertexValueType, typename MessageValueType>
-int UtilClient<VertexValueType, MessageValueType>::transfer(ComputeUnitPackage<VertexValueType> *computePackages,
-                                                            int packagesCnt)
+int UtilClient<VertexValueType, MessageValueType>::transfer(VertexValueType *vValues, Vertex *vSet, Edge *eSet,
+                                                            int *initVSet, bool *filteredV, int *timestamp)
 {
-    this->computePackages = computePackages;
-    this->packagesCnt = packagesCnt;
+    if (this->vCount > 0 && this->eCount > 0 && this->numOfInitV > 0)
+    {
+        if (this->vValues == nullptr) return -1;
+        if (this->vSet == nullptr) return -1;
+        if (this->eSet == nullptr) return -1;
+        if (this->initVSet == nullptr) return -1;
+        if (this->filteredV == nullptr) return -1;
+        if (this->timestamp == nullptr) return -1;
+
+        memcpy(this->vValues, vValues, this->vCount * this->numOfInitV * sizeof(VertexValueType));
+        memcpy(this->vSet, vSet, this->vCount * sizeof(Vertex));
+        memcpy(this->eSet, eSet, this->eCount * sizeof(Edge));
+        memcpy(this->initVSet, initVSet, this->numOfInitV * sizeof(int));
+        memcpy(this->filteredV, filteredV, this->vCount * sizeof(bool));
+        memcpy(this->timestamp, timestamp, this->vCount * sizeof(int));
+
+        this->graphInit();
+
+        return 0;
+    } else return -1;
 }
 
 template<typename VertexValueType, typename MessageValueType>
 int
-UtilClient<VertexValueType, MessageValueType>::update(int computeUnitCount, ComputeUnit<VertexValueType> *computeUnits)
+UtilClient<VertexValueType, MessageValueType>::update(VertexValueType *vValues, Vertex *vSet)
 {
-    if (computeUnitCount <= 0 || computeUnits == nullptr) return -1;
+    if (this->vCount > 0 && this->eCount > 0 && this->numOfInitV > 0)
+    {
+        if (this->vValues == nullptr) return -1;
+        if (this->vSet == nullptr) return -1;
+
+        memcpy(this->vValues, vValues, this->vCount * this->numOfInitV * sizeof(VertexValueType));
+        memcpy(this->vSet, vSet, this->vCount * sizeof(Vertex));
+
+        return 0;
+    } else return -1;
+}
+
+template<typename VertexValueType, typename MessageValueType>
+int
+UtilClient<VertexValueType, MessageValueType>::pipeUpdate(int computeUnitCount,
+                                                          ComputeUnit<VertexValueType> *computeUnits)
+{
 //    if (this->nodeNo == 0)
 //        std::cout << "into update start " << std::endl;
 //    if (this->nodeNo == 0)
@@ -135,25 +190,6 @@ UtilClient<VertexValueType, MessageValueType>::update(int computeUnitCount, Comp
 //    if (this->nodeNo == 0)
 //        std::cout << "this->updateCnt: " << *(this->updateCnt) << std::endl;
     return 0;
-}
-
-template<typename VertexValueType, typename MessageValueType>
-void UtilClient<VertexValueType, MessageValueType>::download(ComputeUnitPackage<VertexValueType> *computePackages,
-                                                             int &copyIndex)
-{
-    auto computeUnits = this->computeUnitsDownload;
-    int count = *(this->downloadCnt);
-
-//    if (this->nodeNo == 0)
-//        std::cout << "download-cnt: " << count << std::endl;
-//
-//    if (this->nodeNo == 0)
-//        std::cout << "copyIndex: " << copyIndex << std::endl;
-
-    if (count == 0) return;
-
-    memcpy(computePackages[copyIndex].getUnitPtr(), computeUnits, count * sizeof(ComputeUnit<VertexValueType>));
-    copyIndex++;
 }
 
 template<typename VertexValueType, typename MessageValueType>
@@ -174,7 +210,11 @@ void UtilClient<VertexValueType, MessageValueType>::rotate()
 template<typename VertexValueType, typename MessageValueType>
 void UtilClient<VertexValueType, MessageValueType>::disconnect()
 {
+    this->vValues_shm.detach();
     this->mValues_shm.detach();
+    this->vSet_shm.detach();
+    this->eSet_shm.detach();
+
     this->initVSet_shm.detach();
     this->filteredV_shm.detach();
     this->timestamp_shm.detach();
@@ -188,7 +228,11 @@ void UtilClient<VertexValueType, MessageValueType>::disconnect()
     this->updateCnt_shm.detach();
     this->computeCnt_shm.detach();
 
+    this->vValues = nullptr;
     this->mValues = nullptr;
+    this->vSet = nullptr;
+    this->eSet = nullptr;
+
     this->initVSet = nullptr;
     this->filteredV = nullptr;
     this->timestamp = nullptr;
@@ -208,7 +252,6 @@ void UtilClient<VertexValueType, MessageValueType>::shutdown()
 {
     this->client_msq.send("exit", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
     this->disconnect();
-    this->stopPipeline();
 }
 
 template<typename VertexValueType, typename MessageValueType>
@@ -256,22 +299,60 @@ void UtilClient<VertexValueType, MessageValueType>::requestMSGMerge()
 }
 
 template<typename VertexValueType, typename MessageValueType>
-void UtilClient<VertexValueType, MessageValueType>::initPipeline(int threadNum)
+std::vector<ComputeUnitPackage<VertexValueType>> UtilClient<VertexValueType, MessageValueType>::computeUnitsGen()
 {
-    if (this->threadPoolPtr == nullptr)
+    int computeCnt = 0;
+    std::vector<ComputeUnitPackage<VertexValueType>> computePackages;
+    ComputeUnit<VertexValueType> *computeUnits = nullptr;
+
+    for (int i = 0; i < this->eCount; i++)
     {
-        this->threadPoolPtr = std::make_shared<ThreadPool>(threadNum);
-        this->threadPoolPtr->start();
+        int destVId = this->eSet[i].dst;
+        int srcVId = this->eSet[i].src;
+
+        if (!this->vSet[srcVId].isActive) continue;
+        if (this->numOfInitV <= 0) this->numOfInitV = 1;
+        for (int j = 0; j < this->numOfInitV; j++)
+        {
+            if (computeCnt == 0) computeUnits = new ComputeUnit<VertexValueType>[this->maxComputeUnitsCnt];
+            computeUnits[computeCnt].destVertex = this->vSet[destVId];
+            computeUnits[computeCnt].destValue = this->vValues[destVId * this->numOfInitV + j];
+            computeUnits[computeCnt].srcVertex = this->vSet[srcVId];
+            computeUnits[computeCnt].srcValue = this->vValues[srcVId * this->numOfInitV + j];
+            computeUnits[computeCnt].edgeWeight = this->eSet[i].weight;
+            computeUnits[computeCnt].indexOfInitV = j;
+            computeCnt++;
+        }
+
+        if (computeCnt == this->maxComputeUnitsCnt || i == this->eCount - 1)
+        {
+            computePackages.emplace_back(ComputeUnitPackage<VertexValueType>(computeUnits, computeCnt));
+            computeCnt = 0;
+        }
     }
+
+    if (computeCnt != 0)
+    {
+        computePackages.emplace_back(ComputeUnitPackage<VertexValueType>(computeUnits, computeCnt));
+    }
+
+    return computePackages;
 }
+
 
 template<typename VertexValueType, typename MessageValueType>
 void UtilClient<VertexValueType, MessageValueType>::startPipeline()
 {
     std::cout << "start pipeline" << std::endl;
+
     int sendCnt = 0;
-    int downloadCnt = 0;
+    int packagesCnt = 0;
     char serverMsg[256];
+    std::vector<ComputeUnitPackage<VertexValueType>> computePackages;
+
+    //package compute unit
+    computePackages = this->computeUnitsGen();
+    packagesCnt = computePackages.size();
 
     //init message
     this->client_msq.send("IterationInit", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
@@ -291,20 +372,14 @@ void UtilClient<VertexValueType, MessageValueType>::startPipeline()
     {
         auto computeUnits = computePackages[sendCnt].getUnitPtr();
         int count = computePackages[sendCnt].getCount();
-//        if (this->nodeNo == 0)
-//            std::cout << "count: " << count << std::endl;
-        this->threadPoolPtr->commitTask(
-                std::bind(&UtilClient<VertexValueType, MessageValueType>::update, this, count, computeUnits));
+
+        this->pipeUpdate(count, computeUnits);
         sendCnt++;
 
-//        if (this->nodeNo == 0)
-//            std::cout << "update: " << *(this->updateCnt) << std::endl;
-        while (this->threadPoolPtr->taskCount() != 0);
-//        if (this->nodeNo == 0)
-//            std::cout << "ExchangeF" << std::endl;
         this->client_msq.send("ExchangeF", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
     }
 
+    //iteration
     while (this->server_msq.recv(serverMsg, (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256))
     {
         if (errno == EINTR) continue;
@@ -315,50 +390,28 @@ void UtilClient<VertexValueType, MessageValueType>::startPipeline()
 //                std::cout << "RotateF" << std::endl;
             rotate();
 
-            // commit download task
-            this->threadPoolPtr->commitTask(
-                    std::bind(&UtilClient<VertexValueType, MessageValueType>::download, this, computePackages,
-                              std::ref(downloadCnt)));
-
             if (sendCnt == packagesCnt)
             {
-                int a = 0;
-                memcpy(this->updateCnt, &a, sizeof(int));
-                continue;
+                *(this->updateCnt) = 0;
+                this->client_msq.send("ExchangeAF", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+            } else
+            {
+                auto computeUnits = computePackages[sendCnt].getUnitPtr();
+                int count = computePackages[sendCnt].getCount();
+
+                this->pipeUpdate(count, computeUnits);
+                sendCnt++;
+                this->client_msq.send("ExchangeF", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
             }
 
-            // commit update task
-            auto computeUnits = computePackages[sendCnt].getUnitPtr();
-            int count = computePackages[sendCnt].getCount();
-            this->threadPoolPtr->commitTask(
-                    std::bind(&UtilClient<VertexValueType, MessageValueType>::update, this, count, computeUnits));
-
-            sendCnt++;
-
-//            if (this->nodeNo == 0)
-//                std::cout << "RotateF" << std::endl;
-
-        } else if (!strcmp("ComputeF", serverMsg))
-        {
-//            if (this->nodeNo == 0)
-//                std::cout << "ComputeF" << std::endl;
-            while (this->threadPoolPtr->taskCount() != 0);
-            this->client_msq.send("ExchangeF", (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256);
-
-//            if (this->nodeNo == 0)
-//                std::cout << "ComputeF" << std::endl;
         } else if (!strcmp("ComputeAF", serverMsg))
         {
-//            if (this->nodeNo == 0)
-//                std::cout << "ComputeAF" << std::endl;
-            while (this->threadPoolPtr->taskCount() != 0);
             break;
         }
     }
-}
 
-template<typename VertexValueType, typename MessageValueType>
-void UtilClient<VertexValueType, MessageValueType>::stopPipeline()
-{
-    this->threadPoolPtr->stop();
+    for (auto &computePackage : computePackages)
+    {
+        free(computePackage.getUnitPtr());
+    }
 }

@@ -99,15 +99,6 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGApply_array(int comp
                                                                         ComputeUnit<VertexValueType> *computeUnits,
                                                                         MessageValueType *mValues)
 {
-//    for(int i = 0; i < std::max(vCount, eCount); i++)
-//    {
-//        auto vid = mValues[i].destVId;
-//        if(vid == -1) continue;
-//        if(!vSet[vid].isMaster) continue;
-//        vValues[i].label = mValues[i].label;
-//        vValues[i].destVId = vid;
-//    }
-
     for (int i = 0; i < computeUnitCount; i++)
     {
         auto &computeUnit = computeUnits[i];
@@ -115,6 +106,8 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGApply_array(int comp
 
         computeUnit.destValue.label = computeUnit.srcValue.label;
         computeUnit.destValue.destVId = computeUnit.destVertex.vertexID;
+
+        computeUnit.destVertex.isActive = true;
     }
 
     return 0;
@@ -155,6 +148,7 @@ template<typename VertexValueType, typename MessageValueType>
 void
 LabelPropagation<VertexValueType, MessageValueType>::IterationInit(int vCount, int eCount, MessageValueType *mValues)
 {
+    this->pipeDownloadCnt = 0;
 }
 
 template<typename VertexValueType, typename MessageValueType>
@@ -391,4 +385,15 @@ void LabelPropagation<VertexValueType, MessageValueType>::ApplyD(Graph<VertexVal
         std::cout << i << " " << g.verticesValue.at(i).label << std::endl;
 
     Free();
+}
+
+template<typename VertexValueType, typename MessageValueType>
+void LabelPropagation<VertexValueType, MessageValueType>::download(VertexValueType *vValues, Vertex *vSet,
+                                                                   int computeUnitCount,
+                                                                   ComputeUnit<VertexValueType> *computeUnits)
+{
+    for (int i = 0; i < computeUnitCount; i++, pipeDownloadCnt++)
+    {
+        vValues[pipeDownloadCnt] = computeUnits[i].destValue;
+    }
 }

@@ -45,12 +45,6 @@ void LabelPropagationGPU<VertexValueType, MessageValueType>::Init(int vCount, in
 }
 
 template<typename VertexValueType, typename MessageValueType>
-void
-LabelPropagationGPU<VertexValueType, MessageValueType>::IterationInit(int vCount, int eCount, MessageValueType *mValues)
-{
-}
-
-template<typename VertexValueType, typename MessageValueType>
 void LabelPropagationGPU<VertexValueType, MessageValueType>::GraphInit(Graph<VertexValueType> &g,
                                                                        std::set<int> &activeVertices,
                                                                        const std::vector<int> &initVList)
