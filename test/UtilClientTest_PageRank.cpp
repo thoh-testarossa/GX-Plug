@@ -220,17 +220,17 @@ int main(int argc, char *argv[])
                 avSet.at(avCount) = i;
                 avCount++;
                 isActive = true;
-                std::cout << "active: " << i << std::endl;
+//                std::cout << "active: " << i << std::endl;
             }
         }
 
         std::cout << "avCount : " << avCount << std::endl;
 
         //test
-        for(int i = 0; i < vCount; i++)
-        {
-            std::cout << i << ":" << vValues[i].first << " " << vValues[i].second << std::endl ;
-        }
+//        for(int i = 0; i < vCount; i++)
+//        {
+//            std::cout << i << ":" << vValues[i].first << " " << vValues[i].second << std::endl ;
+//        }
     }
 
     std::cout << "===========result===========" << std::endl;

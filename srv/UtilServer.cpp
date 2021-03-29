@@ -318,7 +318,7 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
     while (this->client_msq.recv(msgp, (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256) != -1)
     {
         //Test
-        std::cout << "Processing at iter " << ++iterCount << std::endl;
+        std::cout << "Processing at iter " << iterCount << std::endl;
         //Test end
 
         cmd = msgp;
@@ -359,8 +359,8 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
             {
                 while (this->threadPoolPtr->taskCount() != 0);
                 this->server_msq.send("ComputeAF", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+                iterCount++;
             }
-            while (this->threadPoolPtr->taskCount() != 0);
 
 //            std::cout << "RotateF" << std::endl;
         } else if (std::string("IterationInit") == cmd)

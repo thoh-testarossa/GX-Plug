@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
     //Client Init Data Transfer
     auto clientVec = std::vector<UtilClient<double, double>>();
     for(int i = 0; i < nodeCount; i++)
-        clientVec.push_back(UtilClient<double, double>(vCount, ((i + 1) * eCount) / nodeCount - (i * eCount) / nodeCount, numOfInitV, i, 10));
+        clientVec.push_back(UtilClient<double, double>(vCount, ((i + 1) * eCount) / nodeCount - (i * eCount) / nodeCount, numOfInitV, i, 100));
     int chk = 0;
     for(int i = 0; i < nodeCount && chk != -1; i++)
     {

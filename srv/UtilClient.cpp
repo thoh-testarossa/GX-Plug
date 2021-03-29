@@ -406,6 +406,8 @@ void UtilClient<VertexValueType, MessageValueType>::startPipeline()
 
         } else if (!strcmp("ComputeAF", serverMsg))
         {
+            //synchronize with the pointers of server
+            rotate();
             break;
         }
     }
