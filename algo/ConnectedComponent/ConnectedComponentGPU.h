@@ -16,13 +16,17 @@ class ConnectedComponentGPU : public ConnectedComponent<VertexValueType, Message
 public:
     ConnectedComponentGPU();
 
-    void Init(int vCount, int eCount, int numOfInitV) override;
+    void Init(int vCount, int eCount, int numOfInitV, int maxComputeUnits=0) override;
     void GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) override;
     void Deploy(int vCount, int eCount, int numOfInitV) override;
     void Free() override;
 
-    int MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues) override;
-    int MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues) override;
+//    int MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV, const int *initVSet, VertexValueType *vValues, MessageValueType *mValues) override;
+//    int MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet, int numOfInitV, const int *initVSet, const VertexValueType *vValues, MessageValueType *mValues) override;
+
+    // todo
+    int MSGApply_array(int computeUnitCount, ComputeUnit<VertexValueType> *computeUnits, MessageValueType *mValues) override;
+    int MSGGenMerge_array(int computeUnitCount, ComputeUnit<VertexValueType> *computeUnits, MessageValueType *mValues) override;
 
 protected:
     int vertexLimit;

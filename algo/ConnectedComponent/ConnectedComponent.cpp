@@ -25,7 +25,7 @@ int ConnectedComponent<VertexValueType, MessageValueType>::MSGApply(Graph<Vertex
     for(int i = 0; i < g.vCount; i++) mValues[i] = INVALID_MASSAGE;
     for(const auto &m : mSet.mSet) mValues[m.dst] = m.value;
 
-    this->MSGApply_array(g.vCount, g.eCount, &g.vList[0], 0, nullptr, &g.verticesValue[0], mValues);
+//    this->MSGApply_array(g.vCount, g.eCount, &g.vList[0], 0, nullptr, &g.verticesValue[0], mValues);
 
     activeVertice.clear();
     for(const auto &v : g.vList)
@@ -47,7 +47,7 @@ int ConnectedComponent<VertexValueType, MessageValueType>::MSGGenMerge(const Gra
 
     auto *mValues = new MessageValueType[g.vCount];
 
-    this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], 0, nullptr, &g.verticesValue[0], mValues);
+//    this->MSGGenMerge_array(g.vCount, g.eCount, &g.vList[0], &g.eList[0], 0, nullptr, &g.verticesValue[0], mValues);
 
     //Package mValues into result mSet
     for(int i = 0; i < g.vCount; i++)
@@ -59,57 +59,75 @@ int ConnectedComponent<VertexValueType, MessageValueType>::MSGGenMerge(const Gra
     return mSet.mSet.size();
 }
 
+//template<typename VertexValueType, typename MessageValueType>
+//int ConnectedComponent<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV,
+//                                                         const int *initVSet, VertexValueType *vValues,
+//                                                         MessageValueType *mValues)
+//{
+//    int avCount = 0;
+//
+//    //Activity reset
+//    for(int i = 0; i < vCount; i++) vSet[i].isActive = false;
+//
+//    //vValue apply
+//    for(int i = 0; i < vCount; i++)
+//    {
+//        if(vValues[i] > mValues[i])
+//        {
+//            vValues[i] = mValues[i];
+//            if(!vSet[i].isActive)
+//            {
+//                vSet[i].isActive = true;
+//                avCount++;
+//            }
+//        }
+//    }
+//
+//    return avCount;
+//}
+
+//to do
 template<typename VertexValueType, typename MessageValueType>
-int ConnectedComponent<VertexValueType, MessageValueType>::MSGApply_array(int vCount, int eCount, Vertex *vSet, int numOfInitV,
-                                                         const int *initVSet, VertexValueType *vValues,
-                                                         MessageValueType *mValues)
+int ConnectedComponent<VertexValueType, MessageValueType>::MSGApply_array(int computeUnitCount,
+               ComputeUnit<VertexValueType> *computeUnits,
+               MessageValueType *mValues)
 {
-    int avCount = 0;
 
-    //Activity reset
-    for(int i = 0; i < vCount; i++) vSet[i].isActive = false;
-
-    //vValue apply
-    for(int i = 0; i < vCount; i++)
-    {
-        if(vValues[i] > mValues[i])
-        {
-            vValues[i] = mValues[i];
-            if(!vSet[i].isActive)
-            {
-                vSet[i].isActive = true;
-                avCount++;
-            }
-        }
-    }
-
-    return avCount;
 }
 
+//template<typename VertexValueType, typename MessageValueType>
+//int
+//ConnectedComponent<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet,
+//                                                       int numOfInitV, const int *initVSet,
+//                                                       const VertexValueType *vValues, MessageValueType *mValues)
+//{
+//    for(int i = 0; i < vCount; i++) mValues[i] = (MessageValueType)INVALID_MASSAGE;
+//
+//    for(int i = 0; i < eCount; i++)
+//    {
+//        if(vSet[eSet[i].src].isActive)
+//        {
+//            if(mValues[eSet[i].dst] > vValues[eSet[i].src])
+//                mValues[eSet[i].dst] = vValues[eSet[i].src];
+//        }
+//
+//        if(vSet[eSet[i].dst].isActive)
+//        {
+//            if(mValues[eSet[i].src] > vValues[eSet[i].dst])
+//                mValues[eSet[i].src] = vValues[eSet[i].dst];
+//        }
+//    }
+//
+//    return vCount;
+//}
+
+//to do
 template<typename VertexValueType, typename MessageValueType>
-int
-ConnectedComponent<VertexValueType, MessageValueType>::MSGGenMerge_array(int vCount, int eCount, const Vertex *vSet, const Edge *eSet,
-                                                       int numOfInitV, const int *initVSet,
-                                                       const VertexValueType *vValues, MessageValueType *mValues)
+int ConnectedComponent<VertexValueType, MessageValueType>::MSGGenMerge_array(int computeUnitCount,
+                                                                      ComputeUnit<VertexValueType> *computeUnits,
+                                                                      MessageValueType *mValues)
 {
-    for(int i = 0; i < vCount; i++) mValues[i] = (MessageValueType)INVALID_MASSAGE;
 
-    for(int i = 0; i < eCount; i++)
-    {
-        if(vSet[eSet[i].src].isActive)
-        {
-            if(mValues[eSet[i].dst] > vValues[eSet[i].src])
-                mValues[eSet[i].dst] = vValues[eSet[i].src];
-        }
-
-        if(vSet[eSet[i].dst].isActive)
-        {
-            if(mValues[eSet[i].src] > vValues[eSet[i].dst])
-                mValues[eSet[i].src] = vValues[eSet[i].dst];
-        }
-    }
-
-    return vCount;
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -145,10 +163,16 @@ void ConnectedComponent<VertexValueType, MessageValueType>::MergeGraph(Graph<Ver
 }
 
 template <typename VertexValueType, typename MessageValueType>
-void ConnectedComponent<VertexValueType, MessageValueType>::Init(int vCount, int eCount, int numOfInitV)
+void ConnectedComponent<VertexValueType, MessageValueType>::Init(int vCount, int eCount,int numOfInitV, int maxComputeUnits)
 {
     this->totalVValuesCount = vCount;
     this->totalMValuesCount = vCount;
+}
+
+//to do
+template <typename VertexValueType, typename MessageValueType>
+void ConnectedComponent<VertexValueType, MessageValueType>::IterationInit(int vCount, int eCount, MessageValueType *mValues)
+{
 }
 
 template <typename VertexValueType, typename MessageValueType>
@@ -281,4 +305,10 @@ void ConnectedComponent<VertexValueType, MessageValueType>::ApplyD(Graph<VertexV
     //Test
     std::cout << "end" << ":" << clock() << std::endl;
     //Test end
+}
+
+template<typename VertexValueType, typename MessageValueType>
+void ConnectedComponent<VertexValueType, MessageValueType>::download(VertexValueType *vValues, Vertex *vSet, int computeUnitCount,
+        ComputeUnit<VertexValueType> *computeUnits)
+{
 }
