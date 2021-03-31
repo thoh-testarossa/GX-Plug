@@ -482,3 +482,9 @@ void PageRank<VertexValueType, MessageValueType>::download(VertexValueType *vVal
     }
 }
 
+template<typename VertexValueType, typename MessageValueType>
+void PageRank<VertexValueType, MessageValueType>::IterationEnd(MessageValueType *mValues)
+{
+
+}
+

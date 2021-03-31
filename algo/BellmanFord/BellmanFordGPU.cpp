@@ -155,3 +155,11 @@ int BellmanFordGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int com
 
     return 0;
 }
+
+template<typename VertexValueType, typename MessageValueType>
+void BellmanFordGPU<VertexValueType, MessageValueType>::IterationEnd(MessageValueType *mValues)
+{
+    cudaError_t err = cudaSuccess;
+    err = cudaMemcpy(mValues, this->d_mTransformedMergedMSGValueSet, this->totalMValuesCount * sizeof(MessageValueType),
+                     cudaMemcpyDeviceToHost);
+}

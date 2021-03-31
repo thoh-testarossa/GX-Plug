@@ -312,3 +312,9 @@ void ConnectedComponent<VertexValueType, MessageValueType>::download(VertexValue
         ComputeUnit<VertexValueType> *computeUnits)
 {
 }
+
+template<typename VertexValueType, typename MessageValueType>
+void ConnectedComponent<VertexValueType, MessageValueType>::IterationEnd(MessageValueType *mValues)
+{
+
+}

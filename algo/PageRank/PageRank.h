@@ -55,6 +55,8 @@ public:
 
     void IterationInit(int vCount, int eCount, MessageValueType *mValues) override;
 
+    void IterationEnd(MessageValueType *mValues) override;
+
     void
     GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) override;
 

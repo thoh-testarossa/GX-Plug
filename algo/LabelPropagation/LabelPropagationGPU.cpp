@@ -112,5 +112,25 @@ LabelPropagationGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int co
                                                                           MessageValueType *mValues)
 {
     MSGGenMerge_GPU_MVCopy(computeUnitCount, computeUnits);
+
+    cudaError_t err = cudaSuccess;
+
+    for (int i = 0; i < computeUnitCount; i += NUMOFGPUCORE)
+    {
+        int computeUnitsUsedForGPU = (computeUnitCount - i > NUMOFGPUCORE) ? NUMOFGPUCORE : (computeUnitCount - i);
+        err = MSGGenMerge_kernel_exec(computeUnitsUsedForGPU, &this->d_computeUnits[i],
+                                      (MessageValueType *)this->d_mTransformedMergedMSGValueSet, this->pipeMsgCnt);
+    }
+
+    this->pipeMsgCnt += computeUnitCount;
+
     return 0;
+}
+
+template<typename VertexValueType, typename MessageValueType>
+void LabelPropagationGPU<VertexValueType, MessageValueType>::IterationEnd(MessageValueType *mValues)
+{
+    cudaError_t err = cudaSuccess;
+    err = cudaMemcpy(mValues, this->d_mTransformedMergedMSGValueSet, this->totalMValuesCount * sizeof(MessageValueType),
+                     cudaMemcpyDeviceToHost);
 }

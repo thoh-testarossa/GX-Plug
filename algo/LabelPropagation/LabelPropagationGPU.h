@@ -18,6 +18,7 @@ public:
     LabelPropagationGPU();
 
     void Init(int vCount, int eCount, int numOfInitV, int computeUnitsCnt = 0) override;
+    void IterationEnd(MessageValueType *mValues) override;
     void GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) override;
     void Deploy(int vCount, int eCount, int numOfInitV) override;
     void Free() override;

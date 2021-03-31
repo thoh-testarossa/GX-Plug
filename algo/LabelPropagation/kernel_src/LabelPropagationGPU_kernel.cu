@@ -27,13 +27,28 @@ cudaError_t MSGApply_kernel_exec(int numOfUnits, ComputeUnit<LPA_Value> *compute
     return err;
 }
 
-__global__ void MSGGenMerge_kernel(int numOfUnits, ComputeUnit<LPA_Value> *computeUnits, LPA_MSG *mValueSet)
+__global__ void MSGGenMerge_kernel(int numOfUnits, ComputeUnit<LPA_Value> *computeUnits, LPA_MSG *mValueSet, int msgIndex)
 {
+    int tid = threadIdx.x;
+
+    if (tid < numOfUnits)
+    {
+        int index = msgIndex + tid;
+
+        mValueSet[index].label = computeUnits[tid].srcValue.label;
+        mValueSet[index].destVId = computeUnits[tid].destVertex.vertexID;
+    }
 }
 
 cudaError_t
-MSGGenMerge_kernel_exec(int numOfUnits, ComputeUnit<LPA_Value> *computeUnits, LPA_MSG *mValueSet)
+MSGGenMerge_kernel_exec(int numOfUnits, ComputeUnit<LPA_Value> *computeUnits, LPA_MSG *mValueSet, int msgIndex)
 {
     cudaError_t err = cudaSuccess;
+
+    MSGGenMerge_kernel << < 1, NUMOFGPUCORE >> > (numOfUnits, computeUnits, mValueSet, msgIndex);
+    err = cudaGetLastError();
+
+    cudaDeviceSynchronize();
+
     return err;
 }

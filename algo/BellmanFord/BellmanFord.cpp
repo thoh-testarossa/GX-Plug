@@ -394,3 +394,9 @@ BellmanFord<VertexValueType, MessageValueType>::download(VertexValueType *vValue
         }
     }
 }
+
+template<typename VertexValueType, typename MessageValueType>
+void BellmanFord<VertexValueType, MessageValueType>::IterationEnd(MessageValueType *mValues)
+{
+
+}

@@ -69,6 +69,7 @@ public:
     virtual void Init(int vCount, int eCount, int numOfInitV, int maxComputeUnits = 0) = 0;
 
     virtual void IterationInit(int vCount, int eCount, MessageValueType *mValues) = 0;
+    virtual void IterationEnd(MessageValueType *mValues) = 0;
 
     virtual void download(VertexValueType *vValues, Vertex *vSet, int computeUnitCount,
                           ComputeUnit<VertexValueType> *computeUnits) = 0;

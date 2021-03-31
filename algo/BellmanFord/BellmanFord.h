@@ -28,6 +28,7 @@ public:
 
     void Init(int vCount, int eCount, int numOfInitV, int maxComputeUnits=0) override;
     void IterationInit(int vCount, int eCount, MessageValueType *mValues) override;
+    void IterationEnd(MessageValueType *mValues) override;
     void GraphInit(Graph<VertexValueType> &g, std::set<int> &activeVertices, const std::vector<int> &initVList) override;
     void Deploy(int vCount, int eCount, int numOfInitV) override;
     void Free() override;

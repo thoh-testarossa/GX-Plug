@@ -23,6 +23,8 @@ public:
 
     void IterationInit(int vCount, int eCount, MessageValueType *mValues) override;
 
+    void IterationEnd(MessageValueType *mValues) override;
+
     void Deploy(int vCount, int eCount, int numOfInitV) override;
 
     void Free() override;

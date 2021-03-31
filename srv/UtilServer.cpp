@@ -359,6 +359,7 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
             {
                 while (this->threadPoolPtr->taskCount() != 0);
                 this->server_msq.send("ComputeAF", (SRV_MSG_TYPE << MSG_TYPE_OFFSET), 256);
+                this->executor.IterationEnd(this->mValues);
                 iterCount++;
             }
 

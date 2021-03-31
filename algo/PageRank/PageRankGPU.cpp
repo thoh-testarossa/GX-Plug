@@ -136,6 +136,8 @@ int PageRankGPU<VertexValueType, MessageValueType>::MSGGenMerge_array(int comput
                                       this->d_mTransformedMergedMSGValueSet, this->resetProb, this->deltaThreshold);
     }
 
+
+
     return 0;
 }
 
@@ -239,5 +241,11 @@ PageRankGPU<VertexValueType, MessageValueType>::reflectM(const MessageSet<Messag
     return r_mSet;
 }
 
-
+template<typename VertexValueType, typename MessageValueType>
+void PageRankGPU<VertexValueType, MessageValueType>::IterationEnd(MessageValueType *mValues)
+{
+    cudaError_t err = cudaSuccess;
+    err = cudaMemcpy(mValues, this->d_mTransformedMergedMSGValueSet, this->totalMValuesCount * sizeof(MessageValueType),
+                     cudaMemcpyDeviceToHost);
+}
 

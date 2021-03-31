@@ -129,6 +129,15 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGGenMerge_array(int c
 //
 //    return std::max(vCount, eCount);
 
+    for(int i = 0; i < computeUnitCount; i++)
+    {
+        int destVId = computeUnits[i].destVertex.vertexID;
+        int srcVId = computeUnits[i].srcVertex.vertexID;
+
+        mValues[this->pipeMsgCnt++] = MessageValueType(destVId, computeUnits[i].srcValue.label);
+    }
+
+
     return computeUnitCount;
 }
 
@@ -150,6 +159,7 @@ void
 LabelPropagation<VertexValueType, MessageValueType>::IterationInit(int vCount, int eCount, MessageValueType *mValues)
 {
     this->pipeDownloadCnt = 0;
+    this->pipeMsgCnt = 0;
 }
 
 template<typename VertexValueType, typename MessageValueType>
@@ -403,4 +413,10 @@ void LabelPropagation<VertexValueType, MessageValueType>::download(VertexValueTy
         vSet[destVId].isActive |= computeUnits[i].destVertex.isActive;
         vSet[srcVId].isActive |= computeUnits[i].srcVertex.isActive;
     }
+}
+
+template<typename VertexValueType, typename MessageValueType>
+void LabelPropagation<VertexValueType, MessageValueType>::IterationEnd(MessageValueType *mValues)
+{
+
 }
