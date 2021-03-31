@@ -318,7 +318,7 @@ void UtilServer<GraphUtilType, VertexValueType, MessageValueType>::run()
     while (this->client_msq.recv(msgp, (CLI_MSG_TYPE << MSG_TYPE_OFFSET), 256) != -1)
     {
         //Test
-        std::cout << "Processing at iter " << iterCount << std::endl;
+        // std::cout << "Processing at iter " << iterCount << std::endl;
         //Test end
 
         cmd = msgp;
