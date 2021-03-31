@@ -106,6 +106,7 @@ int LabelPropagation<VertexValueType, MessageValueType>::MSGApply_array(int comp
 
         computeUnit.destValue.label = computeUnit.srcValue.label;
         computeUnit.destValue.destVId = computeUnit.destVertex.vertexID;
+        computeUnit.destValue.labelCnt = 1;
 
         computeUnit.destVertex.isActive = true;
     }
@@ -394,6 +395,12 @@ void LabelPropagation<VertexValueType, MessageValueType>::download(VertexValueTy
 {
     for (int i = 0; i < computeUnitCount; i++, pipeDownloadCnt++)
     {
+        int destVId = computeUnits[i].destVertex.vertexID;
+        int srcVId = computeUnits[i].srcVertex.vertexID;
+
         vValues[pipeDownloadCnt] = computeUnits[i].destValue;
+
+        vSet[destVId].isActive |= computeUnits[i].destVertex.isActive;
+        vSet[srcVId].isActive |= computeUnits[i].srcVertex.isActive;
     }
 }
