@@ -1,37 +1,5 @@
-## Welcome to GitHub Pages
+## Welcome to GitHub Pages for GX-Plug
 
-You can use the [editor on GitHub](https://github.com/thoh-testarossa/GX-Plug/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+GX-plug is a middleware for the ease of integrating the merits of both distributed system for scale-out, and emerging hardwares for scale-up, serving graph processing. As a middleware, the GX-plug is versatile in supporting different runtime environments, computation models, and programming models. GX-Plug offers general and coder-friendly programming interfaces for algorithm developers, and good encapsulation of components for secondary system development. More, for improving the middleware performance, it integrates a series of techniques for intra-, inter-, and beyond-iteration optimizations, respectively.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
-
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/thoh-testarossa/GX-Plug/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+The github.io page is now deprecated and new homepage is built [here](http://120.76.141.20/). You can also see [here](http://120.76.141.20/index.php/feature/) to keep following the new features of GX-Plug.
