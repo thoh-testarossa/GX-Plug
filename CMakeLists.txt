@@ -7,14 +7,14 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-set(CMAKE_CXX_FLAGS -pthread)
+set(CMAKE_CXX_FLAGS "-Wall -O0 -g -pthread -lOpenCL -lrt -lstdc++")
 
 INCLUDE_DIRECTORIES(include)
 
+add_subdirectory(util)
 add_subdirectory(algo)
 add_subdirectory(core)
 add_subdirectory(tool)
 add_subdirectory(srv)
-add_subdirectory(util)
-
-add_subdirectory(test)
+#add_subdirectory(test)
+add_subdirectory(fpgaTest)

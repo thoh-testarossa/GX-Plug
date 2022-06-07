@@ -6,6 +6,13 @@
 #include <chrono>
 
 template<typename VertexValueType, typename MessageValueType>
+BellmanFordFPGA<VertexValueType, MessageValueType>::BellmanFordFPGA()
+{
+    InitFPGAEnv();
+    std::cout << "FPGA env has set" << std::endl;
+}
+
+template<typename VertexValueType, typename MessageValueType>
 void
 BellmanFordFPGA<VertexValueType, MessageValueType>::InitFPGAEnv ()
 {
@@ -94,7 +101,7 @@ BellmanFordFPGA<VertexValueType, MessageValueType>::MSGApply_array(
 
     clEnqueueReadBuffer(queue.get(), buffer_4, CL_TRUE, 0, dstValue.size() * sizeof(int), dstValue.data(), 0, NULL, NULL);        
     clEnqueueReadBuffer(queue.get(), buffer_5, CL_TRUE, 0, activeNode.size() * sizeof(int), activeNode.data(), 0, NULL, NULL);
-    
+    queue.finish();
     for(int i = 0 ; i < computeUnitCount ; i++)
     {
         computeUnits[i].destValue = dstValue[i];

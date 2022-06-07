@@ -1,16 +1,15 @@
 #pragma once
 
-#ifndef GRAPH_ALGO_BELLMANFORDFPGA_H
-#define GRAPH_ALGO_BELLMANFORDFPGA_H
-
-#include "BellmanFord.h"
+#ifndef GRAPH_ALGO_PAGERANKFPGA_H
+#define GRAPH_ALGO_PAGERANKFPGA_H
+#include "PageRank.h"
 #include "../../util/xcl2/xcl2.hpp"
 
 template<typename VertexValueType, typename MessageValueType>
-class BellmanFordFPGA : public BellmanFord<VertexValueType, MessageValueType>
+class PageRankFPGA : public PageRank<VertexValueType, MessageValueType>
 {
 public:
-    BellmanFordFPGA();
+    PageRankFPGA();
     void InitFPGAEnv ();
 
     int MSGApply_array(int computeUnitCount, ComputeUnit<VertexValueType> *computeUnits,
@@ -27,4 +26,4 @@ protected:
     cl::Kernel krnl;
 };
 
-#endif //GRAPH_ALGO_BELLMANFORDGPU_H
+#endif 

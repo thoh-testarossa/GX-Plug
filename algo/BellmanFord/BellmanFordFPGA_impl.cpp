@@ -1,4 +1,4 @@
 
 #include "BellmanFordFPGA.cpp"
 
-template class BellmanFordGPU<int, int>;
+template class BellmanFordFPGA<int, int>;

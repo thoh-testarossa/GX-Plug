@@ -3,6 +3,7 @@ project(Graph_Algo)
 
 set(CMAKE_CXX_STANDARD 14)
 
+find_package(OpenCL)
 find_package(CUDA)
 
 add_library(algo_BellmanFord
@@ -33,3 +34,14 @@ if(CUDA_FOUND)
             algo_BellmanFordGPU_kernel)
 
 endif(CUDA_FOUND)
+
+if(OpenCL_FOUND)
+    add_library(algo_BellmanFordFPGA
+            BellmanFordFPGA.h
+            BellmanFordFPGA.cpp
+            BellmanFordFPGA_impl.cpp)
+
+    target_link_libraries(algo_BellmanFordFPGA
+            algo_BellmanFord
+            xcl2)
+endif(OpenCL_FOUND)
