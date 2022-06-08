@@ -38,9 +38,10 @@ BellmanFordFPGA<VertexValueType, MessageValueType>::InitFPGAEnv ()
     }
     
     OCL_CHECK(err, cl::Context context_tmp(device, NULL, NULL, NULL, &err));
+    context = context_tmp;
     OCL_CHECK(err, cl::CommandQueue q(context, device, CL_QUEUE_PROFILING_ENABLE, &err));
     OCL_CHECK(err, std::string device_name = device.getInfo<CL_DEVICE_NAME>(&err));
-    context = context_tmp;
+    
     queue = q;
     std::string binaryFile = xcl::find_binary_file(device_name, "gs_top");
     cl::Program::Binaries bins = xcl::import_binary_file(binaryFile);

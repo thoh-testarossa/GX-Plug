@@ -1,3 +1,3 @@
 #include "PageRankFPGA.h"
 
-template class PageRankFPGA<int, int>;
+template class PageRankFPGA<std::pair<double, double>, PRA_MSG>;
