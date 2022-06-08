@@ -6,7 +6,7 @@
 #include "../../algo/LabelPropagation/LabelPropagation.h"
 #include "../../algo/PageRank/PageRank.h"
 #include "../../algo/DDFS/DDFS.h"
-
+#include "../../algo/BellmanFord/BellmanFord.h"
 template class GraphUtil<double, double>;
 template class GraphUtil<int, int>;
 template class GraphUtil<std::pair<double, double>, PRA_MSG>;

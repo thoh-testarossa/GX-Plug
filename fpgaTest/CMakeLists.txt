@@ -9,4 +9,5 @@ add_executable(sssp_fpga
 target_link_libraries(sssp_fpga
         core_Graph
         core_GraphUtil
-        algo_BellmanFordFPGA)
+        algo_BellmanFordFPGA
+        )

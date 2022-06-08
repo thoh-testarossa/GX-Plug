@@ -6,7 +6,7 @@
 #include "../../algo/PageRank/PageRank.h"
 #include "../../algo/DDFS/DDFS.h"
 #include "../../algo/LabelPropagation/LabelPropagation.h"
-
+#include "../../algo/BellmanFord/BellmanFord.h"
 template class Message<double>;
 template class Message<int>;
 template class Message<LPA_MSG>;

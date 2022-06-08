@@ -36,10 +36,10 @@ BellmanFordFPGA<VertexValueType, MessageValueType>::InitFPGAEnv ()
             }
         }
     }
-
+    
     OCL_CHECK(err, cl::Context context_tmp(device, NULL, NULL, NULL, &err));
     OCL_CHECK(err, cl::CommandQueue q(context, device, CL_QUEUE_PROFILING_ENABLE, &err));
-
+    OCL_CHECK(err, std::string device_name = device.getInfo<CL_DEVICE_NAME>(&err));
     context = context_tmp;
     queue = q;
     std::string binaryFile = xcl::find_binary_file(device_name, "gs_top");
@@ -55,6 +55,7 @@ int
 BellmanFordFPGA<VertexValueType, MessageValueType>::MSGApply_array(
     int computeUnitCount, ComputeUnit<VertexValueType> *computeUnits,MessageValueType *mValues)
 {
+    cl_int err;
     std::vector<int,aligned_allocator<int>> srcValue(computeUnitCount);
     std::vector<int,aligned_allocator<int>> ewValue(computeUnitCount);
     std::vector<int,aligned_allocator<int>> dstArray(computeUnitCount);

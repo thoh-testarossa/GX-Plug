@@ -12,9 +12,10 @@ set(CMAKE_CXX_FLAGS "-Wall -O0 -g -pthread -lOpenCL -lrt -lstdc++")
 INCLUDE_DIRECTORIES(include)
 
 add_subdirectory(util)
-add_subdirectory(algo)
+
 add_subdirectory(core)
-add_subdirectory(tool)
+#add_subdirectory(tool)
 add_subdirectory(srv)
-#add_subdirectory(test)
+add_subdirectory(algo)
+add_subdirectory(test)
 add_subdirectory(fpgaTest)

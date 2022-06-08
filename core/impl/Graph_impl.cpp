@@ -5,7 +5,7 @@
 #include "../Graph.cpp"
 #include "../../algo/LabelPropagation/LabelPropagation.h"
 #include "../../algo/DDFS/DDFS.h"
-
+#include "../../algo/BellmanFord/BellmanFord.h"
 template class Graph<double>;
 template class Graph<int>;
 template class Graph<std::pair<double, double>>;
