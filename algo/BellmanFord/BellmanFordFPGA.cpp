@@ -47,77 +47,120 @@ BellmanFordFPGA<VertexValueType, MessageValueType>::InitFPGAEnv ()
     cl::Program::Binaries bins = xcl::import_binary_file(binaryFile);
     OCL_CHECK(err, cl::Program program_tmp(context, devices, bins, NULL, &err));
     program = program_tmp;
-    OCL_CHECK(err, cl::Kernel kernel(program, "gs_top", &err));
-    krnl = kernel;
+    int index = -1;
+    OCL_CHECK(err, cl::Kernel kernel1(program, "gs_top1", &err));
+    krnls.push_back(kernel1);
+    OCL_CHECK(err, cl::Kernel kernel2(program, "gs_top2", &err));
+    krnls.push_back(kernel2);
+    OCL_CHECK(err, cl::Kernel kernel3(program, "gs_top3", &err));
+    krnls.push_back(kernel3);
+    OCL_CHECK(err, cl::Kernel kernel4(program, "gs_top4", &err));
+    krnls.push_back(kernel4);
 }
-
-template<typename VertexValueType, typename MessageValueType>
-int
-BellmanFordFPGA<VertexValueType, MessageValueType>::MSGApply_array(
-    int computeUnitCount, ComputeUnit<VertexValueType> *computeUnits,MessageValueType *mValues)
-{
-    cl_int err;
-    std::vector<int,aligned_allocator<int>> srcValue(computeUnitCount);
-    std::vector<int,aligned_allocator<int>> ewValue(computeUnitCount);
-    std::vector<int,aligned_allocator<int>> dstArray(computeUnitCount);
-    std::vector<int,aligned_allocator<int>> dstValue(computeUnitCount+1);
-    std::vector<int,aligned_allocator<int>> activeNode(computeUnitCount,0);
-
-    for(int i = 0 ; i < computeUnitCount ; i++)
-    {
-        auto cu = computeUnits[i];
-        srcValue[i] = cu.srcValue;
-        ewValue[i] = cu.edgeWeight;
-        dstArray[i] = cu.destVertex.vertexID;
-        dstValue[i] = cu.destValue;
-    }
-
-    cl_mem buffer_1 = clCreateBuffer(context.get(), CL_MEM_READ_WRITE, srcValue.size() * sizeof(int), nullptr, nullptr);
-    cl_mem buffer_2 = clCreateBuffer(context.get(), CL_MEM_READ_WRITE, ewValue.size() * sizeof(int), nullptr, nullptr);
-    cl_mem buffer_3 = clCreateBuffer(context.get(), CL_MEM_READ_WRITE, dstArray.size() * sizeof(int), nullptr, nullptr);
-    cl_mem buffer_4 = clCreateBuffer(context.get(), CL_MEM_READ_WRITE, dstValue.size() * sizeof(int), nullptr, nullptr);
-    cl_mem buffer_5 = clCreateBuffer(context.get(), CL_MEM_READ_WRITE, activeNode.size() * sizeof(int), nullptr, nullptr);
-
-    clSetKernelArg(krnl.get(), 0, sizeof(cl_mem), &buffer_1);
-    clSetKernelArg(krnl.get(), 1, sizeof(cl_mem), &buffer_2);
-    clSetKernelArg(krnl.get(), 2, sizeof(cl_mem), &buffer_3);
-    clSetKernelArg(krnl.get(), 3, sizeof(cl_mem), &buffer_4);
-    clSetKernelArg(krnl.get(), 4, sizeof(cl_mem), &buffer_5);
-    clSetKernelArg(krnl.get(), 5, sizeof(int), &computeUnitCount);
-
-    clEnqueueWriteBuffer(queue.get(), buffer_1, CL_TRUE, 0, srcValue.size() * sizeof(int), srcValue.data(), 0, nullptr, nullptr);
-    clEnqueueWriteBuffer(queue.get(), buffer_2, CL_TRUE, 0, ewValue.size() * sizeof(int), ewValue.data(), 0, nullptr, nullptr);
-    clEnqueueWriteBuffer(queue.get(), buffer_3, CL_TRUE, 0, dstArray.size() * sizeof(int), dstArray.data(), 0, nullptr, nullptr);
-    clEnqueueWriteBuffer(queue.get(), buffer_4, CL_TRUE, 0, dstValue.size() * sizeof(int), dstValue.data(),0, nullptr, nullptr);
-    clEnqueueWriteBuffer(queue.get(), buffer_5, CL_TRUE, 0, activeNode.size() * sizeof(int), activeNode.data(), 0, nullptr, nullptr);
-
-    clEnqueueMigrateMemObjects(queue.get(), 1, &buffer_1, 0, 0, NULL, NULL);
-    clEnqueueMigrateMemObjects(queue.get(), 1, &buffer_2, 0, 0, NULL, NULL);
-    clEnqueueMigrateMemObjects(queue.get(), 1, &buffer_3, 0, 0, NULL, NULL);
-    clEnqueueMigrateMemObjects(queue.get(), 1, &buffer_4, 0, 0, NULL, NULL);
-    clEnqueueMigrateMemObjects(queue.get(), 1, &buffer_5, 0, 0, NULL, NULL);
-
-    cl::Event event;
-    OCL_CHECK(err, err = queue.enqueueTask(krnl, NULL, &event));
-    OCL_CHECK(err, err = event.wait());
-
-    clEnqueueReadBuffer(queue.get(), buffer_4, CL_TRUE, 0, dstValue.size() * sizeof(int), dstValue.data(), 0, NULL, NULL);        
-    clEnqueueReadBuffer(queue.get(), buffer_5, CL_TRUE, 0, activeNode.size() * sizeof(int), activeNode.data(), 0, NULL, NULL);
-    queue.finish();
-    for(int i = 0 ; i < computeUnitCount ; i++)
-    {
-        computeUnits[i].destValue = dstValue[i];
-        computeUnits[i].destVertex.isActive = activeNode[i];
-    }
-
-    return dstValue[computeUnitCount];
-}
-
-
 
 template<typename VertexValueType, typename MessageValueType>
 int
 BellmanFordFPGA<VertexValueType, MessageValueType>::MSGGenMerge_array(
+    int computeUnitCount, ComputeUnit<VertexValueType> *computeUnits,MessageValueType *mValues)
+{
+    cl_mem mem;
+    std::vector<std::vector<cl_mem>> memTable(4,std::vector<cl_mem>(5)); 
+    std::vector<cl::Event> eventList(4);
+    int LoopNum = (512*4 < computeUnitCount) ? 4 : (computeUnitCount-1) / 512 + 1;
+    int arrayCount = (((computeUnitCount-1) / (4 * 512)) + 1) * 512;
+    // /std::cout << "Loop Num :" << LoopNum << "  ,arrayCount : " << arrayCount << std::endl;
+    std::vector<int,aligned_allocator<int>> srcValue(arrayCount);
+    std::vector<int,aligned_allocator<int>> ewValue(arrayCount);
+    std::vector<int,aligned_allocator<int>> dstArray(arrayCount);
+    std::vector<int,aligned_allocator<int>> dstValue(arrayCount+1);
+    std::vector<int,aligned_allocator<int>> activeNode(arrayCount,0);
+
+    std::vector<int> bound;
+    int oneLoopNum = computeUnitCount / LoopNum;
+    for(int i = 0 ; i < LoopNum-1 ; i++)
+    {
+        bound.push_back(oneLoopNum);
+    }
+    bound.push_back(computeUnitCount - oneLoopNum*(LoopNum-1));
+    
+    cl_int err;
+    int CUindex = 0;
+    for(int loop = 0 ; loop < LoopNum ; loop++)
+    {   
+        for(int i = 0 ; i < bound[loop] ; i++)
+        {
+            auto& cu = computeUnits[CUindex++];
+            cu.destVertex.isActive = false;
+            cu.srcVertex.isActive = false;
+            srcValue[i] = cu.srcValue;
+            ewValue[i] = cu.edgeWeight;
+            dstArray[i] = cu.destVertex.vertexID;
+            dstValue[i] = cu.destValue;
+            activeNode[i] = 0;
+        }
+
+        for(int i = bound[loop] ; i < arrayCount ; i++)
+        {
+            srcValue[i] = 0;
+            ewValue[i] = 0;
+            dstArray[i] = 0;
+            dstValue[i] = 0;
+            activeNode[i] = 0;
+        }
+
+        int CUcount = srcValue.size();
+        int index = -1;
+        memTable[loop][++index] = clCreateBuffer(context.get(), CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, arrayCount * sizeof(int), srcValue.data(), nullptr);
+        memTable[loop][++index] = clCreateBuffer(context.get(), CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, arrayCount * sizeof(int), ewValue.data(), nullptr);
+        memTable[loop][++index] = clCreateBuffer(context.get(), CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, arrayCount * sizeof(int), dstArray.data(), nullptr);
+        memTable[loop][++index] = clCreateBuffer(context.get(), CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, arrayCount * sizeof(int), dstValue.data(), nullptr);
+        memTable[loop][++index] = clCreateBuffer(context.get(), CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, arrayCount * sizeof(int), activeNode.data(), nullptr);
+        index = -1;
+        clSetKernelArg(krnls[loop].get(), 0, sizeof(cl_mem), &memTable[loop][++index]);
+        clSetKernelArg(krnls[loop].get(), 1, sizeof(cl_mem), &memTable[loop][++index]);
+        clSetKernelArg(krnls[loop].get(), 2, sizeof(cl_mem), &memTable[loop][++index]);
+        clSetKernelArg(krnls[loop].get(), 3, sizeof(cl_mem), &memTable[loop][++index]);
+        clSetKernelArg(krnls[loop].get(), 4, sizeof(cl_mem), &memTable[loop][++index]);
+        clSetKernelArg(krnls[loop].get(), 5, sizeof(int), &arrayCount);
+        index = -1;
+        // std::cout << "stp3"<< std::endl;
+        clEnqueueMigrateMemObjects(queue.get(), 1, &memTable[loop][++index], 0, 0, NULL, NULL);
+        clEnqueueMigrateMemObjects(queue.get(), 1, &memTable[loop][++index], 0, 0, NULL, NULL);
+        clEnqueueMigrateMemObjects(queue.get(), 1, &memTable[loop][++index], 0, 0, NULL, NULL);
+        clEnqueueMigrateMemObjects(queue.get(), 1, &memTable[loop][++index], 0, 0, NULL, NULL);
+        clEnqueueMigrateMemObjects(queue.get(), 1, &memTable[loop][++index], 0, 0, NULL, NULL);
+        // std::cout << "stp4"<< std::endl;
+        OCL_CHECK(err, err = queue.enqueueTask(krnls[loop], NULL, &eventList[loop]));
+        // std::cout << "stp5"<< std::endl;
+    }
+    // std::cout << "end loop" << std::endl;
+    int avCount = 0;
+    CUindex = 0;
+    for(int loop = 0 ; loop < LoopNum ; loop++)
+    {
+        OCL_CHECK(err, err = eventList[loop].wait());
+        cl_event endEvt;
+        clEnqueueReadBuffer(queue.get(), memTable[loop][3], CL_TRUE, 0, arrayCount * sizeof(int), dstValue.data(), 0, NULL, NULL);        
+        clEnqueueReadBuffer(queue.get(), memTable[loop][4], CL_TRUE, 0, arrayCount * sizeof(int), activeNode.data(), 0, NULL, &endEvt);
+        clWaitForEvents(1, &endEvt);
+        for(int i = 0 ; i < bound[loop] ; i++)
+        {
+            computeUnits[CUindex].destValue = dstValue[i];
+            computeUnits[CUindex].destVertex.isActive = activeNode[i];
+            CUindex++;
+        }
+        avCount += dstValue[arrayCount];
+    }
+    queue.finish();
+    //std::cout << "active node :" << avCount << std::endl;
+    return avCount;
+}
+
+
+
+template<typename VertexValueType, typename MessageValueType>
+int
+BellmanFordFPGA<VertexValueType, MessageValueType>::MSGApply_array(
     int computeUnitCount, ComputeUnit<VertexValueType> *computeUnits,MessageValueType *mValues)
 {
 

@@ -245,7 +245,6 @@ BellmanFord<VertexValueType, MessageValueType>::ApplyStep(Graph<VertexValueType>
     std::vector<ComputeUnitPackage<VertexValueType>> computePackages;
 
     ComputeUnit<VertexValueType> *computeUnits = nullptr;
-
     for (int i = 0; i < g.eCount; i++)
     {
         int destVId = g.eList[i].dst;
@@ -271,7 +270,7 @@ BellmanFord<VertexValueType, MessageValueType>::ApplyStep(Graph<VertexValueType>
             computeCnt = 0;
         }
     }
-
+    
     if (computeCnt != 0)
     {
         computePackages.emplace_back(ComputeUnitPackage<VertexValueType>(computeUnits, computeCnt));
@@ -286,7 +285,7 @@ BellmanFord<VertexValueType, MessageValueType>::ApplyStep(Graph<VertexValueType>
     {
         computeCnt = computePackage.getCount();
         computeUnits = computePackage.getUnitPtr();
-
+        // std::cout << "cu count :" << computeCnt << std::endl;
         MSGGenMerge_array(computeCnt, computeUnits, mValues);
         MSGApply_array(computeCnt, computeUnits, mValues);
 
@@ -331,7 +330,7 @@ BellmanFord<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> &g
     auto mMergedSetSet = std::vector<MessageSet<MessageValueType>>();
     for (int i = 0; i < partitionCount; i++) mMergedSetSet.push_back(MessageSet<MessageValueType>());
 
-    Init(g.vCount, g.eCount, initVList.size(), 10000);
+    Init(g.vCount, g.eCount, initVList.size(), 256*400);
 
     GraphInit(g, activeVertices, initVList);
 

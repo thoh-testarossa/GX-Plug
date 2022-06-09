@@ -2,7 +2,7 @@
 
 #ifndef GRAPH_ALGO_BELLMANFORDFPGA_H
 #define GRAPH_ALGO_BELLMANFORDFPGA_H
-
+#include <vector>
 #include "BellmanFord.h"
 #include "../../util/xcl2/xcl2.hpp"
 
@@ -24,7 +24,7 @@ protected:
     cl::Context context;
     cl::CommandQueue queue;
     cl::Program program;
-    cl::Kernel krnl;
+    std::vector<cl::Kernel>  krnls;
 };
 
 #endif //GRAPH_ALGO_BELLMANFORDGPU_H
