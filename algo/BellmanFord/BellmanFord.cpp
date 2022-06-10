@@ -340,10 +340,12 @@ BellmanFord<VertexValueType, MessageValueType>::ApplyD(Graph<VertexValueType> &g
 
     while (activeVertices.size() > 0)
     {
+        
         //Test
         std::cout << ++iterCount << ":" << clock() << std::endl;
         //Test end
 
+            
         auto subGraphSet = this->DivideGraphByEdge(g, partitionCount);
 
         for (int i = 0; i < partitionCount; i++)

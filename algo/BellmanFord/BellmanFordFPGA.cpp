@@ -72,17 +72,22 @@ BellmanFordFPGA<VertexValueType, MessageValueType>::MSGGenMerge_array(
     std::vector<int,aligned_allocator<int>> srcValue(arrayCount);
     std::vector<int,aligned_allocator<int>> ewValue(arrayCount);
     std::vector<int,aligned_allocator<int>> dstArray(arrayCount);
-    std::vector<int,aligned_allocator<int>> dstValue(arrayCount+1);
+    std::vector<int,aligned_allocator<int>> dstValue(arrayCount,0);
     std::vector<int,aligned_allocator<int>> activeNode(arrayCount,0);
 
     std::vector<int> bound;
     int oneLoopNum = computeUnitCount / LoopNum;
+    // std::cout << "LoopNum :" << LoopNum <<std::endl;
+    // std::cout << "arrayCount :" << arrayCount <<std::endl;
+    // std::cout << "oneLoopNum :" << oneLoopNum <<std::endl;
+    // std::cout << "ComCU :" << computeUnitCount << std::endl;
     for(int i = 0 ; i < LoopNum-1 ; i++)
     {
         bound.push_back(oneLoopNum);
+        //std::cout <<" " <<bound[i] ;
     }
     bound.push_back(computeUnitCount - oneLoopNum*(LoopNum-1));
-    
+    //std::cout << bound[LoopNum-1] << std::endl;
     cl_int err;
     int CUindex = 0;
     for(int loop = 0 ; loop < LoopNum ; loop++)
@@ -96,9 +101,14 @@ BellmanFordFPGA<VertexValueType, MessageValueType>::MSGGenMerge_array(
             ewValue[i] = cu.edgeWeight;
             dstArray[i] = cu.destVertex.vertexID;
             dstValue[i] = cu.destValue;
+            // if(dstValue[i] < 100)
+            //     std::cout<<"["<<dstArray[i]<<","<<srcValue[i]+ewValue[i]<<","<< dstValue[i]<<"]";
+            // else
+            //     std::cout<<"["<<dstArray[i]<<","<<srcValue[i]+ewValue[i]<<","<< -1<<"]";
             activeNode[i] = 0;
         }
-
+        // std::cout<<std::endl;
+        // std::cout<<"==================================================="<<std::endl;
         for(int i = bound[loop] ; i < arrayCount ; i++)
         {
             srcValue[i] = 0;
@@ -130,30 +140,38 @@ BellmanFordFPGA<VertexValueType, MessageValueType>::MSGGenMerge_array(
         clEnqueueMigrateMemObjects(queue.get(), 1, &memTable[loop][++index], 0, 0, NULL, NULL);
         clEnqueueMigrateMemObjects(queue.get(), 1, &memTable[loop][++index], 0, 0, NULL, NULL);
         // std::cout << "stp4"<< std::endl;
+        //std::cout << "loop :" << loop << std::endl;
         OCL_CHECK(err, err = queue.enqueueTask(krnls[loop], NULL, &eventList[loop]));
         // std::cout << "stp5"<< std::endl;
+        OCL_CHECK(err, err = eventList[loop].wait());
     }
-    // std::cout << "end loop" << std::endl;
-    int avCount = 0;
+
     CUindex = 0;
     for(int loop = 0 ; loop < LoopNum ; loop++)
     {
-        OCL_CHECK(err, err = eventList[loop].wait());
+        
         cl_event endEvt;
         clEnqueueReadBuffer(queue.get(), memTable[loop][3], CL_TRUE, 0, arrayCount * sizeof(int), dstValue.data(), 0, NULL, NULL);        
         clEnqueueReadBuffer(queue.get(), memTable[loop][4], CL_TRUE, 0, arrayCount * sizeof(int), activeNode.data(), 0, NULL, &endEvt);
         clWaitForEvents(1, &endEvt);
         for(int i = 0 ; i < bound[loop] ; i++)
         {
+            if (!computeUnits[CUindex].destVertex.isMaster)
+            {
+                CUindex++;
+                continue;
+            }
             computeUnits[CUindex].destValue = dstValue[i];
             computeUnits[CUindex].destVertex.isActive = activeNode[i];
+            computeUnits[CUindex].srcVertex.isActive = false;
             CUindex++;
         }
-        avCount += dstValue[arrayCount];
+        //std::cout<<std::endl;
+
     }
     queue.finish();
     //std::cout << "active node :" << avCount << std::endl;
-    return avCount;
+    return 0;
 }
 
 
