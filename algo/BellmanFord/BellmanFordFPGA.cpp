@@ -70,7 +70,7 @@ BellmanFordFPGA<VertexValueType, MessageValueType>::MSGGenMerge_array(
     int computeUnitCount, ComputeUnit<VertexValueType> *computeUnits,MessageValueType *mValues)
 {
     cl_mem mem;
-    std::vector<std::vector<cl_mem>> memTable(4,std::vector<cl_mem>(5)); 
+    std::vector<std::vector<cl_mem>> memTable(4,std::vector<cl_mem>(4)); 
     std::vector<cl::Event> eventList(4);
     int LoopNum = (512*4 < computeUnitCount) ? 4 : (computeUnitCount-1) / 512 + 1;
     int arrayCount = (((computeUnitCount-1) / (4 * 512)) + 1) * 512;
@@ -82,7 +82,7 @@ BellmanFordFPGA<VertexValueType, MessageValueType>::MSGGenMerge_array(
 
     std::vector<std::vector<int,aligned_allocator<int>>> srcValueTabel(LoopNum,std::vector<int,aligned_allocator<int>>(arrayCount));
     std::vector<std::vector<int,aligned_allocator<int>>> ewValueTabel(LoopNum,std::vector<int,aligned_allocator<int>>(arrayCount));
-    std::vector<std::vector<int,aligned_allocator<int>>> dstArrayTabel(LoopNum,std::vector<int,aligned_allocator<int>>(arrayCount));
+    //std::vector<std::vector<int,aligned_allocator<int>>> dstArrayTabel(LoopNum,std::vector<int,aligned_allocator<int>>(arrayCount));
     std::vector<std::vector<int,aligned_allocator<int>>> dstValueTabel(LoopNum,std::vector<int,aligned_allocator<int>>(arrayCount,0));
     std::vector<std::vector<int,aligned_allocator<int>>> activeNodeTabel(LoopNum,std::vector<int,aligned_allocator<int>>(arrayCount,0));
 
@@ -106,13 +106,14 @@ BellmanFordFPGA<VertexValueType, MessageValueType>::MSGGenMerge_array(
             cu.srcVertex.isActive = false;
             srcValueTabel[loop][i] = cu.srcValue;
             ewValueTabel[loop][i] = cu.edgeWeight;
-            dstArrayTabel[loop][i] = cu.destVertex.vertexID;
+            //dstArrayTabel[loop][i] = cu.destVertex.vertexID;
             dstValueTabel[loop][i] = cu.destValue;
+            activeNodeTabel[loop][i] = 0;
             // if(dstValue[i] < 100)
             //     std::cout<<"["<<dstArray[i]<<","<<srcValue[i]+ewValue[i]<<","<< dstValue[i]<<"]";
             // else
             //     std::cout<<"["<<dstArray[i]<<","<<srcValue[i]+ewValue[i]<<","<< -1<<"]";
-            activeNodeTabel[loop][i] = 0;
+            
         }
         // std::cout<<std::endl;
         // std::cout<<"==================================================="<<std::endl;
@@ -120,7 +121,7 @@ BellmanFordFPGA<VertexValueType, MessageValueType>::MSGGenMerge_array(
         {
             srcValueTabel[loop][i] = 0;
             ewValueTabel[loop][i] = 0;
-            dstArrayTabel[loop][i] = 0;
+            //dstArrayTabel[loop][i] = 0;
             dstValueTabel[loop][i] = 0;
             activeNodeTabel[loop][i] = 0;
         }
@@ -129,21 +130,21 @@ BellmanFordFPGA<VertexValueType, MessageValueType>::MSGGenMerge_array(
         int index = -1;
         memTable[loop][++index] = clCreateBuffer(context.get(), CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, arrayCount * sizeof(int), srcValueTabel[loop].data(), nullptr);
         memTable[loop][++index] = clCreateBuffer(context.get(), CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, arrayCount * sizeof(int), ewValueTabel[loop].data(), nullptr);
-        memTable[loop][++index] = clCreateBuffer(context.get(), CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, arrayCount * sizeof(int), dstArrayTabel[loop].data(), nullptr);
+        //memTable[loop][++index] = clCreateBuffer(context.get(), CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, arrayCount * sizeof(int), dstArrayTabel[loop].data(), nullptr);
         memTable[loop][++index] = clCreateBuffer(context.get(), CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, arrayCount * sizeof(int), dstValueTabel[loop].data(), nullptr);
         memTable[loop][++index] = clCreateBuffer(context.get(), CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE, arrayCount * sizeof(int), activeNodeTabel[loop].data(), nullptr);
         index = -1;
         clSetKernelArg(krnls[loop].get(), 0, sizeof(cl_mem), &memTable[loop][++index]);
         clSetKernelArg(krnls[loop].get(), 1, sizeof(cl_mem), &memTable[loop][++index]);
+        //clSetKernelArg(krnls[loop].get(), 2, sizeof(cl_mem), &memTable[loop][++index]);
         clSetKernelArg(krnls[loop].get(), 2, sizeof(cl_mem), &memTable[loop][++index]);
         clSetKernelArg(krnls[loop].get(), 3, sizeof(cl_mem), &memTable[loop][++index]);
-        clSetKernelArg(krnls[loop].get(), 4, sizeof(cl_mem), &memTable[loop][++index]);
-        clSetKernelArg(krnls[loop].get(), 5, sizeof(int), &arrayCount);
+        clSetKernelArg(krnls[loop].get(), 4, sizeof(int), &arrayCount);
         index = -1;
         // std::cout << "stp3"<< std::endl;
         clEnqueueMigrateMemObjects(queues[loop].get(), 1, &memTable[loop][++index], 0, 0, NULL, NULL);
         clEnqueueMigrateMemObjects(queues[loop].get(), 1, &memTable[loop][++index], 0, 0, NULL, NULL);
-        clEnqueueMigrateMemObjects(queues[loop].get(), 1, &memTable[loop][++index], 0, 0, NULL, NULL);
+        //clEnqueueMigrateMemObjects(queues[loop].get(), 1, &memTable[loop][++index], 0, 0, NULL, NULL);
         clEnqueueMigrateMemObjects(queues[loop].get(), 1, &memTable[loop][++index], 0, 0, NULL, NULL);
         clEnqueueMigrateMemObjects(queues[loop].get(), 1, &memTable[loop][++index], 0, 0, NULL, NULL);
         // std::cout << "stp4"<< std::endl;
@@ -158,8 +159,8 @@ BellmanFordFPGA<VertexValueType, MessageValueType>::MSGGenMerge_array(
     {
         OCL_CHECK(err, err = eventList[loop].wait());
         cl_event endEvt;
-        clEnqueueReadBuffer(queues[loop].get(), memTable[loop][3], CL_TRUE, 0, arrayCount * sizeof(int), dstValueTabel[loop].data(), 0, NULL, NULL);        
-        clEnqueueReadBuffer(queues[loop].get(), memTable[loop][4], CL_TRUE, 0, arrayCount * sizeof(int), activeNodeTabel[loop].data(), 0, NULL, &endEvt);
+        clEnqueueReadBuffer(queues[loop].get(), memTable[loop][2], CL_TRUE, 0, arrayCount * sizeof(int), dstValueTabel[loop].data(), 0, NULL, NULL);        
+        clEnqueueReadBuffer(queues[loop].get(), memTable[loop][3], CL_TRUE, 0, arrayCount * sizeof(int), activeNodeTabel[loop].data(), 0, NULL, &endEvt);
         clWaitForEvents(1, &endEvt);
         for(int i = 0 ; i < bound[loop] ; i++)
         {
