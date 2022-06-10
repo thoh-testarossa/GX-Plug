@@ -24,6 +24,7 @@ protected:
     cl::Context context;
     cl::CommandQueue queue;
     cl::Program program;
+    std::vector<cl::CommandQueue> queues;
     std::vector<cl::Kernel>  krnls;
 };
 
