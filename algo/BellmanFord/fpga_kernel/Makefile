@@ -1,4 +1,4 @@
-COMMON_REPO = ./
+COMMON_REPO = ../..
 ABS_COMMON_REPO = $(shell readlink -f $(COMMON_REPO))
 
 MK_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
@@ -62,8 +62,8 @@ BINARY_CONTAINERS = $(XCLBIN)/gs_top.$(TARGET).xilinx_pcie-hw-em_7v3_1_0.xclbin
 CP = cp -rf
 
 HOST_SRCS = ./src/host.cpp
-xcl2_SRCS:=${COMMON_REPO}/libs/xcl2/xcl2.cpp
-xcl2_HDRS:=${COMMON_REPO}/libs/xcl2/xcl2.hpp
+xcl2_SRCS:=${COMMON_REPO}/utils/xcl2/xcl2.cpp
+xcl2_HDRS:=${COMMON_REPO}/utils/xcl2/xcl2.hpp
 xcl2_CXXFLAGS:=-I ${COMMON_REPO}/libs/xcl2
 
 CXXFLAGS += ${xcl2_CXXFLAGS}
@@ -82,7 +82,7 @@ exe: emconfig $(EXECUTABLE) $(BINARY_CONTAINERS) run
 
 # Building kernel
 
-$(XCLBIN)/gs_top.$(TARGET).xo: ./src/fpga/gs_top.cpp
+$(XCLBIN)/gs_top.$(TARGET).xo: ./gs_top.cpp
 	mkdir -p $(XCLBIN)
 	$(XOCC) $(CLFLAGS) -c -k gs_top -I'$(<D)' -o'$@' '$<'
 
