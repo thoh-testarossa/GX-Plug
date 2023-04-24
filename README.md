@@ -1,11 +1,11 @@
-# GX-Plug·Ö²¼Ê½Í¼¼ÆËãÖĞ¼ä¼ş
-[Ö÷Ò³](http://120.76.141.20).
-Ä¿Ç°Ç¶ÈëGX-PlugÖĞ¼ä¼şµÄPowerGraphÒÑÖ§³ÖDockerÈİÆ÷²¿Êğ¡£
+# GX-Plugåˆ†å¸ƒå¼å›¾è®¡ç®—ä¸­é—´ä»¶
+[ä¸»é¡µ](http://120.76.141.20).
+ç›®å‰åµŒå…¥GX-Plugä¸­é—´ä»¶çš„PowerGraphå·²æ”¯æŒDockerå®¹å™¨éƒ¨ç½²ã€‚
 
-[Docker HubµØÖ·](https://hub.docker.com/r/kssamwang/gx-plug/tags).
+[Docker Hubåœ°å€](https://hub.docker.com/r/kssamwang/gx-plug/tags).
 
 - v2.0/v2.1
-»ùÓÚÊÖ¶¯¹¹½¨£¬Ìå»ıºÜ´ó¡£
+åŸºäºæ‰‹åŠ¨æ„å»ºï¼Œä½“ç§¯å¾ˆå¤§ã€‚
 
 ```sh
 docker pull kssamwang/gx-plug:v2.0-PowerGraph
@@ -13,7 +13,7 @@ docker pull kssamwang/gx-plug:v2.1-PowerGraph
 ```
 
 - v2.2/v2.3
-ÓÉDockerfile¹¹½¨£¬»ù´¡¾µÏñnvidia/cuda:11.4.0-devel-ubuntu20.04 
+ç”±Dockerfileæ„å»ºï¼ŒåŸºç¡€é•œåƒnvidia/cuda:11.4.0-devel-ubuntu20.04 
 
 ```sh
 docker pull kssamwang/gx-plug:v2.2-PowerGraph
@@ -21,10 +21,12 @@ docker pull kssamwang/gx-plug:v2.3-PowerGraph
 ```
 
 - v3.0
-ÓÉDockerfile¹¹½¨£¬»ù´¡¾µÏñnvidia/cuda:10.0-devel-ubuntu18.04 
+ç”±Dockerfileæ„å»ºï¼ŒåŸºç¡€é•œåƒnvidia/cuda:10.0-devel-ubuntu18.04 
+
+å®Œå…¨æ”¯æŒGPUï¼ŒåŒ…å«äº†é™æ€ç¼–è¯‘çš„ä¸‰ä¸ªç®—æ³•çš„å¯æ‰§è¡Œæ–‡ä»¶ï¼ŒGX-Plugçš„æµ‹è¯•ä½¿ç”¨æ¡ˆä¾‹ï¼Œä»¥åŠåŸç‰ˆPowerGraphå›¾åˆ†æç»„ä»¶é“¾æ¥åçš„å¯æ‰§è¡Œæ–‡ä»¶ã€‚
 
 ```sh
 docker pull kssamwang/gx-plug:v3.0-PowerGraph
 ```
 
-ÍÆ¼öÊ¹ÓÃNVIDIA V100£¬±ÜÃâÆäËû¼Ü¹¹³öÏÖÒ»Ğ©¼æÈİÎÊÌâ¡£
+æ¨èä½¿ç”¨NVIDIA V100ï¼Œé¿å…å…¶ä»–æ¶æ„å‡ºç°ä¸€äº›å…¼å®¹é—®é¢˜ã€‚
