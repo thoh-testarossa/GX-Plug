@@ -4,6 +4,12 @@
 
 [Docker Hub地址](https://hub.docker.com/r/kssamwang/gx-plug/tags).
 
+Docker中使用GPU的原理是通过nvidia-docker2的runtime，把容器内的CUDA Toolkit链接到宿主机的CUDA Driver，使用宿主机GPU。
+
+所以注意：宿主机CUDA Driver版本与Docker镜像中使用的CUDA Toolkit版本兼容，启动镜像时确保docker runtime是nvidia-docker-runtime。
+
+推荐使用NVIDIA V100，避免其他GPU架构出现一些兼容问题。
+
 - v2.0/v2.1
 
 ```sh
@@ -30,4 +36,13 @@ docker pull kssamwang/gx-plug:v2.3-PowerGraph
 docker pull kssamwang/gx-plug:v3.0-PowerGraph
 ```
 
-推荐使用NVIDIA V100，避免其他架构出现一些兼容问题。
+- v3.1
+
+由Dockerfile构建，基础镜像nvidia/cuda:11.4.0-devel-ubuntu20.04 
+
+在3.0基础上更换了基础镜像
+
+```sh
+docker pull kssamwang/gx-plug:v3.1-PowerGraph
+```
+
